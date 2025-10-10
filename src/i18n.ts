@@ -1,0 +1,35 @@
+
+export type Lang = "en" | "th";
+
+export const t = (lang: Lang) => ({
+  appTitle: lang==="th" ? "ข่าวประเสริฐภาษาไทย" : "Thai Good News",
+  browse: lang==="th" ? "เรียกดู" : "Browse",
+  add: lang==="th" ? "เพิ่มลิงก์" : "Add",
+  importExport: lang==="th" ? "นำเข้า / ส่งออก" : "Import / Export",
+  logout: lang==="th" ? "ออกจากระบบ" : "Log out",
+  loginTitle: lang==="th" ? "เข้าสู่ระบบด้วยอีเมล" : "Sign in with Email",
+  email: lang==="th" ? "อีเมล" : "Email",
+  password: lang==="th" ? "รหัสผ่าน" : "Password",
+  signIn: lang==="th" ? "เข้าสู่ระบบ" : "Sign in",
+  signUp: lang==="th" ? "สมัครสมาชิก" : "Sign up",
+  name: lang==="th" ? "ชื่อเรื่อง" : "Name",
+  language: lang==="th" ? "ภาษา" : "Language",
+  url: lang==="th" ? "ลิงก์ (เริ่มด้วย https://)" : "URL (must start with https://)",
+  save: lang==="th" ? "บันทึก" : "Save",
+  searchPlaceholder: lang==="th" ? "ค้นหาทุกภาษา…" : "Search all languages…",
+  size: lang==="th" ? "ขนาดตัวอักษร" : "Text size",
+  small: lang==="th" ? "เล็ก" : "Small",
+  medium: lang==="th" ? "กลาง" : "Medium",
+  large: lang==="th" ? "ใหญ่" : "Large",
+  filterAll: lang==="th" ? "ทั้งหมด" : "All",
+  filterThai: lang==="th" ? "เฉพาะภาษาไทย" : "Thai only",
+  share: lang==="th" ? "แชร์" : "Share",
+  emailShare: lang==="th" ? "อีเมล" : "Email",
+  fbShare: lang==="th" ? "เฟซบุ๊ก" : "Facebook",
+  xShare: lang==="th" ? "เอ็กซ์" : "X / Twitter",
+  waShare: lang==="th" ? "วอทส์แอป" : "WhatsApp",
+  copyLink: lang==="th" ? "คัดลอกลิงก์" : "Copy link",
+  importJSON: lang==="th" ? "นำเข้า JSON" : "Import JSON",
+  importCSV: lang==="th" ? "นำเข้า CSV" : "Import CSV",
+  exportJSON: lang==="th" ? "ส่งออก JSON" : "Export JSON"
+});
