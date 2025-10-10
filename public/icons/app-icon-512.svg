@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="512" height="512">
+  <defs>
+    <style>
+      .bg { fill: #2D2A4A; }
+      .white { fill: #F4F5F8; }
+      .red { fill: #A51931; }
+      .text { fill: #F4F5F8; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; font-weight: 800; }
+    </style>
+  </defs>
+  <rect x="32" y="32" width="960" height="960" rx="160" class="bg"/>
+  <rect x="472" y="160" width="80" height="704" rx="40" class="white"/>
+  <rect x="272" y="456" width="480" height="80" rx="40" class="white"/>
+  <text x="220" y="280" font-size="180" class="text" text-anchor="middle" dominant-baseline="middle">T</text>
+  <text x="280" y="760" font-size="220" class="text" text-anchor="middle" dominant-baseline="middle">G</text>
+  <text x="740" y="760" font-size="220" class="text" text-anchor="middle" dominant-baseline="middle">N</text>
+  <g transform="translate(740,160)">
+    <rect x="-120" y="0" width="200" height="140" rx="24" class="white"/>
+    <rect x="-110" y="16" width="180" height="108" rx="18" fill="#2D2A4A"/>
+    <rect x="-110" y="16" width="180" height="24" class="red"/>
+    <rect x="-110" y="100" width="180" height="24" class="red"/>
+    <rect x="-110" y="52" width="180" height="36" class="white"/>
+  </g>
+</svg>
