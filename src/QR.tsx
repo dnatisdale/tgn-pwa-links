@@ -21,7 +21,7 @@ export default function QR({ url, size = 192, idForDownload }: Props) {
   return (
     <div className="qr-center">
       <canvas
-        id={idForDownload}               {/* <-- add id if provided */}
+        {...(idForDownload ? { id: idForDownload } : {})}
         ref={ref}
         width={size}
         height={size}
