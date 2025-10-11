@@ -37,8 +37,8 @@ export default function App() {
   // font size in px (applies to :root --base)
   const [textPx, setTextPx] = useState<number>(16);
 
-  // QR size in px (slider)
-  const [qrPx, setQrPx] = useState<number>(192);
+  // QR: click-to-enlarge; store which row id is enlarged (or null)
+  const [qrEnlargedId, setQrEnlargedId] = useState<string | null>(null);
 
   // simple hash routing
   const [route, setRoute] = useState<string>(window.location.hash || "#/browse");
@@ -108,6 +108,40 @@ export default function App() {
   const isAdd = route.startsWith("#/add");
   const isImport = route.startsWith("#/import");
 
+  // CSV export (filtered rows)
+  const exportCSV = () => {
+    const header = ["name", "language", "url"];
+    const lines = [header.join(",")].concat(
+      filtered.map((r) =>
+        [r.name ?? "", r.language ?? "", r.url ?? ""]
+          .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+          .join(",")
+      )
+    );
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "thai-good-news-links.csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  // Print / PDF (user can choose "Save as PDF")
+  const printPage = () => {
+    window.print();
+  };
+
+  // small AAA icon
+  const AAA = (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+      <rect x="2" y="2" width="20" height="20" rx="4" fill="#0f2454" />
+      <path
+        d="M6 16l2.2-8h1.6L12 16h-1.6l-.4-1.6H8l-.4 1.6H6zm2.3-3h1.7l-.9-3.7L8.3 13zM13 16l2.2-8h1.6L19 16h-1.6l-.4-1.6h-2.1L14.6 16H13zm2.3-3h1.7l-.9-3.7-.8 3.7z"
+        fill="#fff"
+      />
+    </svg>
+  );
+
   return (
     <div>
       {/* Banner */}
@@ -119,21 +153,12 @@ export default function App() {
       <header className="header p-3 flex items-center justify-between">
         <div />
         <div className="flex items-center gap-4 text-sm">
-          {/* Install (shows only when installable) */}
+          {/* Install (button appears even when prompt isn’t available, with a fallback) */}
           <InstallPWA />
 
           {/* Font-size slider with AAA icon */}
-          <span
-            title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
-            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
-              <rect x="2" y="2" width="20" height="20" rx="4" fill="#0f2454" />
-              <path
-                d="M6 16l2.2-8h1.6L12 16h-1.6l-.4-1.6H8l-.4 1.6H6zm2.3-3h1.7l-.9-3.7L8.3 13zM13 16l2.2-8h1.6L19 16h-1.6l-.4-1.6h-2.1L14.6 16H13zm2.3-3h1.7l-.9-3.7-.8 3.7z"
-                fill="#fff"
-              />
-            </svg>
+          <span title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"} style={{display:"inline-flex",alignItems:"center",gap:6}}>
+            {AAA}
             <input
               type="range"
               min={14}
@@ -147,23 +172,6 @@ export default function App() {
             <span style={{ fontSize: 12, color: "#6b7280" }}>{textPx}px</span>
           </span>
 
-          {/* QR size slider */}
-          <label className="sr-only" htmlFor="qrSizePx">
-            QR size
-          </label>
-          <input
-            id="qrSizePx"
-            type="range"
-            min={128}
-            max={320}
-            step={16}
-            value={qrPx}
-            onChange={(e) => setQrPx(parseInt(e.target.value, 10))}
-            aria-label={lang === "th" ? "ขนาดคิวอาร์โค้ด" : "QR size"}
-            style={{ width: 120, verticalAlign: "middle" }}
-          />
-          <span style={{ fontSize: 12, color: "#6b7280" }}>{qrPx}px</span>
-
           {/* Language + Logout */}
           <button className="linklike" onClick={() => setLang(lang === "en" ? "th" : "en")}>
             {lang === "en" ? "ไทย" : "EN"}
@@ -176,15 +184,9 @@ export default function App() {
 
       {/* Nav */}
       <nav className="p-3 flex flex-wrap gap-4 text-sm">
-        <a className="underline" href="#/browse">
-          {i.browse}
-        </a>
-        <a className="underline" href="#/add">
-          {i.add}
-        </a>
-        <a className="underline" href="#/import">
-          {i.importExport}
-        </a>
+        <a className="underline" href="#/browse">{i.browse}</a>
+        <a className="underline" href="#/add">{i.add}</a>
+        <a className="underline" href="#/import">{i.importExport}</a>
       </nav>
 
       {/* Main */}
@@ -201,7 +203,8 @@ export default function App() {
           </section>
         ) : (
           <section>
-            <div className="flex flex-wrap gap-4 items-center mb-3">
+            {/* Search & Filters + Export/Print row */}
+            <div className="flex flex-wrap items-center gap-4 mb-3">
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
@@ -209,14 +212,15 @@ export default function App() {
                 className="border rounded px-2 py-1 min-w-[260px]"
               />
               <div className="text-sm">
-                <button className="linklike" onClick={() => setFilterThai(false)}>
-                  {i.filterAll}
-                </button>
+                <button className="linklike" onClick={() => setFilterThai(false)}>{i.filterAll}</button>
                 &nbsp;|&nbsp;
-                <button className="linklike" onClick={() => setFilterThai(true)}>
-                  {i.filterThai}
-                </button>
+                <button className="linklike" onClick={() => setFilterThai(true)}>{i.filterThai}</button>
               </div>
+
+              <span className="ml-auto flex items-center gap-3 text-sm">
+                <button className="linklike" onClick={exportCSV}>Export CSV</button>
+                <button className="linklike" onClick={printPage}>Print / PDF</button>
+              </span>
             </div>
 
             {!filtered.length && (
@@ -224,26 +228,39 @@ export default function App() {
             )}
 
             <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {filtered.map((row) => (
-                <li key={row.id} className="card">
-                  <div className="text-base font-semibold text-center">{row.name}</div>
-                  <div className="text-sm mb-2 text-center">{row.language}</div>
+              {filtered.map((row) => {
+                const enlarged = qrEnlargedId === row.id;
+                const qrSize = enlarged ? 320 : 192;
+                return (
+                  <li key={row.id} className="card">
+                    <div className="text-base font-semibold text-center">{row.name}</div>
+                    <div className="text-sm mb-2 text-center">{row.language}</div>
 
-                  {/* Scalable QR */}
-                  <QR url={row.url} size={qrPx} idForDownload={`qr-${row.id}`} />
+                    {/* Click-to-enlarge QR */}
+                    <div
+                      role="button"
+                      onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
+                      onKeyDown={(e) => { if (e.key === "Enter") setQrEnlargedId(enlarged ? null : row.id); }}
+                      tabIndex={0}
+                      title={enlarged ? (lang==="th" ? "ย่อ QR" : "Shrink QR") : (lang==="th" ? "ขยาย QR" : "Enlarge QR")}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <QR url={row.url} size={qrSize} idForDownload={`qr-${row.id}`} />
+                    </div>
 
-                  <div className="mt-2 text-center">
-                    <a href={row.url} className="underline" target="_blank" rel="noreferrer">
-                      {row.url}
-                    </a>
-                  </div>
+                    <div className="mt-2 text-center">
+                      <a href={row.url} className="underline" target="_blank" rel="noreferrer">
+                        {row.url}
+                      </a>
+                    </div>
 
-                  {/* Unified Share */}
-                  <div className="mt-2">
-                    <Share url={row.url} title={row.name || "Link"} qrCanvasId={`qr-${row.id}`} />
-                  </div>
-                </li>
-              ))}
+                    {/* Unified Share row (Email / LINE / Facebook / X / WhatsApp / Telegram / Copy / Download QR) */}
+                    <div className="mt-2">
+                      <Share url={row.url} title={row.name || "Link"} qrCanvasId={`qr-${row.id}`} />
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           </section>
         )}
