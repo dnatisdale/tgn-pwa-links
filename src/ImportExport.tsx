@@ -2,8 +2,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import { db, auth } from "./firebase";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { t, Lang } from "./i18n";
 
 type Row = { id: string; name: string; language: string; url: string };
