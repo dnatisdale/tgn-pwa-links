@@ -363,12 +363,21 @@ export default function ImportExport({ lang }: { lang: Lang }) {
               </tbody>
             </table>
 
-            <div className="mt-3 flex items-center gap-3">
-              <button className="linklike" onClick={doImport} disabled={importing}>
-                {importing ? "Importing…" : `Import ${preview.length} item(s)`}
-              </button>
-              {importMsg && <span className="text-sm text-gray-700">{importMsg}</span>}
-            </div>
+<div className="mt-3 flex items-center gap-3">
+  <button
+    className="linklike"
+    onClick={async () => {
+      console.log("[Import] preview size:", preview.length);
+      await doImport();
+      console.log("[Import] done");
+    }}
+    disabled={importing}
+  >
+    {importing ? "Importing…" : `Import ${preview.length} item(s)`}
+  </button>
+  {importMsg && <span className="text-sm text-gray-700">{importMsg}</span>}
+</div>
+
           </>
         )}
 
