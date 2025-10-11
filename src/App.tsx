@@ -9,9 +9,10 @@ import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 
-// tell TS about the build-time constants from vite.config.ts (Option B)
+// Build-time constants from vite.config.ts
 declare const __APP_VERSION__: string;
 declare const __BUILD_DATE__: string;
+declare const __BUILD_TIME__: string;
 
 type Row = { id: string; name: string; language: string; url: string };
 
@@ -31,7 +32,7 @@ export default function App() {
     return () => off();
   }, []);
 
-  // subscribe to links
+  // data
   useEffect(() => {
     if (!user) {
       setRows([]);
@@ -94,15 +95,14 @@ export default function App() {
 
   return (
     <div>
-      {/* BANNER ON TOP (served from public/) */}
-      <div className="w-full">
+      {/* Banner on top (from public/) + thin dark line under it */}
+      <div className="banner-wrap">
         <img className="banner" src="/banner-2400x600.png" alt="Thai Good News banner" />
       </div>
 
-      {/* Minimal header (logo optional now) */}
+      {/* Minimal header (no title, no logo) */}
       <header className="header p-3 flex items-center justify-between">
-        <div className="font-bold select-none">Thai Good News</div>
-        <img className="logo" src="/logo-square-1024.png" alt="logo" />
+        <div /> {/* empty left to keep spacing minimal and clean */}
         <div className="flex items-center gap-4 text-sm">
           <button className="linklike" onClick={() => setLang(lang === "en" ? "th" : "en")}>
             {lang === "en" ? "ไทย" : "EN"}
@@ -179,10 +179,10 @@ export default function App() {
         )}
       </main>
 
-      {/* centered version/date from Option B */}
+      {/* Centered version/date/time */}
       <footer className="footer">
         <div style={{ display: "flex", justifyContent: "center" }}>
-          Thai Good News — {__APP_VERSION__} — {__BUILD_DATE__}
+          {__APP_VERSION__} — {__BUILD_DATE__} {__BUILD_TIME__}
         </div>
       </footer>
     </div>

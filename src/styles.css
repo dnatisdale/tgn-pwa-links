@@ -1,2 +1,65 @@
-:root{--base:16px}html{font-size:var(--base)}a{text-decoration:underline}button.linklike{background:none;border:none;padding:0;text-decoration:underline;cursor:pointer}.header{border-bottom:1px solid #e5e7eb}.card{border:1px solid #e5e7eb;border-radius:.75rem;padding:.75rem}.banner{max-width:1200px;width:100%;margin:0 auto 12px;display:block}.logo{height:28px;border-radius:8px;vertical-align:middle}
-@tailwind base;@tailwind components;@tailwind utilities;
+/* Tailwind first (required order) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- Base variables & elements ---- */
+:root {
+  --base: 16px;            /* updated by App.tsx for S / M / L */
+}
+
+html {
+  font-size: var(--base);
+}
+
+a {
+  text-decoration: underline;
+}
+
+button.linklike {
+  background: none;
+  border: none;
+  padding: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ---- Layout / UI atoms ---- */
+.header {
+  border-bottom: 1px solid #e5e7eb; /* light gray */
+}
+
+.card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+}
+
+/* Banner at top */
+.banner-wrap {
+  border-bottom: 1px solid #111827; /* very dark, thin line under banner */
+}
+
+.banner {
+  max-width: 1200px;
+  width: 100%;
+  display: block;
+  margin: 0 auto;          /* centered, no extra bottom margin */
+}
+
+/* Optional logo (if used anywhere) */
+.logo {
+  height: 28px;
+  border-radius: 8px;
+  vertical-align: middle;
+}
+
+/* Footer */
+.footer {
+  border-top: 1px solid #e5e7eb;
+  margin-top: 20px;
+  padding: 10px 12px;
+  color: #6b7280;          /* gray-500-ish */
+  font-size: 12px;
+  text-align: center;
+}
