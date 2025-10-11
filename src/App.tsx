@@ -66,9 +66,8 @@ const [textPx, setTextPx] = useState<number>(16);
 
   // apply text size to :root --base
   useEffect(() => {
-    const px = textSize === "s" ? "14px" : textSize === "m" ? "16px" : "19px";
-    document.documentElement.style.setProperty("--base", px);
-  }, [textSize]);
+  document.documentElement.style.setProperty("--base", `${textPx}px`);
+}, [textPx]);
 
   // hash router listener
   useEffect(() => {
