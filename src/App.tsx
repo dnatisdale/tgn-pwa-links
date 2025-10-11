@@ -5,6 +5,7 @@ import ShareButtons from "./ShareButtons";
 import QR from "./QR";
 import AddLink from "./AddLink";
 import ImportExport from "./ImportExport";
+import InstallPWA from "./InstallPWA";
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
@@ -32,7 +33,7 @@ export default function App() {
     return () => off();
   }, []);
 
-  // data
+  // subscribe to links
   useEffect(() => {
     if (!user) {
       setRows([]);
@@ -95,15 +96,18 @@ export default function App() {
 
   return (
     <div>
-      {/* Banner on top (from public/) + thin dark line under it */}
+      {/* Banner on top (from public/) + thin dark line under it (via .banner-wrap) */}
       <div className="banner-wrap">
         <img className="banner" src="/banner-2400x600.png" alt="Thai Good News banner" />
       </div>
 
-      {/* Minimal header (no title, no logo) */}
+      {/* Minimal header */}
       <header className="header p-3 flex items-center justify-between">
-        <div /> {/* empty left to keep spacing minimal and clean */}
+        <div /> {/* keep layout balanced, no title/logo */}
         <div className="flex items-center gap-4 text-sm">
+          {/* Install button appears when PWA is installable */}
+          <InstallPWA />
+
           <button className="linklike" onClick={() => setLang(lang === "en" ? "th" : "en")}>
             {lang === "en" ? "ไทย" : "EN"}
           </button>
@@ -161,26 +165,23 @@ export default function App() {
             <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
               {filtered.map((r) => (
                 <li key={r.id} className="card">
-  <div className="text-base font-semibold text-center">{r.name}</div>
-  <div className="text-sm mb-2 text-center">{r.language}</div>
+                  <div className="text-base font-semibold text-center">{r.name}</div>
+                  <div className="text-sm mb-2 text-center">{r.language}</div>
 
-  {/* Centered QR */}
-  <div className="qr-block">
-    <QR url={r.url} />
-  </div>
+                  {/* QR centered by QR.tsx */}
+                  <QR url={r.url} />
 
-  <div className="mt-2 text-center">
-    <a href={r.url} className="underline" target="_blank" rel="noreferrer">
-      {r.url}
-    </a>
-  </div>
+                  <div className="mt-2 text-center">
+                    <a href={r.url} className="underline" target="_blank" rel="noreferrer">
+                      {r.url}
+                    </a>
+                  </div>
 
-  {/* Centered share row */}
-  <div className="mt-2 share-block">
-    <ShareButtons lang={lang} url={r.url} name={r.name} />
-  </div>
-</li>
-
+                  {/* Share centered by ShareButtons' wrappers */}
+                  <div className="mt-2">
+                    <ShareButtons lang={lang} url={r.url} name={r.name} />
+                  </div>
+                </li>
               ))}
             </ul>
           </section>

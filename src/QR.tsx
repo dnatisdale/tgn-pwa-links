@@ -16,22 +16,19 @@ export default function QR({ url, size = 192 }: Props) {
       width: size,
       margin: 1,
       errorCorrectionLevel: "M",
-      color: {
-        dark: "#111111",  // nearly black for good contrast
-        light: "#ffffff",
-      },
-    }).catch(() => {
-      // No-op: you could set a fallback message if desired
-    });
+      color: { dark: "#111111", light: "#ffffff" },
+    }).catch(() => {});
   }, [url, size]);
 
   return (
-    <canvas
-      ref={ref}
-      width={size}
-      height={size}
-      aria-label="QR code"
-      style={{ borderRadius: 8, background: "#fff" }}
-    />
+    <div className="qr-block">
+      <canvas
+        ref={ref}
+        width={size}
+        height={size}
+        aria-label="QR code"
+        style={{ borderRadius: 8, background: "#fff" }}
+      />
+    </div>
   );
 }
