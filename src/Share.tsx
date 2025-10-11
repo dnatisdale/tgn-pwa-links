@@ -1,4 +1,3 @@
-// src/Share.tsx
 import React, { useState } from "react";
 import { normalizeHttps } from "./utils";
 
@@ -19,11 +18,15 @@ export default function Share({
         return;
       } catch {}
     }
-    // if not supported, fall through; menu provides options
     setOpen(v => !v);
   };
 
-  const mail    = `mailto:?subject=${enc(title || "Link")}&body=${enc(href)}`;
+  // Email links
+  const mailto = `mailto:?subject=${enc(title || "Link")}&body=${enc(href)}`;
+  // Direct Gmail compose (works even if Gmail isn't the default handler)
+  const gmail = `https://mail.google.com/mail/?view=cm&fs=1&su=${enc(title || "Link")}&body=${enc(href)}`;
+
+  // Social
   const lineURL = `https://line.me/R/msg/text/?${enc((title || "") + " " + href)}`;
   const fbURL   = `https://www.facebook.com/sharer/sharer.php?u=${enc(href)}`;
   const xURL    = `https://twitter.com/intent/tweet?url=${enc(href)}&text=${enc(title || "")}`;
@@ -38,19 +41,20 @@ export default function Share({
 
   return (
     <div className="relative inline-block">
-      <button className="linklike" onClick={doWebShare}>
+      <button className="btn-red" onClick={doWebShare}>
         Share ▾
       </button>
 
       {open && (
         <div
           className="absolute z-10 mt-2 border rounded bg-white shadow p-2 text-sm"
-          style={{ minWidth: 200 }}
+          style={{ minWidth: 220 }}
           onMouseLeave={() => setOpen(false)}
         >
           <div className="px-2 py-1 text-gray-500">Share via</div>
           <div className="grid grid-cols-2 gap-x-3 gap-y-1 px-2 pb-2">
-            <a className="underline" href={mail}>Email</a>
+            <a className="underline" href={gmail} target="_blank" rel="noreferrer">Gmail</a>
+            <a className="underline" href={mailto}>Email (mailto)</a>
             <a className="underline" href={lineURL} target="_blank" rel="noreferrer">LINE</a>
             <a className="underline" href={fbURL}   target="_blank" rel="noreferrer">Facebook</a>
             <a className="underline" href={xURL}    target="_blank" rel="noreferrer">X</a>
