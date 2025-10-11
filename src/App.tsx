@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { t, Lang } from "./i18n";
 import Login from "./Login";
 import ShareButtons from "./ShareButtons";
+import NiftyShare from "./NiftyShare";
 import QR from "./QR";
 import AddLink from "./AddLink";
 import ImportExport from "./ImportExport";
@@ -170,6 +171,29 @@ export default function App() {
 
                   {/* QR centered by QR.tsx */}
                   <QR url={r.url} />
+
+                  // ...
+<li key={r.id} className="card">
+  <div className="text-base font-semibold text-center">{r.name}</div>
+  <div className="text-sm mb-2 text-center">{r.language}</div>
+
+  {/* QR centered */}
+  <QR url={r.url} />
+
+  <div className="mt-2 text-center">
+    <a href={r.url} className="underline" target="_blank" rel="noreferrer">
+      {r.url}
+    </a>
+  </div>
+
+  {/* Your existing ShareButtons (optional) */}
+  {/* <div className="mt-2"><ShareButtons lang={lang} url={r.url} name={r.name} /></div> */}
+
+  {/* NEW: Nifty-style popup share (uses the SAVED URL) */}
+  <div className="mt-2" style={{ display: "flex", justifyContent: "center" }}>
+    <NiftyShare url={r.url} title={r.name || "Link"} />
+  </div>
+</li>
 
                   <div className="mt-2 text-center">
                     <a href={r.url} className="underline" target="_blank" rel="noreferrer">
