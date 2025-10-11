@@ -1,3 +1,4 @@
+// src/App.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { t, Lang } from "./i18n";
 import Login from "./Login";
@@ -38,7 +39,7 @@ export default function App() {
   // font size in px (applies to :root --base)
   const [textPx, setTextPx] = useState<number>(16);
 
-  // QR: click-to-enlarge; stores which row id is enlarged (or null)
+  // QR click-to-enlarge
   const [qrEnlargedId, setQrEnlargedId] = useState<string | null>(null);
 
   // simple hash routing
@@ -64,13 +65,6 @@ export default function App() {
     });
     return () => off();
   }, [user]);
-
-<DownloadQRButton
-  qrCanvasId={`qr-${row.id}`}
-  url={row.url}
-  name={row.name}
-  title="Thai Good News"
-/>
 
   // apply font size
   useEffect(() => {
@@ -138,10 +132,7 @@ export default function App() {
       <header className="header p-3 flex items-center justify-between">
         <div />
         <div className="flex items-center gap-4 text-sm">
-          {/* Install (shows even without beforeinstallprompt, with fallback) */}
           <InstallPWA />
-
-          {/* Font-size slider with AAA icon */}
           <span title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"} style={{display:"inline-flex",alignItems:"center",gap:6}}>
             {AAA}
             <input
@@ -156,14 +147,10 @@ export default function App() {
             />
             <span style={{ fontSize: 12, color: "#6b7280" }}>{textPx}px</span>
           </span>
-
-          {/* Language + Logout */}
           <button className="linklike" onClick={() => setLang(lang === "en" ? "th" : "en")}>
             {lang === "en" ? "ไทย" : "EN"}
           </button>
-          <button className="linklike" onClick={() => signOut(auth)}>
-            {i.logout}
-          </button>
+          <button className="linklike" onClick={() => signOut(auth)}>{i.logout}</button>
         </div>
       </header>
 
@@ -233,9 +220,15 @@ export default function App() {
                       </a>
                     </div>
 
-                    {/* Unified Share row */}
-                    <div className="mt-2">
-                      <Share url={row.url} title={row.name || "Link"} qrCanvasId={`qr-${row.id}`} />
+                    {/* Actions: Share dropdown + Download QR card */}
+                    <div className="mt-2 flex items-center justify-center gap-6">
+                      <Share url={row.url} title={row.name || "Link"} />
+                      <DownloadQRButton
+                        qrCanvasId={`qr-${row.id}`}
+                        url={row.url}
+                        name={row.name}
+                        title="Thai Good News"
+                      />
                     </div>
                   </li>
                 );
