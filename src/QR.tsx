@@ -2,15 +2,14 @@ import React, { useEffect, useRef } from "react";
 import QRCode from "qrcode";
 import { normalizeHttps } from "./utils";
 
-type Props = { url: string; size?: number };
+type Props = { url: string; size?: number; idForDownload?: string };
 
-export default function QR({ url, size = 192 }: Props) {
+export default function QR({ url, size = 192, idForDownload }: Props) {
   const ref = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     const safeUrl = normalizeHttps(url);
     if (!ref.current || !safeUrl) return;
-
     QRCode.toCanvas(ref.current, safeUrl, {
       width: size,
       margin: 1,
@@ -19,10 +18,10 @@ export default function QR({ url, size = 192 }: Props) {
     }).catch(() => {});
   }, [url, size]);
 
-  // centered container
   return (
     <div className="qr-center">
       <canvas
+        id={idForDownload}               {/* <-- add id if provided */}
         ref={ref}
         width={size}
         height={size}
