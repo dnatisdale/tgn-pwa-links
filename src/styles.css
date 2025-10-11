@@ -23,6 +23,42 @@ button.linklike:focus-visible {
   outline-offset: 2px;
 }
 
+/* --- PWA toast --- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  background: #111827;
+  color: white;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  padding: 10px 12px;
+  z-index: 9999;
+  max-width: 92vw;
+}
+.toast-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.toast-btn {
+  background: white;
+  color: #111827;
+  border: 0;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.toast-btn.ghost {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.35);
+}
+.ios-hint { bottom: 64px; }
+
+
 /* --- Layout atoms --- */
 .header { border-bottom: 1px solid #e5e7eb; } /* light gray */
 
