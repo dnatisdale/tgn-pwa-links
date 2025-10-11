@@ -1,4 +1,4 @@
-iimport React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { t, Lang } from "./i18n";
 import Login from "./Login";
 import QR from "./QR";
