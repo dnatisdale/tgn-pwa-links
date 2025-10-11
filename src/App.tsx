@@ -5,6 +5,8 @@ import QR from "./QR";
 import AddLink from "./AddLink";
 import ImportExport from "./ImportExport";
 import InstallPWA from "./InstallPWA";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import UpdateToast from "./UpdateToast";
 import IOSInstallHint from "./IOSInstallHint";
 import Share from "./Share";
@@ -130,6 +132,60 @@ export default function App() {
   const printPage = () => {
     window.print();
   };
+  
+// One-click PDF (uses current filtered list)
+const downloadPDF = () => {
+  try {
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+
+    // Header title
+    const title = "Thai Good News — Links";
+    const meta = `${__APP_VERSION__} — ${__BUILD_DATE__} ${__BUILD_TIME__}`;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text(title, 40, 40);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(meta, 40, 57);
+
+    // Build table rows from filtered results
+    const body = filtered.map(r => [
+      r.name ?? "",
+      r.language ?? "",
+      r.url ?? "",
+    ]);
+
+    // Table
+    (autoTable as any)(doc, {
+      head: [["Name", "Language", "URL"]],
+      body,
+      startY: 74,
+      styles: { fontSize: 10, cellPadding: 6, overflow: "linebreak" },
+      headStyles: { fillColor: [15, 36, 84] }, // deep navy
+      columnStyles: {
+        0: { cellWidth: 170 }, // Name
+        1: { cellWidth: 100 }, // Language
+        2: { cellWidth: 250 }, // URL
+      },
+      didDrawPage: (data: any) => {
+        // Footer page numbers
+        const pageSize = doc.internal.pageSize;
+        const pageW = pageSize.getWidth();
+        const pageH = pageSize.getHeight();
+        const page = (doc as any).getCurrentPageInfo?.().pageNumber ?? doc.getNumberOfPages();
+        const total = doc.getNumberOfPages();
+        doc.setFontSize(9);
+        doc.text(`Page ${page} / ${total}`, pageW - 80, pageH - 20);
+      },
+      margin: { left: 40, right: 40 },
+    });
+
+    doc.save("thai-good-news-links.pdf");
+  } catch (e) {
+    console.error(e);
+    alert("Sorry—couldn’t generate the PDF.");
+  }
+};
 
   // small AAA icon
   const AAA = (
