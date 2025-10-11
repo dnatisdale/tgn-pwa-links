@@ -222,24 +222,24 @@ const [textPx, setTextPx] = useState<number>(16);
 
             <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
               {filtered.map((row) => (
-                <li key={row.id} className="card">
-                  <div className="text-base font-semibold text-center">{row.name}</div>
-                  <div className="text-sm mb-2 text-center">{row.language}</div>
+               
+               <li key={row.id} className="card">
+  <div className="text-base font-semibold text-center">{row.name}</div>
+  <div className="text-sm mb-2 text-center">{row.language}</div>
 
-                  {/* Scalable QR */}
-                  <QR url={row.url} size={qrPx} idForDownload={`qr-${row.id}`} />
+  <QR url={row.url} size={qrPx} idForDownload={`qr-${row.id}`} />
 
-                  <div className="mt-2 text-center">
-                    <a href={row.url} className="underline" target="_blank" rel="noreferrer">
-                      {row.url}
-                    </a>
-                  </div>
+  <div className="mt-2 text-center">
+    <a href={row.url} className="underline" target="_blank" rel="noreferrer">
+      {row.url}
+    </a>
+  </div>
 
-                  {/* Unified Share (URL-only, plus optional Download QR) */}
-                  <div className="mt-2">
-                    <Share url={row.url} title={row.name || "Link"} qrCanvasId={`qr-${row.id}`} />
-                  </div>
-                </li>
+  {/* This renders Share / Email / LINE / Facebook / X / WhatsApp / Telegram / Copy / Download QR */}
+  <div className="mt-2">
+    <Share url={row.url} title={row.name || "Link"} qrCanvasId={`qr-${row.id}`} />
+  </div>
+</li>
               ))}
             </ul>
           </section>
