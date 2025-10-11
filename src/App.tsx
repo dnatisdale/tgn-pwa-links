@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { t, Lang } from "./i18n";
 import Login from "./Login";
-import ShareButtons from "./ShareButtons";
+import Share from "./Share";
 import NiftyShare from "./NiftyShare";
 import QR from "./QR";
 import AddLink from "./AddLink";
@@ -192,6 +192,26 @@ export default function App() {
   {/* NEW: Nifty-style popup share (uses the SAVED URL) */}
   <div className="mt-2" style={{ display: "flex", justifyContent: "center" }}>
     <NiftyShare url={r.url} title={r.name || "Link"} />
+  </div>
+</li>
+
+// ... inside the card render:
+<li key={r.id} className="card">
+  <div className="text-base font-semibold text-center">{r.name}</div>
+  <div className="text-sm mb-2 text-center">{r.language}</div>
+
+  {/* Give each QR a unique id so "Download QR" can grab the right canvas */}
+  <QR url={r.url} size={sizePx} idForDownload={`qr-${r.id}`} />
+
+  <div className="mt-2 text-center">
+    <a href={r.url} className="underline" target="_blank" rel="noreferrer">
+      {r.url}
+    </a>
+  </div>
+
+  {/* Unified share: uses ONLY the saved URL; includes all platforms + Copy + (optional) Download QR */}
+  <div className="mt-2">
+    <Share url={r.url} title={r.name || "Link"} qrCanvasId={`qr-${r.id}`} />
   </div>
 </li>
 
