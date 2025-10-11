@@ -65,6 +65,13 @@ export default function App() {
     return () => off();
   }, [user]);
 
+<DownloadQRButton
+  qrCanvasId={`qr-${row.id}`}
+  url={row.url}
+  name={row.name}
+  title="Thai Good News"
+/>
+
   // apply font size
   useEffect(() => {
     document.documentElement.style.setProperty("--base", `${textPx}px`);
