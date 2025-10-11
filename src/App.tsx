@@ -1,12 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
+iimport React, { useEffect, useMemo, useState } from "react";
 import { t, Lang } from "./i18n";
 import Login from "./Login";
 import QR from "./QR";
 import AddLink from "./AddLink";
 import ImportExport from "./ImportExport";
 import InstallPWA from "./InstallPWA";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import UpdateToast from "./UpdateToast";
 import IOSInstallHint from "./IOSInstallHint";
 import Share from "./Share";
