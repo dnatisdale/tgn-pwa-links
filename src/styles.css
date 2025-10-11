@@ -116,3 +116,13 @@ button.linklike:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+.btn-red {
+  background: #a51931; /* Thai flag red */
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.btn-red:hover { opacity: 0.92; }
