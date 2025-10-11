@@ -1,4 +1,3 @@
-// src/QR.tsx
 import React, { useEffect, useRef } from "react";
 import QRCode from "qrcode";
 import { normalizeHttps } from "./utils";
@@ -20,8 +19,9 @@ export default function QR({ url, size = 192 }: Props) {
     }).catch(() => {});
   }, [url, size]);
 
+  // centered container
   return (
-    <div className="qr-block">
+    <div className="qr-center">
       <canvas
         ref={ref}
         width={size}

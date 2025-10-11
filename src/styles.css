@@ -1,33 +1,30 @@
+/* --- Tailwind (must be first) --- */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-/* your custom CSS below… */
 
-/* ---- Base variables & elements ---- */
-:root {
-  --base: 16px;            /* updated by App.tsx for S / M / L */
-}
+/* --- Base variables & elements --- */
+:root { --base: 16px; }           /* updated by App.tsx for S / M / L */
+html { font-size: var(--base); }
+a { text-decoration: underline; }
 
-html {
-  font-size: var(--base);
-}
-
-a {
-  text-decoration: underline;
-}
-
+/* Link-like button (text-only) */
 button.linklike {
   background: none;
   border: none;
-  padding: 0;
+  padding: 2px 4px;               /* tiny tap target */
+  margin: 0;
   text-decoration: underline;
   cursor: pointer;
+  border-radius: 6px;
+}
+button.linklike:focus-visible {
+  outline: 2px solid #111827;     /* dark focus ring */
+  outline-offset: 2px;
 }
 
-/* ---- Layout / UI atoms ---- */
-.header {
-  border-bottom: 1px solid #e5e7eb; /* light gray */
-}
+/* --- Layout atoms --- */
+.header { border-bottom: 1px solid #e5e7eb; } /* light gray */
 
 .card {
   border: 1px solid #e5e7eb;
@@ -35,19 +32,31 @@ button.linklike {
   padding: 0.75rem;
 }
 
-/* Banner at top */
-.banner-wrap {
-  border-bottom: 1px solid #111827; /* very dark, thin line under banner */
-}
-
+/* Banner (top) */
+.banner-wrap { border-bottom: 1px solid #111827; }  /* very dark, thin line */
 .banner {
   max-width: 1200px;
   width: 100%;
   display: block;
-  margin: 0 auto;          /* centered, no extra bottom margin */
+  margin: 0 auto;                 /* centered */
 }
 
-/* Optional logo (if used anywhere) */
+/* Centering helpers */
+.qr-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.share-center { display: flex; justify-content: center; }
+.share-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Optional logo (if used) */
 .logo {
   height: 28px;
   border-radius: 8px;
@@ -59,7 +68,15 @@ button.linklike {
   border-top: 1px solid #e5e7eb;
   margin-top: 20px;
   padding: 10px 12px;
-  color: #6b7280;          /* gray-500-ish */
+  color: #6b7280;                 /* gray-500-ish */
   font-size: 12px;
   text-align: center;
+}
+
+/* --- Small niceties --- */
+@media (hover: hover) {
+  a:hover, button.linklike:hover { text-decoration-thickness: 2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
 }
