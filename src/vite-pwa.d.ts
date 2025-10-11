@@ -5,3 +5,10 @@ declare module "virtual:pwa-register" {
     onOfflineReady?: () => void;
   }): (reload?: boolean) => void;
 }
+
+declare global {
+  interface Window {
+    __tgnUpdateSW?: (reload?: boolean) => void;
+  }
+}
+export {};
