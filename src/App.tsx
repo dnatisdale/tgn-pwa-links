@@ -37,7 +37,7 @@ export default function App() {
   // font size in px (applies to :root --base)
   const [textPx, setTextPx] = useState<number>(16);
 
-  // QR: click-to-enlarge; store which row id is enlarged (or null)
+  // QR: click-to-enlarge; stores which row id is enlarged (or null)
   const [qrEnlargedId, setQrEnlargedId] = useState<string | null>(null);
 
   // simple hash routing
@@ -108,83 +108,6 @@ export default function App() {
   const isAdd = route.startsWith("#/add");
   const isImport = route.startsWith("#/import");
 
-  // CSV export (filtered rows)
-  const exportCSV = () => {
-    const header = ["name", "language", "url"];
-    const lines = [header.join(",")].concat(
-      filtered.map((r) =>
-        [r.name ?? "", r.language ?? "", r.url ?? ""]
-          .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-          .join(",")
-      )
-    );
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "thai-good-news-links.csv";
-    a.click();
-    URL.revokeObjectURL(a.href);
-  };
-
-  // Print / PDF (user can choose "Save as PDF")
-  const printPage = () => {
-    window.print();
-  };
-
-// One-click PDF (uses current filtered list)
-const downloadPDF = () => {
-  try {
-    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
-
-    // Header title
-    const title = "Thai Good News — Links";
-    const meta = `${__APP_VERSION__} — ${__BUILD_DATE__} ${__BUILD_TIME__}`;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.text(title, 40, 40);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text(meta, 40, 57);
-
-    // Build table rows from filtered results
-    const body = filtered.map(r => [
-      r.name ?? "",
-      r.language ?? "",
-      r.url ?? "",
-    ]);
-
-    // Table
-    (autoTable as any)(doc, {
-      head: [["Name", "Language", "URL"]],
-      body,
-      startY: 74,
-      styles: { fontSize: 10, cellPadding: 6, overflow: "linebreak" },
-      headStyles: { fillColor: [15, 36, 84] }, // deep navy
-      columnStyles: {
-        0: { cellWidth: 170 }, // Name
-        1: { cellWidth: 100 }, // Language
-        2: { cellWidth: 250 }, // URL
-      },
-      didDrawPage: (data: any) => {
-        // Footer page numbers
-        const pageSize = doc.internal.pageSize;
-        const pageW = pageSize.getWidth();
-        const pageH = pageSize.getHeight();
-        const page = (doc as any).getCurrentPageInfo?.().pageNumber ?? doc.getNumberOfPages();
-        const total = doc.getNumberOfPages();
-        doc.setFontSize(9);
-        doc.text(`Page ${page} / ${total}`, pageW - 80, pageH - 20);
-      },
-      margin: { left: 40, right: 40 },
-    });
-
-    doc.save("thai-good-news-links.pdf");
-  } catch (e) {
-    console.error(e);
-    alert("Sorry—couldn’t generate the PDF.");
-  }
-};
-
   // small AAA icon
   const AAA = (
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
@@ -207,7 +130,7 @@ const downloadPDF = () => {
       <header className="header p-3 flex items-center justify-between">
         <div />
         <div className="flex items-center gap-4 text-sm">
-          {/* Install (button appears even when prompt isn’t available, with a fallback) */}
+          {/* Install (shows even without beforeinstallprompt, with fallback) */}
           <InstallPWA />
 
           {/* Font-size slider with AAA icon */}
@@ -257,8 +180,7 @@ const downloadPDF = () => {
           </section>
         ) : (
           <section>
-            {/* Search & Filters + Export/Print row */}
-            <div className="flex flex-wrap items-center gap-4 mb-3">
+            <div className="flex flex-wrap gap-4 items-center mb-3">
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
@@ -270,13 +192,6 @@ const downloadPDF = () => {
                 &nbsp;|&nbsp;
                 <button className="linklike" onClick={() => setFilterThai(true)}>{i.filterThai}</button>
               </div>
-
-             <span className="ml-auto flex items-center gap-3 text-sm">
-  <button className="linklike" onClick={exportCSV}>Export CSV</button>
-  <button className="linklike" onClick={downloadPDF}>Download PDF</button> {/* NEW */}
-  <button className="linklike" onClick={printPage}>Print / PDF</button>
-</span>
-
             </div>
 
             {!filtered.length && (
@@ -310,7 +225,7 @@ const downloadPDF = () => {
                       </a>
                     </div>
 
-                    {/* Unified Share row (Email / LINE / Facebook / X / WhatsApp / Telegram / Copy / Download QR) */}
+                    {/* Unified Share row */}
                     <div className="mt-2">
                       <Share url={row.url} title={row.name || "Link"} qrCanvasId={`qr-${row.id}`} />
                     </div>
