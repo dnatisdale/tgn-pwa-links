@@ -9,6 +9,9 @@ import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 
+declare const __APP_VERSION__: string;
+declare const __BUILD_DATE__: string;
+
 // Simple row type coming from Firestore
 type Row = { id: string; name: string; language: string; url: string };
 
@@ -224,8 +227,12 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer version (optional) */}
-      <footer className="footer">Thai Good News — {APP_VERSION}</footer>
+
+<footer className="footer">
+  <div style={{ display: "flex", justifyContent: "center" }}>
+    Thai Good News — {__APP_VERSION__} — {__BUILD_DATE__}
+  </div>
+</footer>
     </div>
   );
 }
