@@ -25,7 +25,9 @@ export default function App() {
   const [rows, setRows] = useState<Row[]>([]);
   const [q, setQ] = useState("");
   const [filterThai, setFilterThai] = useState(false);
-  const [size, setSize] = useState<"s" | "m" | "l">("m");
+  // QR pixel size (slider): 128–320
+const [qrPx, setQrPx] = useState<number>(192);
+  // const [size, setSize] = useState<"s" | "m" | "l">("m");
   const [route, setRoute] = useState<string>(window.location.hash || "#/browse");
 
   // auth
