@@ -26,13 +26,12 @@ export default function Share({
     a.click();
   };
 
-  // Targets (URL only; your requirement)
-  const lineURL = `https://line.me/R/msg/text/?${enc(title || "")}%20${enc(href)}`;
+  const mail    = `mailto:?subject=${enc(title || "Link")}&body=${enc(href)}`;
+  const lineURL = `https://line.me/R/msg/text/?${enc((title || "") + " " + href)}`;
   const fbURL   = `https://www.facebook.com/sharer/sharer.php?u=${enc(href)}`;
   const xURL    = `https://twitter.com/intent/tweet?url=${enc(href)}&text=${enc(title || "")}`;
   const waURL   = `https://wa.me/?text=${enc((title || "") + " " + href)}`;
   const tgURL   = `https://t.me/share/url?url=${enc(href)}&text=${enc(title || "")}`;
-  const mail    = `mailto:?subject=${enc(title || "Link")}&body=${enc(href)}`;
 
   return (
     <div className="share-center">
