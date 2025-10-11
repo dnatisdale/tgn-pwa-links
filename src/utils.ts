@@ -1,9 +1,11 @@
 // Force https and add scheme when missing
-export function normalizeHttps(raw: string): string {
-  let u = (raw || "").trim();
-  if (!u) return "";
-  if (u.startsWith("//")) u = "https:" + u;
-  if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+export function normalizeHttps(input: string): string | null {
+  if (!input) return null;
+  let u = input.trim();
+  if (/^https?:\/\//i.test(u) === false) u = "https://" + u;
+  // force https only
   u = u.replace(/^http:\/\//i, "https://");
-  return u;
+  try { new URL(u); return u.startsWith("https://") ? u : null; }
+  catch { return null; }
 }
+
