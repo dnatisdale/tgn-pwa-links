@@ -1,8 +1,28 @@
-// vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
-import { readFileSync } from "node:fs";
+
+export default defineConfig({
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: "prompt",
+      includeAssets: ["favicon.ico", "robots.txt"],
+      manifest: {
+        name: "Thai Good News",
+        short_name: "TGN",
+        start_url: "/",
+        display: "standalone",
+        background_color: "#ffffff",
+        theme_color: "#0f2454",
+        icons: [
+          { src: "/icons/pwa-192.png", sizes: "192x192", type: "image/png" },
+          { src: "/icons/pwa-512.png", sizes: "512x512", type: "image/png" }
+        ]
+      }
+    })
+  ],
+});
 
 // Read version directly from package.json (no JSON import typing required)
 const pkg = JSON.parse(
