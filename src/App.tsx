@@ -40,6 +40,7 @@ const [textPx, setTextPx] = useState<number>(16);
   // QR size: slider (px)
   const [qrPx, setQrPx] = useState<number>(192);
 
+
   // simple hash router
   const [route, setRoute] = useState<string>(window.location.hash || "#/browse");
 
@@ -143,20 +144,6 @@ const [textPx, setTextPx] = useState<number>(16);
   />
   <span style={{ fontSize: 12, color: "#6b7280" }}>{textPx}px</span>
 </span>
-
-          {/* Text size (S/M/L) */}
-          <label className="sr-only" htmlFor="textSize">Text size</label>
-          <select
-            id="textSize"
-            value={textSize}
-            onChange={(e) => setTextSize(e.target.value as "s" | "m" | "l")}
-            aria-label={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
-            style={{ padding: "2px 6px", borderRadius: 6, border: "1px solid #e5e7eb" }}
-          >
-            <option value="s">{glyph} (S)</option>
-            <option value="m">{glyph} (M)</option>
-            <option value="l">{glyph} (L)</option>
-          </select>
 
           {/* QR size slider */}
           <label className="sr-only" htmlFor="qrSizePx">QR size</label>
