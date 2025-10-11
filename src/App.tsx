@@ -124,6 +124,26 @@ const [textPx, setTextPx] = useState<number>(16);
           {/* Install with icon (shows only when installable) */}
           <InstallPWA />
 
+{/* Font size slider with an “AAA” icon */}
+<span title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"} style={{display:"inline-flex",alignItems:"center",gap:6}}>
+  {/* inline ‘AAA’ icon in your dark/navy with white letters */}
+  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+    <rect x="2" y="2" width="20" height="20" rx="4" fill="#0f2454"></rect>
+    <path d="M6 16l2.2-8h1.6L12 16h-1.6l-.4-1.6H8l-.4 1.6H6zm2.3-3h1.7l-.9-3.7L8.3 13zM13 16l2.2-8h1.6L19 16h-1.6l-.4-1.6h-2.1L14.6 16H13zm2.3-3h1.7l-.9-3.7-.8 3.7z" fill="#fff"/>
+  </svg>
+  <input
+    type="range"
+    min={14}
+    max={22}
+    step={1}
+    value={textPx}
+    onChange={(e) => setTextPx(parseInt(e.target.value, 10))}
+    aria-label={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
+    style={{ width: 110 }}
+  />
+  <span style={{ fontSize: 12, color: "#6b7280" }}>{textPx}px</span>
+</span>
+
           {/* Text size (S/M/L) */}
           <label className="sr-only" htmlFor="textSize">Text size</label>
           <select
