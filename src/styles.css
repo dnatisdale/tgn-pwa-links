@@ -1,7 +1,7 @@
-/* Tailwind first (required order) */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* your custom CSS below… */
 
 /* ---- Base variables & elements ---- */
 :root {

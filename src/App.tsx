@@ -161,18 +161,26 @@ export default function App() {
             <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
               {filtered.map((r) => (
                 <li key={r.id} className="card">
-                  <div className="text-base font-semibold">{r.name}</div>
-                  <div className="text-sm mb-2">{r.language}</div>
-                  <QR url={r.url} />
-                  <div className="mt-2">
-                    <a href={r.url} className="underline" target="_blank" rel="noreferrer">
-                      {r.url}
-                    </a>
-                  </div>
-                  <div className="mt-2">
-                    <ShareButtons lang={lang} url={r.url} name={r.name} />
-                  </div>
-                </li>
+  <div className="text-base font-semibold text-center">{r.name}</div>
+  <div className="text-sm mb-2 text-center">{r.language}</div>
+
+  {/* Centered QR */}
+  <div className="qr-block">
+    <QR url={r.url} />
+  </div>
+
+  <div className="mt-2 text-center">
+    <a href={r.url} className="underline" target="_blank" rel="noreferrer">
+      {r.url}
+    </a>
+  </div>
+
+  {/* Centered share row */}
+  <div className="mt-2 share-block">
+    <ShareButtons lang={lang} url={r.url} name={r.name} />
+  </div>
+</li>
+
               ))}
             </ul>
           </section>
