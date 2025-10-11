@@ -11,7 +11,6 @@ import { normalizeHttps } from "./utils";
 
 type Row = { id?: string; name: string; language: string; url: string };
 
-// Build-time constants (from vite.config.ts)
 declare const __APP_VERSION__: string;
 declare const __BUILD_DATE__: string;
 declare const __BUILD_TIME__: string;
@@ -21,23 +20,26 @@ const LAST_BATCH_KEY = "tgn:lastImportBatchId";
 export default function ImportExport({ lang }: { lang: Lang }) {
   const i = t(lang);
 
-  // Existing data (for export + de-dupe)
+  // Current data (for export + de-dup)
   const [rows, setRows] = useState<Row[]>([]);
-  const [q, setQ] = useState("");
+  // Export filter (applies to export table only)
+  const [exportFilter, setExportFilter] = useState("");
 
   // Import state
   const [fileName, setFileName] = useState<string>("");
-  const [rawPaste, setRawPaste] = useState<string>("");
   const [preview, setPreview] = useState<Row[]>([]);
-  const [previewNote, setPreviewNote] = useState<string>("");
-  const [importing, setImporting] = useState<boolean>(false);
-  const [importResult, setImportResult] = useState<string>("");
+  const [skipNote, setSkipNote] = useState<string>("");
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState("");
+  const [showPaste, setShowPaste] = useState(false);
+  const [rawPaste, setRawPaste] = useState("");
+
   const [lastBatchId, setLastBatchId] = useState<string | null>(
     typeof window !== "undefined" ? localStorage.getItem(LAST_BATCH_KEY) : null
   );
-  const [undoMsg, setUndoMsg] = useState<string>("");
+  const [undoMsg, setUndoMsg] = useState("");
 
-  // Load existing links
+  // Load existing items once
   useEffect(() => {
     (async () => {
       const user = auth.currentUser;
@@ -45,19 +47,9 @@ export default function ImportExport({ lang }: { lang: Lang }) {
       const col = collection(db, "users", user.uid, "links");
       const qry = query(col, orderBy("name"));
       const snap = await getDocs(qry);
-      setRows(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
+      setRows(snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })));
     })();
   }, []);
-
-  const filtered = useMemo(() => {
-    const needle = q.trim().toLowerCase();
-    if (!needle) return rows;
-    return rows.filter((r) =>
-      (r.name || "").toLowerCase().includes(needle) ||
-      (r.language || "").toLowerCase().includes(needle) ||
-      (r.url || "").toLowerCase().includes(needle)
-    );
-  }, [rows, q]);
 
   // ---------- helpers ----------
   function toHttps(u: string): string | null {
@@ -68,20 +60,16 @@ export default function ImportExport({ lang }: { lang: Lang }) {
   }
 
   function smartSplit(line: string, delim: string): string[] {
-    // tiny CSV/TSV splitter with quotes
-    const out: string[] = [];
-    let cur = "", q = false;
+    const out: string[] = []; let cur = ""; let q = false;
     for (let i = 0; i < line.length; i++) {
       const ch = line[i];
       if (ch === '"') {
         if (q && line[i + 1] === '"') { cur += '"'; i++; }
         else { q = !q; }
-      } else if (!q && ch === delim) {
-        out.push(cur); cur = "";
-      } else cur += ch;
+      } else if (!q && ch === delim) { out.push(cur); cur = ""; }
+      else { cur += ch; }
     }
-    out.push(cur);
-    return out;
+    out.push(cur); return out;
   }
 
   function parseCSVLike(text: string): Row[] {
@@ -123,71 +111,67 @@ export default function ImportExport({ lang }: { lang: Lang }) {
     } catch { return []; }
   }
 
-  function dedupeAgainstExisting(candidates: Row[]): { unique: Row[]; skipped: number } {
+  function dedupe(candidates: Row[]) {
     const existing = new Set(rows.map(r => (r.url || "").trim().toLowerCase()));
     const seen = new Set<string>();
     const unique: Row[] = [];
     let skipped = 0;
-
     for (const r of candidates) {
       const key = (r.url || "").trim().toLowerCase();
       if (!key) { skipped++; continue; }
       if (existing.has(key)) { skipped++; continue; }
       if (seen.has(key)) { skipped++; continue; }
-      seen.add(key);
-      unique.push(r);
+      seen.add(key); unique.push(r);
     }
     return { unique, skipped };
   }
 
-  // ---------- Import actions ----------
+  async function refreshRows() {
+    const user = auth.currentUser;
+    if (!user) return;
+    const col = collection(db, "users", user.uid, "links");
+    const qry = query(col, orderBy("name"));
+    const snap = await getDocs(qry);
+    setRows(snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })));
+  }
+
+  // ---------- import actions ----------
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
     setFileName(f.name);
     const text = await f.text();
-
-    let parsed: Row[] = [];
-    let note = "";
-
-    if (f.name.toLowerCase().endsWith(".json")) {
-      parsed = parseJSON(text);
-      note = `Parsed JSON with ${parsed.length} item(s).`;
-    } else {
-      parsed = parseCSVLike(text);
-      note = `Parsed CSV/TSV with ${parsed.length} row(s).`;
-    }
-
-    const { unique, skipped } = dedupeAgainstExisting(parsed);
+    let parsed: Row[] = f.name.toLowerCase().endsWith(".json")
+      ? parseJSON(text)
+      : parseCSVLike(text);
+    const { unique, skipped } = dedupe(parsed);
     setPreview(unique);
-    setPreviewNote(`${note} Skipped ${skipped} duplicate/invalid url(s).`);
+    setSkipNote(skipped ? `Skipped ${skipped} duplicate/invalid URL(s).` : "");
+    setImportMsg("");
   }
 
-  function onPasteParse() {
+  function parsePaste() {
     const txt = rawPaste.trim();
-    if (!txt) { setPreview([]); setPreviewNote("Nothing to parse."); return; }
-
+    if (!txt) { setPreview([]); setSkipNote("Nothing to parse."); return; }
     let parsed = parseJSON(txt);
-    let note = "";
-    if (parsed.length) note = `Parsed JSON with ${parsed.length} item(s).`;
-    else { parsed = parseCSVLike(txt); note = `Parsed CSV/TSV/URLs with ${parsed.length} row(s).`; }
-
-    const { unique, skipped } = dedupeAgainstExisting(parsed);
+    if (!parsed.length) parsed = parseCSVLike(txt);
+    const { unique, skipped } = dedupe(parsed);
     setPreview(unique);
-    setPreviewNote(`${note} Skipped ${skipped} duplicate/invalid url(s).`);
+    setSkipNote(skipped ? `Skipped ${skipped} duplicate/invalid URL(s).` : "");
+    setImportMsg("");
   }
 
-  async function doImport(items: Row[]) {
-    if (!items.length) { setImportResult("Nothing to import."); return; }
+  async function doImport() {
+    if (!preview.length) { setImportMsg("Nothing to import."); return; }
     const user = auth.currentUser;
-    if (!user) { setImportResult("Not signed in."); return; }
-    setImporting(true); setImportResult("");
+    if (!user) { setImportMsg("Not signed in."); return; }
+    setImporting(true); setImportMsg("");
 
-    const batchId = `${Date.now()}`; // tag this batch
+    const batchId = String(Date.now());
     try {
       const batch = writeBatch(db);
       const colPath = `users/${user.uid}/links`;
-      for (const r of items) {
+      for (const r of preview) {
         const ref = doc(collection(db, colPath));
         batch.set(ref, {
           name: r.name || r.url,
@@ -198,21 +182,14 @@ export default function ImportExport({ lang }: { lang: Lang }) {
         });
       }
       await batch.commit();
-
-      // remember last batch id for undo
       localStorage.setItem(LAST_BATCH_KEY, batchId);
       setLastBatchId(batchId);
 
-      setImportResult(`Imported ${items.length} item(s).`);
-      setPreview([]); setRawPaste(""); setFileName("");
-
-      // refresh list
-      const col = collection(db, "users", user.uid, "links");
-      const qry = query(col, orderBy("name"));
-      const snap = await getDocs(qry);
-      setRows(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
+      setImportMsg(`Imported ${preview.length} item(s).`);
+      setPreview([]); setFileName(""); setRawPaste(""); setSkipNote("");
+      await refreshRows();
     } catch (e: any) {
-      setImportResult(e?.message || "Import failed.");
+      setImportMsg(e?.message || "Import failed.");
     } finally {
       setImporting(false);
     }
@@ -222,49 +199,61 @@ export default function ImportExport({ lang }: { lang: Lang }) {
     setUndoMsg("");
     const user = auth.currentUser;
     if (!user) { setUndoMsg("Not signed in."); return; }
-    const batchId = lastBatchId;
-    if (!batchId) { setUndoMsg("No import to undo."); return; }
+    const id = lastBatchId;
+    if (!id) { setUndoMsg("No import to undo."); return; }
 
     try {
       const col = collection(db, "users", user.uid, "links");
-      const qry = query(col, where("importBatchId", "==", batchId));
+      const qry = query(col, where("importBatchId", "==", id));
       const snap = await getDocs(qry);
       if (snap.empty) {
         setUndoMsg("No rows found for last import.");
-        // still clear saved batch id to avoid confusion
-        localStorage.removeItem(LAST_BATCH_KEY);
-        setLastBatchId(null);
+        localStorage.removeItem(LAST_BATCH_KEY); setLastBatchId(null);
         return;
       }
-
       const batch = writeBatch(db);
       snap.docs.forEach(d => batch.delete(d.ref));
       await batch.commit();
-
-      localStorage.removeItem(LAST_BATCH_KEY);
-      setLastBatchId(null);
-
+      localStorage.removeItem(LAST_BATCH_KEY); setLastBatchId(null);
       setUndoMsg(`Undo complete: removed ${snap.size} item(s).`);
-
-      // refresh list
-      const col2 = collection(db, "users", user.uid, "links");
-      const qry2 = query(col2, orderBy("name"));
-      const snap2 = await getDocs(qry2);
-      setRows(snap2.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
+      await refreshRows();
     } catch (e: any) {
-      // Firestore may prompt for an index once; follow the console link to create it.
-      setUndoMsg(e?.message || "Undo failed (check Firestore index for importBatchId).");
+      setUndoMsg(e?.message || "Undo failed (index may be required for importBatchId).");
     }
   }
 
-  // ---------- Export actions ----------
-  const exportCSV = () => {
+  function downloadSampleCSV() {
+    const sample = [
+      "name,language,url",
+      "Five Fish (Thai),Thai,https://5fish.mobi/A62808",
+      "Bible App (Thai),Thai,https://www.bible.com/th",
+      "Example,,https://example.org/path"
+    ].join("\n");
+    const blob = new Blob([sample], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "sample-links.csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  // ---------- export helpers ----------
+  const exportFiltered = useMemo(() => {
+    const needle = exportFilter.trim().toLowerCase();
+    if (!needle) return rows;
+    return rows.filter(r =>
+      (r.name || "").toLowerCase().includes(needle) ||
+      (r.language || "").toLowerCase().includes(needle) ||
+      (r.url || "").toLowerCase().includes(needle)
+    );
+  }, [rows, exportFilter]);
+
+  function exportCSV() {
     const header = ["name", "language", "url"];
     const lines = [header.join(",")].concat(
-      filtered.map((r) =>
+      exportFiltered.map(r =>
         [r.name ?? "", r.language ?? "", r.url ?? ""]
-          .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-          .join(",")
+          .map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")
       )
     );
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
@@ -273,30 +262,15 @@ export default function ImportExport({ lang }: { lang: Lang }) {
     a.download = "thai-good-news-links.csv";
     a.click();
     URL.revokeObjectURL(a.href);
-  };
+  }
 
-  const downloadSampleCSV = () => {
-    const sample = [
-      "name,language,url",
-      "Five Fish (Thai),Thai,https://5fish.mobi/A62808",
-      "Bible App (Thai),Thai,https://www.bible.com/th",
-      "Example Link,,https://example.org/path"
-    ].join("\n");
-    const blob = new Blob([sample], { type: "text/csv;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "sample-links.csv";
-    a.click();
-    URL.revokeObjectURL(a.href);
-  };
-
-  const downloadPDF = () => {
+  function downloadPDF() {
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
     const title = "Thai Good News — Links";
     const meta = `${__APP_VERSION__} — ${__BUILD_DATE__} ${__BUILD_TIME__}`;
     doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.text(title, 40, 40);
     doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text(meta, 40, 57);
-    const body = filtered.map(r => [r.name ?? "", r.language ?? "", r.url ?? ""]);
+    const body = exportFiltered.map(r => [r.name ?? "", r.language ?? "", r.url ?? ""]);
     (autoTable as any)(doc, {
       head: [["Name", "Language", "URL"]],
       body,
@@ -304,22 +278,22 @@ export default function ImportExport({ lang }: { lang: Lang }) {
       styles: { fontSize: 10, cellPadding: 6, overflow: "linebreak" },
       headStyles: { fillColor: [15, 36, 84] },
       columnStyles: { 0: { cellWidth: 170 }, 1: { cellWidth: 100 }, 2: { cellWidth: 250 } },
-      margin: { left: 40, right: 40 }
+      margin: { left: 40, right: 40 },
     });
     doc.save("thai-good-news-links.pdf");
-  };
+  }
 
   const printPage = () => window.print();
 
   // ---------- UI ----------
   return (
     <div className="max-w-5xl mx-auto">
-      {/* IMPORT */}
-      <section className="mb-6">
-        <h2 className="text-lg font-semibold mb-2">Import</h2>
+      <h2 className="text-lg font-semibold mb-2">Import</h2>
 
-        <div className="flex flex-wrap items-center gap-3 mb-3">
-          <button className="linklike" onClick={downloadSampleCSV}>Download sample CSV</button>
+      {/* top action row */}
+      <div className="flex items-center gap-3 mb-3 text-sm">
+        <button className="linklike" onClick={downloadSampleCSV}>Download sample CSV</button>
+        <span className="ml-auto flex items-center gap-3">
           {lastBatchId && (
             <>
               <span className="text-xs text-gray-500">Last batch: {lastBatchId}</span>
@@ -327,39 +301,39 @@ export default function ImportExport({ lang }: { lang: Lang }) {
               {undoMsg && <span className="text-sm text-gray-700">{undoMsg}</span>}
             </>
           )}
-        </div>
+        </span>
+      </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
-          {/* File import */}
-          <div className="border rounded p-3">
-            <div className="mb-2 font-semibold">From file (CSV / JSON)</div>
-            <input type="file" accept=".csv,.json,text/csv,application/json" onChange={onFile} />
-            {fileName && <div className="text-xs mt-1 text-gray-600">Selected: {fileName}</div>}
-          </div>
+      {/* Import panel */}
+      <div className="border rounded p-3 mb-4">
+        <div className="mb-2">1) Choose a file (CSV / TSV / JSON)</div>
+        <input type="file" accept=".csv,.json,text/csv,application/json" onChange={onFile} />
+        {fileName && <div className="text-xs mt-1 text-gray-600">Selected: {fileName}</div>}
 
-          {/* Paste import */}
-          <div className="border rounded p-3">
-            <div className="mb-2 font-semibold">From paste (CSV / TSV / URLs)</div>
-            <textarea
-              className="w-full border rounded p-2 min-h-[120px]"
-              placeholder={`Examples:\n\nname,language,url\nJohn,Thai,https://5fish.mobi/A12345\n\nOR just URLs (one per line):\nhttps://5fish.mobi/A12345\nhttps://5fish.mobi/A67890`}
-              value={rawPaste}
-              onChange={(e) => setRawPaste(e.target.value)}
-            />
-            <div className="mt-2 flex gap-3">
-              <button className="linklike" onClick={onPasteParse}>Parse</button>
-              <button className="linklike" onClick={() => { setRawPaste(""); setPreview([]); setPreviewNote(""); }}>
-                Clear
-              </button>
+        <div className="mt-3">
+          <button className="linklike" onClick={() => setShowPaste(v => !v)}>
+            {showPaste ? "Hide paste import" : "Paste instead"}
+          </button>
+          {showPaste && (
+            <div className="mt-2">
+              <textarea
+                className="w-full border rounded p-2 min-h-[120px]"
+                placeholder={`CSV/TSV or JSON or one URL per line`}
+                value={rawPaste}
+                onChange={(e) => setRawPaste(e.target.value)}
+              />
+              <div className="mt-2">
+                <button className="linklike" onClick={parsePaste}>Parse paste</button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Preview */}
-        {previewNote && <div className="mt-3 text-sm text-gray-600">{previewNote}</div>}
+        {skipNote && <div className="mt-3 text-sm text-gray-600">{skipNote}</div>}
         {!!preview.length && (
           <>
-            <div className="mt-3 text-sm">Preview ({preview.length} importable item{preview.length>1?"s":""})</div>
+            <div className="mt-3 text-sm">Preview ({preview.length} item{preview.length>1?"s":""})</div>
             <table className="w-full text-sm mt-2">
               <thead>
                 <tr className="text-left border-b">
@@ -382,58 +356,64 @@ export default function ImportExport({ lang }: { lang: Lang }) {
             </table>
 
             <div className="mt-3 flex items-center gap-3">
-              <button className="linklike" onClick={() => doImport(preview)} disabled={importing}>
+              <button className="linklike" onClick={doImport} disabled={importing}>
                 {importing ? "Importing…" : `Import ${preview.length} item(s)`}
               </button>
-              {importResult && <span className="text-sm text-gray-700">{importResult}</span>}
+              {importMsg && <span className="text-sm text-gray-700">{importMsg}</span>}
             </div>
           </>
         )}
-      </section>
 
-      {/* EXPORT */}
-      <section>
-        <h2 className="text-lg font-semibold mb-2">{i.importExport}</h2>
-
-        <div className="flex flex-wrap items-center gap-3 mb-3">
-          <input
-            className="border rounded px-2 py-1 min-w-[260px]"
-            placeholder={i.searchPlaceholder}
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-          <span className="ml-auto flex items-center gap-3 text-sm">
-            <button className="linklike" onClick={exportCSV}>Export CSV</button>
-            <button className="linklike" onClick={downloadPDF}>Download PDF</button>
-            <button className="linklike" onClick={printPage}>Print / PDF</button>
-          </span>
-        </div>
-
-        {!filtered.length && (
-          <div className="text-sm text-gray-600 mb-3">{i.empty}</div>
+        {!preview.length && !fileName && !showPaste && (
+          <div className="text-sm text-gray-500 mt-2">Nothing to parse yet.</div>
         )}
+      </div>
 
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left border-b">
-              <th className="py-2 pr-3">Name</th>
-              <th className="py-2 pr-3">Language</th>
-              <th className="py-2">URL</th>
+      {/* Export section */}
+      <h2 className="text-lg font-semibold mb-2">{i.importExport}</h2>
+
+      <div className="flex flex-wrap items-center gap-3 mb-3">
+        <input
+          className="border rounded px-2 py-1 min-w-[260px]"
+          placeholder="Filter export list…"
+          value={exportFilter}
+          onChange={(e) => setExportFilter(e.target.value)}
+        />
+        <span className="ml-auto flex items-center gap-3 text-sm">
+          <button className="linklike" onClick={exportCSV}>Export CSV</button>
+          <button className="linklike" onClick={downloadPDF}>Download PDF</button>
+          <button className="linklike" onClick={printPage}>Print / PDF</button>
+        </span>
+      </div>
+
+      {!exportFiltered.length && (
+        <div className="text-sm text-gray-600 mb-3">{i.empty}</div>
+      )}
+
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left border-b">
+            <th className="py-2 pr-3">Name</th>
+            <th className="py-2 pr-3">Language</th>
+            <th className="py-2">URL</th>
+          </tr>
+        </thead>
+        <tbody>
+          {exportFiltered.map(r => (
+            <tr key={r.id} className="border-b">
+              <td className="py-2 pr-3">{r.name}</td>
+              <td className="py-2 pr-3">{r.language}</td>
+              <td className="py-2">
+                <a className="underline" href={r.url} target="_blank" rel="noreferrer">{r.url}</a>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {filtered.map(r => (
-              <tr key={r.id} className="border-b">
-                <td className="py-2 pr-3">{r.name}</td>
-                <td className="py-2 pr-3">{r.language}</td>
-                <td className="py-2">
-                  <a className="underline" href={r.url} target="_blank" rel="noreferrer">{r.url}</a>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="text-xs text-gray-500 mt-3">
+        Showing {exportFiltered.length} of {rows.length}
+      </div>
     </div>
   );
 }
