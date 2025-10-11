@@ -34,8 +34,8 @@ export default function App() {
   const [q, setQ] = useState("");
   const [filterThai, setFilterThai] = useState(false);
 
-  // text size (S/M/L)
-  const [textSize, setTextSize] = useState<"s" | "m" | "l">("m");
+// replace the old text size state with a pixel slider (14–22 px)
+const [textPx, setTextPx] = useState<number>(16);
 
   // QR size: slider (px)
   const [qrPx, setQrPx] = useState<number>(192);
