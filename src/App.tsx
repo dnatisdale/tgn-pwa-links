@@ -3,6 +3,7 @@ import { t, Lang } from "./i18n";
 import Login from "./Login";
 import QR from "./QR";
 import AddLink from "./AddLink";
+import DownloadQRButton from "./DownloadQRButton";
 import ImportExport from "./ImportExport";
 import InstallPWA from "./InstallPWA";
 import UpdateToast from "./UpdateToast";
