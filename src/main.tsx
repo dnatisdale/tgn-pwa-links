@@ -4,27 +4,19 @@ import App from "./App";
 import "./styles.css";
 import ErrorBoundary from "./ErrorBoundary";
 
-/* Safe PWA update wiring: dynamic import with catch */
+// inside src/main.tsx (top-level file)
 (function safePWA() {
-  // only try in browsers that support SW
   if (!("serviceWorker" in navigator)) return;
-  // dynamic import so dev won't crash if plugin is missing
   import("virtual:pwa-register")
     .then(({ registerSW }) => {
       const updateSW = registerSW({
-        onNeedRefresh() {
-          window.dispatchEvent(new CustomEvent("tgn-sw-update"));
-        },
-        onOfflineReady() {
-          // Optional: show "Ready to work offline"
-        },
+        onNeedRefresh() { window.dispatchEvent(new CustomEvent("tgn-sw-update")); },
+        onOfflineReady() { /* optional */ },
       });
       // @ts-ignore
       window.__tgnUpdateSW = updateSW;
     })
-    .catch(() => {
-      // ignore: plugin not active in this build, or dev with no PWA
-    });
+    .catch(() => {});
 })();
 
 declare const __APP_VERSION__: string;
