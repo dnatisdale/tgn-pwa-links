@@ -111,6 +111,23 @@ const [qrPx, setQrPx] = useState<number>(192);
           {/* Install button appears when PWA is installable */}
           <InstallPWA />
 
+{/* QR size slider */}
+<label className="sr-only" htmlFor="qrSizePx">QR size</label>
+<input
+  id="qrSizePx"
+  type="range"
+  min={128}
+  max={320}
+  step={16}
+  value={qrPx}
+  onChange={(e) => setQrPx(parseInt(e.target.value, 10))}
+  aria-label={lang === "th" ? "ขนาดคิวอาร์โค้ด" : "QR size"}
+  style={{ width: 120, verticalAlign: "middle" }}
+/>
+<span style={{ fontSize: 12, color: "#6b7280" }}>{qrPx}px</span>
+
+<QR url={r.url} size={qrPx} idForDownload={`qr-${r.id}`} />
+
           <button className="linklike" onClick={() => setLang(lang === "en" ? "th" : "en")}>
             {lang === "en" ? "ไทย" : "EN"}
           </button>
