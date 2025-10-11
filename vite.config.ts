@@ -2,19 +2,30 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
-import pkg from "./package.json" assert { type: "json" };  // <-- add this
+import { readFileSync } from "fs";
 
+// --- Robust version/date/time ---
+function readPkgVersion(): string {
+  try {
+    const json = readFileSync(new URL("./package.json", import.meta.url), "utf-8");
+    const pkg = JSON.parse(json);
+    return `v${pkg.version || "0.0.0"}`;
+  } catch {
+    // Fallback to env if reading fails
+    return `v${process.env.npm_package_version || "0.0.0"}`;
+  }
+}
+const APP_VERSION = readPkgVersion();
 const now = new Date();
 const BUILD_DATE = now.toISOString().slice(0, 10);  // YYYY-MM-DD
 const BUILD_TIME = now.toTimeString().slice(0, 8);  // HH:MM:SS
-const APP_VERSION = `v${pkg.version}`;              // <-- use package.json
 
 export default defineConfig({
   plugins: [
     react(),
     VitePWA({
       registerType: "prompt",
-      includeAssets: ["favicon.ico", "robots.txt"],
+      includeAssets: ["robots.txt"], // (favicon optional per you)
       manifest: {
         name: "Thai Good News",
         short_name: "TGN",
@@ -24,10 +35,10 @@ export default defineConfig({
         theme_color: "#0f2454",
         icons: [
           { src: "/icons/pwa-192.png", sizes: "192x192", type: "image/png" },
-          { src: "/icons/pwa-512.png", sizes: "512x512", type: "image/png" },
-        ],
-      },
-    }),
+          { src: "/icons/pwa-512.png", sizes: "512x512", type: "image/png" }
+        ]
+      }
+    })
   ],
   define: {
     __APP_VERSION__: JSON.stringify(APP_VERSION),
