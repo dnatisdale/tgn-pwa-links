@@ -2,9 +2,12 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
-import pkg from "./package.json" assert { type: "json" };
+import { readFileSync } from "node:fs";
 
-// Robust version resolution: use package.json, fallback if needed
+// Read version directly from package.json (no JSON import typing required)
+const pkg = JSON.parse(
+  readFileSync(new URL("./package.json", import.meta.url), "utf-8")
+);
 const APP_VERSION = `v${pkg?.version ?? "0.0.0"}`;
 
 // Build timestamp in America/Los_Angeles (PT)
@@ -39,13 +42,13 @@ export default defineConfig({
           { src: "/icons/app-icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "/icons/app-icon-512.png", sizes: "512x512", type: "image/png" },
           { src: "/icons/app-icon-1024.png", sizes: "1024x1024", type: "image/png", purpose: "any maskable" }
-        ],
-      },
-    }),
+        ]
+      }
+    })
   ],
   define: {
     __APP_VERSION__: JSON.stringify(APP_VERSION),
     __BUILD_DATE__: JSON.stringify(BUILD_DATE),
     __BUILD_TIME__: JSON.stringify(BUILD_TIME),
-  },
+  }
 });
