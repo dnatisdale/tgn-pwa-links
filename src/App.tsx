@@ -132,7 +132,7 @@ export default function App() {
   const printPage = () => {
     window.print();
   };
-  
+
 // One-click PDF (uses current filtered list)
 const downloadPDF = () => {
   try {
@@ -273,10 +273,12 @@ const downloadPDF = () => {
                 <button className="linklike" onClick={() => setFilterThai(true)}>{i.filterThai}</button>
               </div>
 
-              <span className="ml-auto flex items-center gap-3 text-sm">
-                <button className="linklike" onClick={exportCSV}>Export CSV</button>
-                <button className="linklike" onClick={printPage}>Print / PDF</button>
-              </span>
+             <span className="ml-auto flex items-center gap-3 text-sm">
+  <button className="linklike" onClick={exportCSV}>Export CSV</button>
+  <button className="linklike" onClick={downloadPDF}>Download PDF</button> {/* NEW */}
+  <button className="linklike" onClick={printPage}>Print / PDF</button>
+</span>
+
             </div>
 
             {!filtered.length && (
