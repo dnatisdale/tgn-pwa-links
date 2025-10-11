@@ -1,17 +1,18 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { t, Lang } from "./i18n";
 import Login from "./Login";
-import Share from "./Share";
-import NiftyShare from "./NiftyShare";
 import QR from "./QR";
 import AddLink from "./AddLink";
 import ImportExport from "./ImportExport";
 import InstallPWA from "./InstallPWA";
+import UpdateToast from "./UpdateToast";
+import IOSInstallHint from "./IOSInstallHint";
+import Share from "./Share"; // unified share
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 
-// Build-time constants from vite.config.ts
+// Build-time constants (from vite.config)
 declare const __APP_VERSION__: string;
 declare const __BUILD_DATE__: string;
 declare const __BUILD_TIME__: string;
@@ -19,24 +20,36 @@ declare const __BUILD_TIME__: string;
 type Row = { id: string; name: string; language: string; url: string };
 
 export default function App() {
+  // language
   const [lang, setLang] = useState<Lang>("en");
   const i = t(lang);
-  const [user, setUser] = useState<any>(null);
-  const [rows, setRows] = useState<Row[]>([]);
-  const [q, setQ] = useState("");
-  const [filterThai, setFilterThai] = useState(false);
-  // QR pixel size (slider): 128–320
-const [qrPx, setQrPx] = useState<number>(192);
-  // const [size, setSize] = useState<"s" | "m" | "l">("m");
-  const [route, setRoute] = useState<string>(window.location.hash || "#/browse");
 
   // auth
+  const [user, setUser] = useState<any>(null);
+
+  // data
+  const [rows, setRows] = useState<Row[]>([]);
+
+  // search / filter
+  const [q, setQ] = useState("");
+  const [filterThai, setFilterThai] = useState(false);
+
+  // text size (S/M/L)
+  const [textSize, setTextSize] = useState<"s" | "m" | "l">("m");
+
+  // QR size: slider (px)
+  const [qrPx, setQrPx] = useState<number>(192);
+
+  // simple hash router
+  const [route, setRoute] = useState<string>(window.location.hash || "#/browse");
+
+  // auth subscribe
   useEffect(() => {
     const off = onAuthStateChanged(auth, (u) => setUser(u));
     return () => off();
   }, []);
 
-  // subscribe to links
+  // data subscribe
   useEffect(() => {
     if (!user) {
       setRows([]);
@@ -51,15 +64,13 @@ const [qrPx, setQrPx] = useState<number>(192);
     return () => off();
   }, [user]);
 
-  // text size
+  // apply text size to :root --base
   useEffect(() => {
-    document.documentElement.style.setProperty(
-      "--base",
-      size === "s" ? "14px" : size === "m" ? "16px" : "19px"
-    );
-  }, [size]);
+    const px = textSize === "s" ? "14px" : textSize === "m" ? "16px" : "19px";
+    document.documentElement.style.setProperty("--base", px);
+  }, [textSize]);
 
-  // hash router
+  // hash router listener
   useEffect(() => {
     const onHash = () => setRoute(window.location.hash || "#/browse");
     window.addEventListener("hashchange", onHash);
@@ -69,18 +80,18 @@ const [qrPx, setQrPx] = useState<number>(192);
   // filter + search
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    let out = rows.filter((r) => {
+    let out = rows.filter((row) => {
       if (
         filterThai &&
-        r.language?.toLowerCase() !== "thai" &&
-        r.language?.toLowerCase() !== "ไทย"
+        row.language?.toLowerCase() !== "thai" &&
+        row.language?.toLowerCase() !== "ไทย"
       )
         return false;
       if (!needle) return true;
       return (
-        (r.name || "").toLowerCase().includes(needle) ||
-        (r.language || "").toLowerCase().includes(needle) ||
-        (r.url || "").toLowerCase().includes(needle)
+        (row.name || "").toLowerCase().includes(needle) ||
+        (row.language || "").toLowerCase().includes(needle) ||
+        (row.url || "").toLowerCase().includes(needle)
       );
     });
     out.sort(
@@ -97,60 +108,68 @@ const [qrPx, setQrPx] = useState<number>(192);
   const isAdd = route.startsWith("#/add");
   const isImport = route.startsWith("#/import");
 
+  // glyphs for text-size dropdown
+  const glyph = lang === "th" ? "ก" : "A";
+
   return (
     <div>
-      {/* Banner on top (from public/) + thin dark line under it (via .banner-wrap) */}
+      {/* Banner */}
       <div className="banner-wrap">
         <img className="banner" src="/banner-2400x600.png" alt="Thai Good News banner" />
       </div>
 
-      {/* Minimal header */}
+      {/* Header (right side controls only) */}
       <header className="header p-3 flex items-center justify-between">
-        <div /> {/* keep layout balanced, no title/logo */}
+        <div />
         <div className="flex items-center gap-4 text-sm">
-          {/* Install button appears when PWA is installable */}
+          {/* Install with icon (shows only when installable) */}
           <InstallPWA />
 
-{/* QR size slider */}
-<label className="sr-only" htmlFor="qrSizePx">QR size</label>
-<input
-  id="qrSizePx"
-  type="range"
-  min={128}
-  max={320}
-  step={16}
-  value={qrPx}
-  onChange={(e) => setQrPx(parseInt(e.target.value, 10))}
-  aria-label={lang === "th" ? "ขนาดคิวอาร์โค้ด" : "QR size"}
-  style={{ width: 120, verticalAlign: "middle" }}
-/>
-<span style={{ fontSize: 12, color: "#6b7280" }}>{qrPx}px</span>
+          {/* Text size (S/M/L) */}
+          <label className="sr-only" htmlFor="textSize">Text size</label>
+          <select
+            id="textSize"
+            value={textSize}
+            onChange={(e) => setTextSize(e.target.value as "s" | "m" | "l")}
+            aria-label={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
+            style={{ padding: "2px 6px", borderRadius: 6, border: "1px solid #e5e7eb" }}
+          >
+            <option value="s">{glyph} (S)</option>
+            <option value="m">{glyph} (M)</option>
+            <option value="l">{glyph} (L)</option>
+          </select>
 
-<QR url={r.url} size={qrPx} idForDownload={`qr-${r.id}`} />
+          {/* QR size slider */}
+          <label className="sr-only" htmlFor="qrSizePx">QR size</label>
+          <input
+            id="qrSizePx"
+            type="range"
+            min={128}
+            max={320}
+            step={16}
+            value={qrPx}
+            onChange={(e) => setQrPx(parseInt(e.target.value, 10))}
+            aria-label={lang === "th" ? "ขนาดคิวอาร์โค้ด" : "QR size"}
+            style={{ width: 120, verticalAlign: "middle" }}
+          />
+          <span style={{ fontSize: 12, color: "#6b7280" }}>{qrPx}px</span>
 
+          {/* Language toggle + Logout */}
           <button className="linklike" onClick={() => setLang(lang === "en" ? "th" : "en")}>
             {lang === "en" ? "ไทย" : "EN"}
           </button>
-          <div>
-            {i.size}:&nbsp;
-            <button className="linklike" onClick={() => setSize("s")}>{i.small}</button>
-            &nbsp;|&nbsp;
-            <button className="linklike" onClick={() => setSize("m")}>{i.medium}</button>
-            &nbsp;|&nbsp;
-            <button className="linklike" onClick={() => setSize("l")}>{i.large}</button>
-          </div>
           <button className="linklike" onClick={() => signOut(auth)}>{i.logout}</button>
         </div>
       </header>
 
-      {/* nav */}
+      {/* Nav */}
       <nav className="p-3 flex flex-wrap gap-4 text-sm">
         <a className="underline" href="#/browse">{i.browse}</a>
         <a className="underline" href="#/add">{i.add}</a>
         <a className="underline" href="#/import">{i.importExport}</a>
       </nav>
 
-      {/* main */}
+      {/* Main */}
       <main className="p-3 max-w-5xl mx-auto">
         {isAdd ? (
           <section>
@@ -183,66 +202,23 @@ const [qrPx, setQrPx] = useState<number>(192);
             )}
 
             <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {filtered.map((r) => (
-                <li key={r.id} className="card">
-                  <div className="text-base font-semibold text-center">{r.name}</div>
-                  <div className="text-sm mb-2 text-center">{r.language}</div>
+              {filtered.map((row) => (
+                <li key={row.id} className="card">
+                  <div className="text-base font-semibold text-center">{row.name}</div>
+                  <div className="text-sm mb-2 text-center">{row.language}</div>
 
-                  {/* QR centered by QR.tsx */}
-                  <QR url={r.url} />
-
-                  // ...
-<li key={r.id} className="card">
-  <div className="text-base font-semibold text-center">{r.name}</div>
-  <div className="text-sm mb-2 text-center">{r.language}</div>
-
-  {/* QR centered */}
-  <QR url={r.url} />
-
-  <div className="mt-2 text-center">
-    <a href={r.url} className="underline" target="_blank" rel="noreferrer">
-      {r.url}
-    </a>
-  </div>
-
-  {/* Your existing ShareButtons (optional) */}
-  {/* <div className="mt-2"><ShareButtons lang={lang} url={r.url} name={r.name} /></div> */}
-
-  {/* NEW: Nifty-style popup share (uses the SAVED URL) */}
-  <div className="mt-2" style={{ display: "flex", justifyContent: "center" }}>
-    <NiftyShare url={r.url} title={r.name || "Link"} />
-  </div>
-</li>
-
-// ... inside the card render:
-<li key={r.id} className="card">
-  <div className="text-base font-semibold text-center">{r.name}</div>
-  <div className="text-sm mb-2 text-center">{r.language}</div>
-
-  {/* Give each QR a unique id so "Download QR" can grab the right canvas */}
-  <QR url={r.url} size={sizePx} idForDownload={`qr-${r.id}`} />
-
-  <div className="mt-2 text-center">
-    <a href={r.url} className="underline" target="_blank" rel="noreferrer">
-      {r.url}
-    </a>
-  </div>
-
-  {/* Unified share: uses ONLY the saved URL; includes all platforms + Copy + (optional) Download QR */}
-  <div className="mt-2">
-    <Share url={r.url} title={r.name || "Link"} qrCanvasId={`qr-${r.id}`} />
-  </div>
-</li>
+                  {/* Scalable QR */}
+                  <QR url={row.url} size={qrPx} idForDownload={`qr-${row.id}`} />
 
                   <div className="mt-2 text-center">
-                    <a href={r.url} className="underline" target="_blank" rel="noreferrer">
-                      {r.url}
+                    <a href={row.url} className="underline" target="_blank" rel="noreferrer">
+                      {row.url}
                     </a>
                   </div>
 
-                  {/* Share centered by ShareButtons' wrappers */}
+                  {/* Unified Share (URL-only, plus optional Download QR) */}
                   <div className="mt-2">
-                    <ShareButtons lang={lang} url={r.url} name={r.name} />
+                    <Share url={row.url} title={row.name || "Link"} qrCanvasId={`qr-${row.id}`} />
                   </div>
                 </li>
               ))}
@@ -251,7 +227,11 @@ const [qrPx, setQrPx] = useState<number>(192);
         )}
       </main>
 
-      {/* Centered version/date/time */}
+      {/* Toasts + iOS hint */}
+      <UpdateToast />
+      <IOSInstallHint />
+
+      {/* Footer (centered version/date/time) */}
       <footer className="footer">
         <div style={{ display: "flex", justifyContent: "center" }}>
           {__APP_VERSION__} — {__BUILD_DATE__} {__BUILD_TIME__}
