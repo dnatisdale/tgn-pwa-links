@@ -12,7 +12,7 @@ import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 
-// Build-time constants injected by Vite (vite.config.ts)
+// Build-time constants (injected by vite.config.ts)
 declare const __APP_VERSION__: string;
 declare const __BUILD_DATE__: string;
 declare const __BUILD_TIME__: string;
@@ -27,20 +27,20 @@ export default function App() {
   // auth
   const [user, setUser] = useState<any>(null);
 
-  // Firestore data
+  // rows
   const [rows, setRows] = useState<Row[]>([]);
 
   // search / filter
   const [q, setQ] = useState("");
   const [filterThai, setFilterThai] = useState(false);
 
-  // font size (px) slider
+  // font size in px (applies to :root --base)
   const [textPx, setTextPx] = useState<number>(16);
 
-  // QR size (px) slider
+  // QR size in px (slider)
   const [qrPx, setQrPx] = useState<number>(192);
 
-  // simple hash route
+  // simple hash routing
   const [route, setRoute] = useState<string>(window.location.hash || "#/browse");
 
   // auth subscribe
@@ -49,7 +49,7 @@ export default function App() {
     return () => off();
   }, []);
 
-  // data subscribe (user links)
+  // data subscribe
   useEffect(() => {
     if (!user) {
       setRows([]);
@@ -64,19 +64,19 @@ export default function App() {
     return () => off();
   }, [user]);
 
-  // apply font size to :root --base so all text scales
+  // apply font size
   useEffect(() => {
     document.documentElement.style.setProperty("--base", `${textPx}px`);
   }, [textPx]);
 
-  // hash-change listener
+  // hash change
   useEffect(() => {
     const onHash = () => setRoute(window.location.hash || "#/browse");
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
-  // filter + search
+  // filtered list
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     let out = rows.filter((row) => {
@@ -84,8 +84,7 @@ export default function App() {
         filterThai &&
         row.language?.toLowerCase() !== "thai" &&
         row.language?.toLowerCase() !== "ไทย"
-      )
-        return false;
+      ) return false;
       if (!needle) return true;
       return (
         (row.name || "").toLowerCase().includes(needle) ||
@@ -101,7 +100,9 @@ export default function App() {
     return out;
   }, [rows, q, filterThai]);
 
-  if (!user) return <Login lang={lang} onLang={setLang} onSignedIn={() => {}} />;
+  if (!user) {
+    return <Login lang={lang} onLang={setLang} onSignedIn={() => {}} />;
+  }
 
   const isBrowse = route.startsWith("#/browse");
   const isAdd = route.startsWith("#/add");
@@ -114,20 +115,20 @@ export default function App() {
         <img className="banner" src="/banner-2400x600.png" alt="Thai Good News banner" />
       </div>
 
-      {/* Header controls */}
+      {/* Header */}
       <header className="header p-3 flex items-center justify-between">
         <div />
         <div className="flex items-center gap-4 text-sm">
           {/* Install (shows only when installable) */}
           <InstallPWA />
 
-          {/* Font size slider + small “AAA” icon */}
+          {/* Font-size slider with AAA icon */}
           <span
             title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
             style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
-              <rect x="2" y="2" width="20" height="20" rx="4" fill="#0f2454"></rect>
+              <rect x="2" y="2" width="20" height="20" rx="4" fill="#0f2454" />
               <path
                 d="M6 16l2.2-8h1.6L12 16h-1.6l-.4-1.6H8l-.4 1.6H6zm2.3-3h1.7l-.9-3.7L8.3 13zM13 16l2.2-8h1.6L19 16h-1.6l-.4-1.6h-2.1L14.6 16H13zm2.3-3h1.7l-.9-3.7-.8 3.7z"
                 fill="#fff"
@@ -151,4 +152,113 @@ export default function App() {
             QR size
           </label>
           <input
-            id="qrSize
+            id="qrSizePx"
+            type="range"
+            min={128}
+            max={320}
+            step={16}
+            value={qrPx}
+            onChange={(e) => setQrPx(parseInt(e.target.value, 10))}
+            aria-label={lang === "th" ? "ขนาดคิวอาร์โค้ด" : "QR size"}
+            style={{ width: 120, verticalAlign: "middle" }}
+          />
+          <span style={{ fontSize: 12, color: "#6b7280" }}>{qrPx}px</span>
+
+          {/* Language + Logout */}
+          <button className="linklike" onClick={() => setLang(lang === "en" ? "th" : "en")}>
+            {lang === "en" ? "ไทย" : "EN"}
+          </button>
+          <button className="linklike" onClick={() => signOut(auth)}>
+            {i.logout}
+          </button>
+        </div>
+      </header>
+
+      {/* Nav */}
+      <nav className="p-3 flex flex-wrap gap-4 text-sm">
+        <a className="underline" href="#/browse">
+          {i.browse}
+        </a>
+        <a className="underline" href="#/add">
+          {i.add}
+        </a>
+        <a className="underline" href="#/import">
+          {i.importExport}
+        </a>
+      </nav>
+
+      {/* Main */}
+      <main className="p-3 max-w-5xl mx-auto">
+        {isAdd ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
+            <AddLink lang={lang} />
+          </section>
+        ) : isImport ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">{i.importExport}</h2>
+            <ImportExport lang={lang} />
+          </section>
+        ) : (
+          <section>
+            <div className="flex flex-wrap gap-4 items-center mb-3">
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder={i.searchPlaceholder}
+                className="border rounded px-2 py-1 min-w-[260px]"
+              />
+              <div className="text-sm">
+                <button className="linklike" onClick={() => setFilterThai(false)}>
+                  {i.filterAll}
+                </button>
+                &nbsp;|&nbsp;
+                <button className="linklike" onClick={() => setFilterThai(true)}>
+                  {i.filterThai}
+                </button>
+              </div>
+            </div>
+
+            {!filtered.length && (
+              <div className="text-sm text-gray-600 mb-3">{i.empty}</div>
+            )}
+
+            <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filtered.map((row) => (
+                <li key={row.id} className="card">
+                  <div className="text-base font-semibold text-center">{row.name}</div>
+                  <div className="text-sm mb-2 text-center">{row.language}</div>
+
+                  {/* Scalable QR */}
+                  <QR url={row.url} size={qrPx} idForDownload={`qr-${row.id}`} />
+
+                  <div className="mt-2 text-center">
+                    <a href={row.url} className="underline" target="_blank" rel="noreferrer">
+                      {row.url}
+                    </a>
+                  </div>
+
+                  {/* Unified Share */}
+                  <div className="mt-2">
+                    <Share url={row.url} title={row.name || "Link"} qrCanvasId={`qr-${row.id}`} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </main>
+
+      {/* Toasts + iOS hint */}
+      <UpdateToast />
+      <IOSInstallHint />
+
+      {/* Footer with version/date/time */}
+      <footer className="footer">
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          {__APP_VERSION__} — {__BUILD_DATE__} {__BUILD_TIME__}
+        </div>
+      </footer>
+    </div>
+  );
+}
