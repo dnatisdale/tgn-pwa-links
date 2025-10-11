@@ -1,4 +1,37 @@
-import React,{useEffect,useRef}from"react";import QRCode from"qrcode";
-export default function QR({url,size=160}:{url:string;size?:number}){const c=useRef<HTMLCanvasElement>(null);useEffect(()=>{if(!c.current)return;const s=size*2;c.current.width=s;c.current.height=s;QRCode.toCanvas(c.current,url,{margin:1,width:s});},[url,size]);
-const downloadPNG=()=>{if(!c.current)return;const big=document.createElement("canvas");big.width=1024;big.height=1024;QRCode.toCanvas(big,url,{margin:1,width:1024},()=>{const a=document.createElement("a");a.href=big.toDataURL("image/png");a.download="qr.png";a.click();});};
-return(<div><canvas ref={c} style={{width:size,height:size,imageRendering:"pixelated"}} aria-label="QR code"/><div className="text-sm mt-1"><button className="linklike" onClick={downloadPNG}>Download QR</button></div></div>);}
+// src/QR.tsx
+import React, { useEffect, useRef } from "react";
+import QRCode from "qrcode";
+import { normalizeHttps } from "./utils";
+
+type Props = { url: string; size?: number };
+
+export default function QR({ url, size = 192 }: Props) {
+  const ref = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const safeUrl = normalizeHttps(url);
+    if (!ref.current || !safeUrl) return;
+
+    QRCode.toCanvas(ref.current, safeUrl, {
+      width: size,
+      margin: 1,
+      errorCorrectionLevel: "M",
+      color: {
+        dark: "#111111",  // nearly black for good contrast
+        light: "#ffffff",
+      },
+    }).catch(() => {
+      // No-op: you could set a fallback message if desired
+    });
+  }, [url, size]);
+
+  return (
+    <canvas
+      ref={ref}
+      width={size}
+      height={size}
+      aria-label="QR code"
+      style={{ borderRadius: 8, background: "#fff" }}
+    />
+  );
+}
