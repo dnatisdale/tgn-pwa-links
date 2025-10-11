@@ -306,8 +306,16 @@ export default function ImportExport({ lang }: { lang: Lang }) {
 
       {/* Import panel */}
       <div className="border rounded p-3 mb-4">
-        <div className="mb-2">1) Choose a file (CSV / TSV / JSON)</div>
-        <input type="file" accept=".csv,.json,text/csv,application/json" onChange={onFile} />
+<div className="mb-1">
+  <span>Choose a file</span>{" "}
+  <span className="text-xs" style={{ color: "#6b7280" }}>(CSV TSV JSON)</span>
+</div>
+<input
+  type="file"
+  accept=".csv,.json,text/csv,application/json"
+  onChange={onFile}
+/>
+
         {fileName && <div className="text-xs mt-1 text-gray-600">Selected: {fileName}</div>}
 
         <div className="mt-3">
