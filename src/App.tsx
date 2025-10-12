@@ -534,7 +534,10 @@ const renderPage = () => {
       </div>
 
       {/* ===== MAIN CONTENT ===== */}
-      <main className="app-main p-3 max-w-5xl mx-auto">
+        <main className="app-main p-3 max-w-5xl mx-auto">
+  {renderPage()}
+</main>
+
         {/* Banner */}
         <div className="banner-wrap">
           <img className="banner" src="/banner-2400x600.png" alt="Thai Good News banner" />
