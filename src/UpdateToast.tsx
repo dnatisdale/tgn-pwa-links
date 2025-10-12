@@ -1,4 +1,8 @@
+// src/UpdateToast.tsx
 import React, { useEffect, useState } from "react";
+
+// Let TS know this global may exist (defined in vite.config.ts -> define)
+declare const __APP_VERSION__: string | undefined;
 
 export default function UpdateToast() {
   const [show, setShow] = useState(false);
@@ -12,25 +16,19 @@ export default function UpdateToast() {
   if (!show) return null;
 
   const refresh = () => {
-    // @ts-ignore
-    const fn = window.__tgnUpdateSW as undefined | ((reload?: boolean) => void);
-    fn?.(true); // update SW + reload page
+    // set by main.tsx when registering the SW
+    (window as any).__tgnUpdateSW?.(true); // update SW + reload page
   };
-
-
-
-// inside the toast render
-<div>
-  New version available — refresh
-  {typeof __APP_VERSION__ !== "undefined" && __APP_VERSION__ ? ` (${__APP_VERSION__})` : ""}
-</div>
-
-
 
   return (
     <div className="toast">
       <div className="toast-row">
-        <span>New version available</span>
+        <span>
+          New version available — refresh
+          {typeof __APP_VERSION__ !== "undefined" && __APP_VERSION__
+            ? ` (${__APP_VERSION__})`
+            : ""}
+        </span>
         <button className="toast-btn" onClick={refresh}>Refresh</button>
         <button className="toast-btn ghost" onClick={() => setShow(false)}>Later</button>
       </div>
