@@ -1,16 +1,10 @@
 // src/ImportExport.tsx
 import React, { useMemo, useState } from "react";
-import { t, Lang } from "./i18n";
+import { Lang, t } from "./i18n";
 import { auth, db } from "./firebase";
-import {
-  collection,
-  writeBatch,
-  serverTimestamp,
-  doc,
-} from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { forceHttps } from "./url";
 
-type RowIn = { name?: string; language?: string; url?: string };
 type PreviewItem = {
   name: string;
   language: string;
@@ -20,137 +14,86 @@ type PreviewItem = {
   reason?: string;
 };
 
-function parseDelimited(text: string, sep: string): RowIn[] {
-  const lines = text
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0);
-  if (lines.length === 0) return [];
-
-  const head = lines[0].split(sep).map((h) => h.trim().toLowerCase());
-  const idxName = head.findIndex((h) => h === "name");
-  const idxLang = head.findIndex((h) => h === "language" || h === "lang");
-  const idxUrl = head.findIndex((h) => h === "url");
-
-  const out: RowIn[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cells = lines[i].split(sep);
-    const name = idxName >= 0 ? (cells[idxName] || "").trim() : "";
-    const language = idxLang >= 0 ? (cells[idxLang] || "").trim() : "";
-    const url = idxUrl >= 0 ? (cells[idxUrl] || "").trim() : "";
-    if (!name && !language && !url) continue;
-    out.push({ name, language, url });
-  }
-  return out;
-}
-
-function parseJson(text: string): RowIn[] {
-  try {
-    const obj = JSON.parse(text);
-    if (Array.isArray(obj)) return obj as RowIn[];
-    if (obj && Array.isArray((obj as any).items)) return (obj as any).items as RowIn[];
-    return [];
-  } catch {
-    return [];
-  }
-}
-
 export default function ImportExport({ lang }: { lang: Lang }) {
   const i = t(lang);
 
-  const [fileName, setFileName] = useState("");
+  // file + preview state
   const [preview, setPreview] = useState<PreviewItem[]>([]);
-  const [importing, setImporting] = useState(false);
-  const [importMsg, setImportMsg] = useState("");
+  const [kindLabel, setKindLabel] = useState<"CSV" | "TSV" | "JSON" | "">("");
+  const [importMsg, setImportMsg] = useState<string>("");
+  const [importing, setImporting] = useState<boolean>(false);
 
-  const validItems = useMemo(
-    () => preview.filter((p) => p.valid && p.urlHttps),
-    [preview]
-  );
+  // --- UI strings ---
+  const labelChoose = lang === "th" ? "เลือกไฟล์" : "Choose a file";
+  const labelAdd = lang === "th" ? "เพิ่ม" : "Add";
+  const tipCoerce =
+    lang === "th"
+      ? "เราจะแก้ URL ที่ขาด http/https หรือเป็น http ให้เป็น https ถ้า “URL (https)” ยังว่าง แสดงว่าไม่ถูกต้อง"
+      : "We auto-fix missing/http schemes to https. If “URL (https)” is empty, it was still invalid.";
 
-  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+  // --- file handler ---
+  async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     setImportMsg("");
-    const f = e.target.files?.[0];
-    if (!f) return;
+    const file = e.target.files?.[0];
+    if (!file) {
+      setPreview([]);
+      setKindLabel("");
+      return;
+    }
+    const text = await file.text();
+    const ext = file.name.toLowerCase().split(".").pop() || "";
 
-    setFileName(f.name);
-    const text = await f.text();
-    const lower = f.name.toLowerCase();
-
-    let rows: RowIn[] = [];
-    if (lower.endsWith(".csv")) rows = parseDelimited(text, ",");
-    else if (lower.endsWith(".tsv") || lower.endsWith(".txt")) rows = parseDelimited(text, "\t");
-    else if (lower.endsWith(".json")) rows = parseJson(text);
-    else {
-      rows = parseDelimited(text, ",");
-      if (rows.length === 0) rows = parseJson(text);
+    // Try to detect kind
+    if (ext === "json" || looksLikeJSON(text)) {
+      setKindLabel("JSON");
+      const rows = parseJSON(text);
+      setPreview(toPreview(rows));
+      return;
     }
 
- -    const pv: PreviewItem[] = rows.map((r) => {
--      const urlHttps = toHttpsOrNull(r.url || "");
--      const valid = !!urlHttps;
--      return {
--        name: (r.name || "").trim(),
--        language: (r.language || "").trim(),
--        urlRaw: r.url || "",
--        urlHttps,
--        valid,
--        reason: valid ? undefined : "URL must be https (or valid domain to coerce)",
--      };
--    });
-+    const pv: PreviewItem[] = rows.map((r) => {
-+      const raw = (r.url || "").trim();
-+      const urlHttps = forceHttps(raw);
-+      const valid = !!urlHttps;
-+      return {
-+        name: (r.name || "").trim(),
-+        language: (r.language || "").trim(),
-+        urlRaw: raw,
-+        urlHttps,
-+        valid,
-+        reason: valid ? undefined : "Invalid URL (couldn’t coerce to https)",
-+      };
-+    });
+    // CSV / TSV
+    if (ext === "tsv" || looksLikeTSV(text)) {
+      setKindLabel("TSV");
+      const rows = parseDelimited(text, "\t");
+      setPreview(toPreview(rows));
+      return;
+    }
 
-    setPreview(pv);
+    // default CSV
+    setKindLabel("CSV");
+    const rows = parseDelimited(text, ",");
+    setPreview(toPreview(rows));
   }
 
+  // --- import ---
   async function doImport() {
     setImportMsg("");
     if (!auth.currentUser) {
       setImportMsg("Not signed in.");
       return;
     }
-    const uid = auth.currentUser.uid;
-    const col = collection(db, "users", uid, "links");
-
-    const items = validItems;
-    if (items.length === 0) {
-      setImportMsg("Nothing valid to import.");
+    const validItems = preview.filter((p) => p.valid && p.urlHttps);
+    if (!validItems.length) {
+      setImportMsg("No valid rows to import.");
       return;
     }
 
     setImporting(true);
     try {
-      const CHUNK = 500;
-      const batchId = Date.now();
-      for (let i = 0; i < items.length; i += CHUNK) {
-        const chunk = items.slice(i, i + CHUNK);
-        const batch = writeBatch(db);
-        for (const it of chunk) {
-          const ref = doc(col);
-          batch.set(ref, {
-            name: it.name,
-            language: it.language,
-            url: it.urlHttps,
-            createdAt: serverTimestamp(),
-            importBatchId: batchId,
-          });
-        }
-        await batch.commit();
+      const col = collection(db, "users", auth.currentUser.uid, "links");
+      let ok = 0;
+      for (const item of validItems) {
+        const https = forceHttps(item.urlRaw); // re-validate
+        if (!https) continue;
+        await addDoc(col, {
+          name: item.name,
+          language: item.language,
+          url: https,
+          createdAt: serverTimestamp(),
+        });
+        ok++;
       }
-      setImportMsg(`Imported ${items.length} item(s).`);
-      // Optionally: setPreview([]);
+      setImportMsg(`Imported ${ok} item(s).`);
     } catch (e: any) {
       setImportMsg(e.message || String(e));
     } finally {
@@ -158,108 +101,183 @@ export default function ImportExport({ lang }: { lang: Lang }) {
     }
   }
 
-  function exportCSV() {
-    const rows = preview.length ? preview : [];
-    const head = ["name", "language", "url"];
-    const body = rows.map((r) =>
-      [r.name, r.language, r.urlRaw || r.urlHttps || ""]
-        .map((v) => `"${(v || "").replace(/"/g, '""')}"`)
-        .join(",")
-    );
-    const csv = [head.join(","), ...body].join("\n");
-    const a = document.createElement("a");
-    a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-    a.download = "links.csv";
-    a.click();
+  // --- helpers ---
+  function looksLikeJSON(s: string) {
+    const x = s.trim();
+    return (x.startsWith("{") && x.endsWith("}")) || (x.startsWith("[") && x.endsWith("]"));
+  }
+  function looksLikeTSV(s: string) {
+    // a quick heuristic: more tabs than commas in first lines
+    const first = s.split(/\r?\n/).slice(0, 3).join("\n");
+    const tabs = (first.match(/\t/g) || []).length;
+    const commas = (first.match(/,/g) || []).length;
+    return tabs > commas;
   }
 
+  type RawRow = { name?: string; language?: string; url?: string };
+
+  function parseJSON(text: string): RawRow[] {
+    try {
+      const val = JSON.parse(text);
+      if (Array.isArray(val)) return val as RawRow[];
+      // object with property 'rows'?
+      if (val && Array.isArray((val as any).rows)) return (val as any).rows as RawRow[];
+      return [];
+    } catch {
+      return [];
+    }
+  }
+
+  function parseDelimited(text: string, delim: "," | "\t"): RawRow[] {
+    const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+    if (!lines.length) return [];
+    const head = splitLine(lines[0], delim);
+    const hasHeader =
+      head.some((h) => /^name$/i.test(h)) &&
+      head.some((h) => /^language$/i.test(h)) &&
+      head.some((h) => /^url$/i.test(h));
+
+    if (hasHeader) {
+      const idxName = head.findIndex((h) => /^name$/i.test(h));
+      const idxLang = head.findIndex((h) => /^language$/i.test(h));
+      const idxUrl = head.findIndex((h) => /^url$/i.test(h));
+      return lines.slice(1).map((line) => {
+        const cells = splitLine(line, delim);
+        return {
+          name: cells[idxName] ?? "",
+          language: cells[idxLang] ?? "",
+          url: cells[idxUrl] ?? "",
+        };
+      });
+    } else {
+      // assume columns: name, language, url
+      return lines.map((line) => {
+        const [name = "", language = "", url = ""] = splitLine(line, delim);
+        return { name, language, url };
+      });
+    }
+  }
+
+  function splitLine(line: string, delim: "," | "\t") {
+    // simple split (no quoted field support). If you need quotes, say the word.
+    return line.split(delim).map((s) => s.trim());
+  }
+
+  function toPreview(rows: RawRow[]): PreviewItem[] {
+    return rows.map((r) => {
+      const raw = (r.url || "").trim();
+      const urlHttps = forceHttps(raw);
+      const valid = !!urlHttps;
+      return {
+        name: (r.name || "").trim(),
+        language: (r.language || "").trim(),
+        urlRaw: raw,
+        urlHttps,
+        valid,
+        reason: valid ? undefined : "Invalid URL (not fixable to https)",
+      };
+    });
+  }
+
+  const counts = useMemo(() => {
+    const total = preview.length;
+    const ok = preview.filter((p) => p.valid).length;
+    const bad = total - ok;
+    return { total, ok, bad };
+  }, [preview]);
+
+  // --- UI ---
   return (
-    <div className="max-w-3xl p-3">
-      {/* File picker row */}
-      <div className="file-row mb-2">
-        {/* Red "Choose file" button using hidden input */}
-        <label className="btn-red" style={{ cursor: "pointer" }}>
-          Choose file
-          <input
-            type="file"
-            accept=".csv,.tsv,.txt,.json,application/json,text/csv"
-            onChange={onFile}
-            style={{ display: "none" }}
-          />
-        </label>
+    <div className="max-w-3xl mx-auto">
+      {/* Top row: Choose + kind badge + Add button */}
+      <div className="flex flex-wrap items-center gap-12 mb-4">
+        <div className="flex items-center gap-10">
+          {/* Choose file (button only) */}
+          <label className="linklike" style={{ cursor: "pointer" }}>
+            {labelChoose}
+            <input
+              type="file"
+              accept=".csv,.tsv,.json,text/csv,text/tab-separated-values,application/json"
+              onChange={onFileChange}
+              style={{ display: "none" }}
+            />
+          </label>
 
-        {/* Red pill with formats */}
-        <span className="pill-red">(CSV / JSON / TSV)</span>
-
-        {/* Chosen filename */}
-        {fileName && (
-          <span className="text-sm" style={{ color: "#6b7280" }}>
-            {fileName}
-          </span>
-        )}
-
-        {/* Blue “Add” button appears when a file is chosen */}
-        {fileName && (
-          <button
-            className="btn-blue"
-            onClick={doImport}
-            disabled={importing || validItems.length === 0}
-            title={validItems.length ? `Import ${validItems.length} valid` : "No valid rows"}
+          {/* kind badge (Thai flag red) */}
+          <span
+            style={{
+              display: "inline-block",
+              padding: "2px 8px",
+              borderRadius: 6,
+              background: "#a51931", // Thai red
+              color: "#fff",
+              fontSize: 12,
+            }}
           >
-            {importing ? "Importing…" : `Add (${validItems.length})`}
-          </button>
-        )}
-      </div>
+            {kindLabel || "CSV / TSV / JSON"}
+          </span>
+        </div>
 
-      {/* Optional export of current preview */}
-      <div className="mt-2">
-        <button className="linklike" onClick={exportCSV}>
-          Export CSV (preview)
+        {/* Add button (Thai flag blue) */}
+        <button
+          className="btn-blue"
+          disabled={!preview.some((p) => p.valid) || importing}
+          onClick={doImport}
+          style={{
+            background: "#2d2a4b", // your dark/navy or use Thai blue #2d2a4b you used
+            color: "#fff",
+            border: "none",
+            borderRadius: 8,
+            padding: "8px 14px",
+            cursor: preview.some((p) => p.valid) && !importing ? "pointer" : "not-allowed",
+          }}
+        >
+          {labelAdd}
         </button>
       </div>
 
-      {/* Status message */}
-      {importMsg && <div className="mt-2 text-sm">{importMsg}</div>}
+      {/* Counts + tip */}
+      <div className="text-sm mb-2">
+        {counts.total} rows — {counts.ok} valid, {counts.bad} invalid
+      </div>
+      <div className="text-xs" style={{ color: "#6b7280" }}>
+        {tipCoerce}
+      </div>
+
+      {/* Import message */}
+      {importMsg && (
+        <div className="mt-3 text-sm" style={{ whiteSpace: "pre-wrap" }}>
+          {importMsg}
+        </div>
+      )}
 
       {/* Preview table */}
       {!!preview.length && (
-        <div className="mt-4">
-          <div className="text-sm mb-2">
-            Preview: {preview.length} row(s) —{" "}
-            <span style={{ color: "#059669" }}>{validItems.length} valid</span>,{" "}
-            <span style={{ color: "#b91c1c" }}>
-              {preview.length - validItems.length} invalid
-            </span>
-          </div>
-          <div className="overflow-auto">
-            <table className="min-w-full text-sm border">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border px-2 py-1 text-left">Valid</th>
-                  <th className="border px-2 py-1 text-left">Name</th>
-                  <th className="border px-2 py-1 text-left">Language</th>
-                  <th className="border px-2 py-1 text-left">URL (raw)</th>
-                  <th className="border px-2 py-1 text-left">URL (https)</th>
-                  <th className="border px-2 py-1 text-left">Reason</th>
+        <div className="mt-4 overflow-auto">
+          <table className="min-w-full text-sm" style={{ borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                <th className="px-2 py-1 border">Name</th>
+                <th className="px-2 py-1 border">Language</th>
+                <th className="px-2 py-1 border">URL (raw)</th>
+                <th className="px-2 py-1 border">URL (https)</th>
+                <th className="px-2 py-1 border">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {preview.map((r, idx) => (
+                <tr key={idx}>
+                  <td className="px-2 py-1 border">{r.name}</td>
+                  <td className="px-2 py-1 border">{r.language}</td>
+                  <td className="px-2 py-1 border">{r.urlRaw}</td>
+                  <td className="px-2 py-1 border">{r.urlHttps ?? ""}</td>
+                  <td className="px-2 py-1 border" style={{ color: r.valid ? "#059669" : "#b91c1c" }}>
+                    {r.valid ? "OK" : r.reason || "Invalid"}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {preview.map((p, idx) => (
-                  <tr key={idx}>
-                    <td className="border px-2 py-1">{p.valid ? "✓" : "✗"}</td>
-                    <td className="border px-2 py-1 whitespace-nowrap">{p.name}</td>
-                    <td className="border px-2 py-1 whitespace-nowrap">{p.language}</td>
-                    <td className="border px-2 py-1">{p.urlRaw}</td>
-                    <td className="border px-2 py-1">{p.urlHttps || ""}</td>
-                    <td className="border px-2 py-1 text-red-600">{p.reason || ""}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="text-xs mt-1" style={{ color: "#6b7280" }}>
-            Tip: if “URL (https)” is empty, we rejected it (http or invalid). Fix your file and re-import.
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
