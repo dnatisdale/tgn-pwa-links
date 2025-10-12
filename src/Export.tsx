@@ -36,8 +36,6 @@ export default function ExportPage({ lang, rows }: { lang: Lang; rows: Row[] }) 
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-lg font-semibold mb-3">Import / Export</h2>
-
       <div className="flex items-center gap-8 mb-4">
         <button className="btn-blue" onClick={toCSV}>Export CSV</button>
         <button className="btn-blue" onClick={toJSON}>Export JSON</button>
