@@ -50,6 +50,10 @@ export default function App() {
   // auth
   const [user, setUser] = useState<any>(null);
 
+  // Selected items (by id)
+const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+
   // data
   const [rows, setRows] = useState<Row[]>([]);
 
