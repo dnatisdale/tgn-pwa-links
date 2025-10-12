@@ -10,21 +10,15 @@ import InstallPWA from "./InstallPWA";
 import UpdateToast from "./UpdateToast";
 import IOSInstallHint from "./IOSInstallHint";
 import Share from "./Share";
+
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import {
-  collection,
-  onSnapshot,
-  orderBy,
-  query,
-  doc,
-  deleteDoc,
-  updateDoc,
-} from "firebase/firestore";
+import { collection, onSnapshot, orderBy, query, doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { toHttpsOrNull as toHttps } from "./url";
 
 type Row = { id: string; name: string; language: string; url: string };
 
+// ---- helpers ----
 function formatPacific(iso?: string) {
   const date = iso ? new Date(iso) : new Date();
   const dateStr = new Intl.DateTimeFormat("en-US", {
@@ -41,9 +35,15 @@ function formatPacific(iso?: string) {
   }).format(date);
   return `${dateStr} — ${timeStr} PT`;
 }
+// --------------
+
+// Build-time constants (optional; injected by vite.config.ts)
+declare const __APP_VERSION__: string | undefined;
+declare const __BUILD_DATE__: string | undefined;
+declare const __BUILD_TIME__: string | undefined;
 
 export default function App() {
-  // i18n
+  // language
   const [lang, setLang] = useState<Lang>("en");
   const i = t(lang);
 
@@ -54,14 +54,16 @@ export default function App() {
   const [rows, setRows] = useState<Row[]>([]);
 
   // UI state
-  const [q, setQ] = useState("");
-  const [filterThai, setFilterThai] = useState(false);
   const [textPx, setTextPx] = useState<number>(16);
   const [qrEnlargedId, setQrEnlargedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lastLogin, setLastLogin] = useState<string | null>(null);
 
-  // simple hash routing
+  // search/filter
+  const [q, setQ] = useState("");
+  const [filterThai, setFilterThai] = useState(false);
+
+  // hash routing
   const [route, setRoute] = useState<string>(window.location.hash || "#/browse");
   const isBrowse = route.startsWith("#/browse");
   const isAdd = route.startsWith("#/add");
@@ -75,7 +77,7 @@ export default function App() {
     return () => off();
   }, []);
 
-  // last login stamp from Login.tsx
+  // last login stamp (Login.tsx should set localStorage 'tgnLastLoginISO' on successful sign-in)
   useEffect(() => {
     const iso = localStorage.getItem("tgnLastLoginISO");
     if (iso) setLastLogin(iso);
@@ -92,7 +94,7 @@ export default function App() {
     const off = onSnapshot(qry, (snap) => {
       const list: Row[] = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
       setRows(list);
-      // prune selection for removed docs
+      // prune selection if items were deleted
       setSelectedIds((prev) => {
         const next = new Set<string>();
         for (const id of prev) if (list.find((r) => r.id === id)) next.add(id);
@@ -102,26 +104,19 @@ export default function App() {
     return () => off();
   }, [user]);
 
-  // apply base text size
+  // apply font size to :root var(--base)
   useEffect(() => {
     document.documentElement.style.setProperty("--base", `${textPx}px`);
   }, [textPx]);
 
-  // router
+  // listen for hash changes
   useEffect(() => {
     const onHash = () => setRoute(window.location.hash || "#/browse");
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
-  useEffect(() => {
-  const saved = localStorage.getItem("lang") as Lang | null;
-  if (saved) setLang(saved);
-  else setLang(navigator.language.startsWith("th") ? "th" : "en");
-}, []);
-useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
-
-  // filtered list
+  // filter/search
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     let out = rows.filter((row) => {
@@ -129,8 +124,7 @@ useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
         filterThai &&
         row.language?.toLowerCase() !== "thai" &&
         row.language?.toLowerCase() !== "ไทย"
-      )
-        return false;
+      ) return false;
       if (!needle) return true;
       return (
         (row.name || "").toLowerCase().includes(needle) ||
@@ -146,79 +140,21 @@ useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
     return out;
   }, [rows, q, filterThai]);
 
-  // gate: login
-  if (!user) {
-    return <Login lang={lang} onLang={setLang} onSignedIn={() => {}} />;
-  }
-
-// ---- selection helpers (MUST come before JSX that uses them) ----
-const allVisibleIds = filtered.map((r) => r.id);
-const selectedRows = filtered.filter((r) => selectedIds.has(r.id));
-const firstSelected = selectedRows[0];
-const allSelected =
-  allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
-
-function toggleSelect(id: string) {
-  setSelectedIds((prev) => {
-    const next = new Set(prev);
-    next.has(id) ? next.delete(id) : next.add(id);
-    return next;
-  });
-}
-function toggleSelectAll() {
-  setSelectedIds((prev) => {
-    const next = new Set(prev);
-    if (allSelected) {
-      for (const id of allVisibleIds) next.delete(id);
-    } else {
-      for (const id of allVisibleIds) next.add(id);
-    }
-    return next;
-  });
-}
-
-async function batchDownload() {
-  if (!selectedRows.length) {
-    alert("Select at least one");
-    return;
-  }
-  const mod = await import("./qrCard");
-  for (const r of selectedRows) {
-    await mod.downloadQrCard({
-      qrCanvasId: `qr-${r.id}`,
-      url: r.url,
-      name: r.name,
-      title: "Thai Good News",
-    });
-  }
-}
-
-async function copySelectedLinks() {
-  const urls = selectedRows.map((r) => r.url).filter(Boolean);
-  if (!urls.length) { alert("Select at least one item"); return; }
-  try {
-    await navigator.clipboard.writeText(urls.join("\n"));
-    // optional toast here
-  } catch {
-    alert("Copy failed");
-  }
-}
-// ---- end selection helpers ----
-
+  // selection helpers (MUST be after `filtered`)
   const allVisibleIds = filtered.map((r) => r.id);
+  const selectedRows = filtered.filter((r) => selectedIds.has(r.id));
   const firstSelected = selectedRows[0];
   const allSelected =
     allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
 
-  const toggleSelect = (id: string) =>
+  function toggleSelect(id: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-
-  const toggleSelectAll = () =>
+  }
+  function toggleSelectAll() {
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (allSelected) {
@@ -228,10 +164,11 @@ async function copySelectedLinks() {
       }
       return next;
     });
-
-  const clearSelection = () => setSelectedIds(new Set());
-
-  const copySelectedLinks = async () => {
+  }
+  function clearSelection() {
+    setSelectedIds(new Set());
+  }
+  async function copySelectedLinks() {
     const urls = selectedRows.map((r) => r.url).filter(Boolean);
     if (!urls.length) {
       alert("Select at least one item");
@@ -239,14 +176,11 @@ async function copySelectedLinks() {
     }
     try {
       await navigator.clipboard.writeText(urls.join("\n"));
-      alert("Copied links");
     } catch {
       alert("Copy failed");
     }
-  };
-
-  // batch download QR cards (selected)
-  const batchDownload = async () => {
+  }
+  async function batchDownload() {
     if (!selectedRows.length) {
       alert("Select at least one");
       return;
@@ -260,18 +194,18 @@ async function copySelectedLinks() {
         title: "Thai Good News",
       });
     }
-  };
+  }
 
-  // per-card edit/delete (https only)
-  const editRow = async (r: Row) => {
+  // per-card edit/delete
+  async function editRow(r: Row) {
     const name = prompt("Name", r.name ?? "");
     if (name === null) return;
     const language = prompt("Language", r.language ?? "") ?? "";
-    const url = prompt("URL (https only)", r.url ?? "");
+    const url = prompt("URL", r.url ?? "");
     if (url === null) return;
     const https = toHttps(url);
     if (!https) {
-      alert("Please enter a valid https:// URL");
+      alert("Only https:// URLs are allowed.");
       return;
     }
     try {
@@ -283,9 +217,8 @@ async function copySelectedLinks() {
     } catch (e: any) {
       alert(e.message || String(e));
     }
-  };
-
-  const deleteRow = async (r: Row) => {
+  }
+  async function deleteRow(r: Row) {
     if (!confirm(`Delete "${r.name || r.url}"?`)) return;
     try {
       await deleteDoc(doc(db, "users", user.uid, "links", r.id));
@@ -297,9 +230,28 @@ async function copySelectedLinks() {
     } catch (e: any) {
       alert(e.message || String(e));
     }
-  };
+  }
 
-  // AAA icon
+  // Share PWA button
+  async function sharePWA() {
+    const shareData = {
+      title: "Thai Good News",
+      text: "Curated links for Thai & English readers.",
+      url: window.location.origin,
+    };
+    if (navigator.share) {
+      try { await navigator.share(shareData); } catch { /* user canceled */ }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareData.url);
+        alert("Link copied");
+      } catch {
+        alert("Share not supported");
+      }
+    }
+  }
+
+  // small AAA icon for font size
   const AAA = (
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
       <rect x="2" y="2" width="20" height="20" rx="4" fill="#0f2454" />
@@ -310,200 +262,10 @@ async function copySelectedLinks() {
     </svg>
   );
 
-  // --------- page switcher (avoid nested crazy ternaries) ----------
-  let page: React.ReactNode;
-
-  if (isAdd) {
-    page = (
-      <section>
-        <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
-        <AddLink lang={lang} />
-      </section>
-    );
-  } else if (isImport) {
-    page = (
-      <section>
-        <h2 className="text-lg font-semibold mb-2">{i.importExport /* title without /Export */}</h2>
-        <ImportExport lang={lang} />
-      </section>
-    );
-  } else if (isExport) {
-    page = (
-      <section>
-        {/* Export page already says “Export” inside; not “Import/Export” */}
-        <ExportPage lang={lang} />
-      </section>
-    );
-  } else if (isAbout) {
-    page = (
-      <section className="prose max-w-2xl">
-        <h2>About</h2>
-        <p>Thai Good News — shareable links with QR codes for Thai &amp; English audiences.</p>
-        <p>
-          Need Thai strings polished? I can help translate / localize the labels
-          and messages—just send me your preferred wording.
-        </p>
-      </section>
-    );
-  } else {
-    // Browse
-    page = (
-      <section>
-        {/* Search + filter */}
-        <div className="flex flex-wrap gap-4 items-center mb-3">
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={i.searchPlaceholder}
-            className="border rounded px-2 py-1 min-w-[260px]"
-          />
-
-          {/* bulk select helpers */}
-          <div className="text-sm">
-            <button className="linklike" onClick={toggleSelectAll}>
-              {allSelected ? "Clear all" : "Select all"}
-            </button>
-            &nbsp;|&nbsp;
-            <button className="linklike" onClick={clearSelection}>Clear</button>
-          </div>
-
-          <div className="text-sm">
-            <button className="linklike" onClick={() => setFilterThai(false)}>
-              {i.filterAll}
-            </button>
-            &nbsp;|&nbsp;
-            <button className="linklike" onClick={() => setFilterThai(true)}>
-              {i.filterThai}
-            </button>
-          </div>
-        </div>
-
-        {/* Global toolbar (Share + Copy + Download) */}
-        <div className="flex flex-wrap items-center gap-8 mb-3">
-          {/* Share (first selected) */}
-          <div className="flex items-center gap-2">
-            <Share
-              url={firstSelected ? firstSelected.url : ""}
-              title={firstSelected ? firstSelected.name || "Link" : ""}
-              qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
-            />
-            {!firstSelected && (
-              <span className="hint-under">( Select at least one item )</span>
-            )}
-          </div>
-
-          {/* Copy links + hint */}
-          <div className="flex items-center gap-2">
-            <button className="linklike" onClick={copySelectedLinks}>Copy link</button>
-            {selectedRows.length === 0 && (
-              <div className="hint-under">( Select at least one item )</div>
-            )}
-          </div>
-
-          {/* Download QR cards */}
-          <button
-            className="btn-blue"
-            onClick={batchDownload}
-            disabled={!selectedRows.length}
-            title="Download QR card images for selected items"
-          >
-            Download QR cards ({selectedRows.length})
-          </button>
-        </div>
-
-        {!filtered.length && (
-          <div className="text-sm text-gray-600 mb-3">{i.empty}</div>
-        )}
-
-        {/* Cards */}
-        <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filtered.map((row) => {
-            const enlarged = qrEnlargedId === row.id;
-            const qrSize = enlarged ? 320 : 192;
-            const checked = selectedIds.has(row.id);
-            return (
-              <li key={row.id} className="card">
-                {/* Selection checkbox */}
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm">
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleSelect(row.id)}
-                      style={{ marginRight: 8 }}
-                    />
-                    Select
-                  </label>
-                </div>
-
-                <div className="text-base font-semibold text-center">{row.name}</div>
-                <div className="text-sm mb-2 text-center">{row.language}</div>
-
-                {/* Click-to-enlarge QR */}
-                <div
-                  role="button"
-                  onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") setQrEnlargedId(enlarged ? null : row.id);
-                  }}
-                  tabIndex={0}
-                  title={enlarged ? "Shrink QR" : "Enlarge QR"}
-                  style={{ cursor: "pointer" }}
-                >
-                  <QR url={row.url} size={qrSize} idForDownload={`qr-${row.id}`} />
-                </div>
-
-                <div className="mt-2 text-center">
-                  <a href={row.url} className="underline" target="_blank" rel="noreferrer">
-                    {row.url}
-                  </a>
-                </div>
-
-                {/* Per-card actions */}
-                <div className="mt-2 flex justify-center gap-6 text-sm">
-                  <button className="linklike" onClick={() => editRow(row)}>
-                    Edit
-                  </button>
-                  <button className="linklike" onClick={() => deleteRow(row)}>
-                    Delete
-                  </button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
-    );
+  // not signed in
+  if (!user) {
+    return <Login lang={lang} onLang={setLang} onSignedIn={() => {}} />;
   }
-
-  // header AAA icon
-  const AAAIcon = (
-    <span
-      title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
-      style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-    >
-      {(
-        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
-          <rect x="2" y="2" width="20" height="20" rx="4" fill="#0f2454" />
-          <path
-            d="M6 16l2.2-8h1.6L12 16h-1.6l-.4-1.6H8l-.4 1.6H6zm2.3-3h1.7l-.9-3.7L8.3 13zM13 16l2.2-8h1.6L19 16h-1.6l-.4-1.6h-2.1L14.6 16H13zm2.3-3h1.7l-.9-3.7-.8 3.7z"
-            fill="#fff"
-          />
-        </svg>
-      )}
-      <input
-        type="range"
-        min={14}
-        max={22}
-        step={1}
-        value={textPx}
-        onChange={(e) => setTextPx(parseInt(e.target.value, 10))}
-        aria-label={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
-        style={{ width: 110 }}
-      />
-      <span style={{ fontSize: 12, color: "#6b7280" }}>{textPx}px</span>
-    </span>
-  );
 
   return (
     <div>
@@ -516,25 +278,59 @@ async function copySelectedLinks() {
       <header className="header p-3 flex items-center justify-between">
         <div />
         <div className="flex items-center gap-4 text-sm">
-          {/* Red Install and Blue Share PWA buttons (styled via your CSS utility classes) */}
-          <button className="btn-red">
-            <InstallPWA />
+          {/* Install (red) */}
+          <button
+            className="btn-red"
+            onClick={() => {
+              // InstallPWA has the actual logic; we expose a click target here.
+              // If your InstallPWA has its own button, you can hide it and call a global fn instead.
+              const el = document.getElementById("tgn-install-trigger");
+              el?.dispatchEvent(new Event("click", { bubbles: true }));
+            }}
+          >
+            {lang === "th" ? "ติดตั้ง" : "Install"}
           </button>
-          <a className="btn-blue" href={location.origin} target="_blank" rel="noreferrer">
-            Share PWA
-          </a>
 
-          {AAAIcon}
+          {/* Share PWA (blue) */}
+          <button className="btn-blue" onClick={sharePWA}>
+            {lang === "th" ? "แชร์แอป" : "Share PWA"}
+          </button>
 
-          {/* Language + Logout */}
+          {/* Font-size slider */}
+          <span
+            title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            {AAA}
+            <input
+              type="range"
+              min={14}
+              max={22}
+              step={1}
+              value={textPx}
+              onChange={(e) => setTextPx(parseInt(e.target.value, 10))}
+              aria-label={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
+              style={{ width: 110 }}
+            />
+            <span style={{ fontSize: 12, color: "#6b7280" }}>{textPx}px</span>
+          </span>
+
+          {/* Lang + Logout */}
           <button className="linklike" onClick={() => setLang(lang === "en" ? "th" : "en")}>
-            {lang === "EN" || lang === "en" ? "ไทย" : "EN"}
+            {lang === "en" ? "ไทย" : "EN"}
           </button>
           <button className="linklike" onClick={() => signOut(auth)}>
             {i.logout}
           </button>
         </div>
       </header>
+
+      {/* Hidden real install component (kept for functionality) */}
+      <div style={{ display: "none" }}>
+        {/* InstallPWA should listen to a click on #tgn-install-trigger or show its own UI in your older layout */}
+        <button id="tgn-install-trigger" />
+        <InstallPWA />
+      </div>
 
       {/* Nav */}
       <nav className="p-3 flex flex-wrap gap-4 text-sm">
@@ -543,12 +339,169 @@ async function copySelectedLinks() {
         <a className="underline" href="#/import">{i.importExport}</a>
         <a className="underline" href="#/export">Export</a>
         <a className="underline" href="#/about">About</a>
-        <a className="underline" href="#/about">{i.about}</a>
-
       </nav>
 
       {/* Main */}
-      <main className="p-3 max-w-5xl mx-auto">{page}</main>
+      <main className="p-3 max-w-5xl mx-auto">
+        {isAdd ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
+            <AddLink lang={lang} />
+          </section>
+        ) : isImport ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">
+              {lang === "th" ? "นำเข้า" : "Import"}
+            </h2>
+            <ImportExport lang={lang} />
+          </section>
+        ) : isExport ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">
+              {lang === "th" ? "ส่งออก" : "Export"}
+            </h2>
+            <ExportPage lang={lang} rows={rows} />
+          </section>
+        ) : isAbout ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">{lang === "th" ? "เกี่ยวกับ" : "About"}</h2>
+            <p className="mb-2">
+              {lang === "th"
+                ? "แอปนี้รวบรวมลิงก์ข่าวสารภาษาไทยและอังกฤษ ใช้งานได้แบบ PWA"
+                : "This PWA curates Thai & English news/links for quick access."}
+            </p>
+            <p className="text-sm text-gray-600">
+              {typeof __APP_VERSION__ !== "undefined" && __APP_VERSION__
+                ? `v${__APP_VERSION__} — ${__BUILD_DATE__ ?? ""} ${__BUILD_TIME__ ?? ""}`
+                : ""}
+            </p>
+          </section>
+        ) : (
+          // Browse
+          <section>
+            {/* Search + Filter */}
+            <div className="flex flex-wrap gap-4 items-center mb-3">
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder={i.searchPlaceholder}
+                className="border rounded px-2 py-1 min-w-[260px]"
+              />
+
+              <div className="text-sm">
+                <button className="linklike" onClick={() => setFilterThai(false)}>{i.filterAll}</button>
+                &nbsp;|&nbsp;
+                <button className="linklike" onClick={() => setFilterThai(true)}>{i.filterThai}</button>
+              </div>
+            </div>
+
+            {/* Global toolbar */}
+            <div className="flex flex-wrap items-center gap-8 mb-4">
+              <div className="text-sm">
+                <button className="linklike" onClick={toggleSelectAll}>
+                  {allSelected ? (lang === "th" ? "ยกเลิกเลือกทั้งหมด" : "Unselect all") : (lang === "th" ? "เลือกทั้งหมด" : "Select all")}
+                </button>
+                &nbsp;|&nbsp;
+                <button className="linklike" onClick={clearSelection}>
+                  {lang === "th" ? "ล้างการเลือก" : "Clear"}
+                </button>
+                <span className="text-xs" style={{ color: "#6b7280", marginLeft: 8 }}>
+                  ({selectedRows.length}/{filtered.length})
+                </span>
+              </div>
+
+              {/* One Share (first selected) */}
+              <div className="flex items-center gap-3">
+                <Share
+                  url={firstSelected ? firstSelected.url : ""}
+                  title={firstSelected ? firstSelected.name || "Link" : ""}
+                  qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
+                  variant="red" // make it red in your Share.tsx if you support variants
+                />
+                {!firstSelected && (
+                  <span className="text-xs" style={{ color: "#6b7280" }}>
+                    ( {lang === "th" ? "เลือกอย่างน้อยหนึ่งรายการ" : "Select at least one item"} )
+                  </span>
+                )}
+              </div>
+
+              {/* Friends: Copy + Download */}
+              <button className="linklike" onClick={copySelectedLinks}>
+                {lang === "th" ? "คัดลอกลิงก์" : "Copy link"}
+              </button>
+
+              <button className="btn-blue" onClick={batchDownload} disabled={!selectedRows.length}>
+                {lang === "th" ? "ดาวน์โหลดการ์ด QR" : "Download QR cards"} ({selectedRows.length})
+              </button>
+            </div>
+
+            {!filtered.length && (
+              <div className="text-sm text-gray-600 mb-3">{i.empty}</div>
+            )}
+
+            {/* Cards */}
+            <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filtered.map((row) => {
+                const enlarged = qrEnlargedId === row.id;
+                const qrSize = enlarged ? 320 : 192;
+                return (
+                  <li key={row.id} className="card">
+                    {/* Selection */}
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(row.id)}
+                          onChange={() => toggleSelect(row.id)}
+                          style={{ marginRight: 8 }}
+                        />
+                        {lang === "th" ? "เลือก" : "Select"}
+                      </label>
+                    </div>
+
+                    <div className="text-base font-semibold text-center">{row.name}</div>
+                    <div className="text-sm mb-2 text-center">{row.language}</div>
+
+                    {/* Click-to-enlarge QR */}
+                    <div
+                      role="button"
+                      onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") setQrEnlargedId(enlarged ? null : row.id);
+                      }}
+                      tabIndex={0}
+                      title={
+                        enlarged
+                          ? lang === "th" ? "ย่อ QR" : "Shrink QR"
+                          : lang === "th" ? "ขยาย QR" : "Enlarge QR"
+                      }
+                      style={{ cursor: "pointer" }}
+                    >
+                      <QR url={row.url} size={qrSize} idForDownload={`qr-${row.id}`} />
+                    </div>
+
+                    <div className="mt-2 text-center">
+                      <a href={row.url} className="underline" target="_blank" rel="noreferrer">
+                        {row.url}
+                      </a>
+                    </div>
+
+                    {/* Per-card actions */}
+                    <div className="mt-2 flex justify-center gap-6 text-sm">
+                      <button className="linklike" onClick={() => editRow(row)}>
+                        {lang === "th" ? "แก้ไข" : "Edit"}
+                      </button>
+                      <button className="linklike" onClick={() => deleteRow(row)}>
+                        {lang === "th" ? "ลบ" : "Delete"}
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+      </main>
 
       {/* Toasts + iOS hint */}
       <UpdateToast />
@@ -557,7 +510,9 @@ async function copySelectedLinks() {
       {/* Footer */}
       <footer className="footer">
         <div style={{ display: "flex", justifyContent: "center" }}>
-          {lastLogin ? `Last login: ${formatPacific(lastLogin)}` : `Last login: ${formatPacific()}`}
+          {lastLogin
+            ? `Last login: ${formatPacific(lastLogin)}`
+            : `Last login: ${formatPacific()}`}
         </div>
       </footer>
     </div>
