@@ -40,9 +40,6 @@ export default defineConfig({
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
       },
-      devOptions: {
-        enabled: true,
-      },
     }),
   ],
   define: {
