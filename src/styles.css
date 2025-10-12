@@ -1,353 +1,261 @@
-/* Tailwind layers */
+/* ───────────────── Tailwind (remove these 3 lines if you don't use Tailwind) ───────────────── */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-.hint-under{
-  font-size:12px;
-  color:#6b7280;     /* gray-500 */
-  margin-top:4px;
-  text-align:center; /* or left if it sits under a left-aligned button */
+/* ───────────────── Theme: Thai flag colors ───────────────── */
+:root{
+  --thai-red:   #A51931;
+  --thai-white: #F4F5F8;
+  --thai-blue:  #2D2A4A;
+  --thai-black: #000000;
+
+  /* Global typographic base (App sets this dynamically) */
+  --base: 16px;
 }
 
-/* ---------- Custom CSS below ---------- */
+/* ───────────────── Base resets ───────────────── */
+html{ font-size: var(--base); }
+a{ text-decoration: underline; }
 
-/* Base */
-:root { --base: 16px; }                  /* updated by App.tsx */
-html { font-size: var(--base); }
-a { text-decoration: underline; }
-button.linklike {
-  background: none; border: none; padding: 0;
-  text-decoration: underline; cursor: pointer;
-}
-
-/* Layout atoms */
-.header { border-bottom: 1px solid #e5e7eb; }
-.card   { border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 0.75rem; }
-
-/* Banner */
-.banner-wrap { border-bottom: 1px solid #111827; } /* very dark thin line */
-.banner {
-  max-width: 1200px; width: 100%; display: block; margin: 0 auto;
-}
-
-/* QR + share alignment */
-.qr-center { display: flex; justify-content: center; align-items: center; }
-.share-center { display: flex; justify-content: center; }
-.share-row {
-  display: inline-flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center;
-}
-
-/* Logo (if used) */
-.logo { height: 28px; border-radius: 8px; vertical-align: middle; }
-
-/* Footer */
-.footer {
-  border-top: 1px solid #e5e7eb;
-  margin-top: 20px; padding: 10px 12px;
-  color: #6b7280; font-size: 12px; text-align: center;
-}
-
-/* Thai flag red button */
-.btn-red { background:#a51931; color:#fff; border:none; padding:8px 12px; border-radius:8px; font-weight:600; }
-.btn-red:hover { filter:brightness(0.95); }
-
-/* Update toast */
-.toast {
-  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
-  background: #111827; color: #fff; padding: 10px 14px; border-radius: 10px;
-  box-shadow: 0 6px 24px rgba(0,0,0,.25); z-index: 50;
-}
-.toast-row { display: flex; gap: 10px; align-items: center; }
-.toast-btn {
-  background: #fff; color: #111827; border: none; border-radius: 6px;
-  padding: 6px 10px; cursor: pointer;
-}
-.toast-btn.ghost { background: transparent; color: #fff; border: 1px solid #fff; }
-
-/* Thai flag blue button */
-.btn-blue {
-  background: #00247d; /* Thai flag blue */
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 14px;
-  cursor: pointer;
-}
-.btn-blue:hover { opacity: 0.92; }
-
-/* Red pill (for “CSV / JSON / TSV”) */
-.pill-red {
-  display: inline-block;
-  background: #a51931;
-  color: #fff;
-  border-radius: 999px;
-  padding: 2px 10px;
-  font-size: 12px;
-  line-height: 18px;
-}
-
-/* File row layout on Import */
-.file-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-/* Tiny checkbox for cards */
-.card-check {
-  transform: scale(1.1);
-  margin-right: 6px;
-}
-
-.hint-under {
-  font-size: 12px;
-  color: #6b7280; /* gray-500 */
-  margin-top: 4px;
-}
-/* --- Thai flag buttons --- */
-.btn-red {
-  background: #a51931;         /* Thai red */
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 6px 12px;
-  cursor: pointer;
-}
-.btn-red:hover { opacity: .9; }
-
-.btn-blue {
-  background: #2d2a4b;         /* Thai blue/navy */
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 6px 12px;
-  cursor: pointer;
-}
-.btn-blue:hover { opacity: .92; }
-
-/* inline hint that matches “( Select at least one item )” */
-.inline-hint {
-  font-size: 12px;
-  color: #6b7280;   /* ~gray-500 */
-  margin-left: 8px;
-  white-space: nowrap;
-}
-
-/* small gap group for toolbar actions */
-.toolbar-row {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* Thai flag brand buttons */
-.btn-red {
-  background: #A51931;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 6px 12px;
-  cursor: pointer;
-}
-.btn-red:hover { opacity: 0.92; }
-
-.btn-blue {
-  background: #2D2A4B;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 6px 12px;
-  cursor: pointer;
-}
-.btn-blue:hover { opacity: 0.92; }
-
-/* Hint under copy/download row */
-.hint-under {
-  font-size: 12px;
-  color: #6b7280; /* ~70% gray */
-  margin-left: 0.5rem; /* small indent so it visually groups with buttons */
-}
-
-/* --- Red & Blue buttons (Thai flag colors) --- */
-.btn-red {
-  background: #A51931; /* Thai flag red */
-  color: #fff;
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-}
-.btn-blue {
-  background: #0F2454; /* Thai flag blue */
-  color: #fff;
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-}
-.btn-disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* --- Dropdown menu for Share --- */
-.dropdown {
-  position: absolute;
-  top: 110%;
-  left: 0;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  min-width: 180px;
-  padding: 6px;
-  box-shadow: 0 6px 24px rgba(0,0,0,.08);
-  z-index: 40;
-}
-.drop-item {
-  display: block;
-  width: 100%;
-  text-align: left;
+/* Link-look button */
+.linklike{
   background: none;
   border: none;
-  padding: 8px 10px;
-  border-radius: 6px;
+  padding: 0;
   cursor: pointer;
-  font-size: 14px;
-}
-.drop-item:hover {
-  background: #f3f4f6;
-}
-.drop-sep {
-  height: 1px;
-  background: #e5e7eb;
-  margin: 4px 2px;
+  color: var(--thai-blue);
+  text-decoration: underline;
 }
 
-/* Match your existing little hint style */
-.hint-under {
+/* Small helper hints */
+.hint-under,
+.inline-hint{
   font-size: 12px;
-  color: #6b7280;
+  color: #6b7280; /* gray-500-ish */
 }
 
-.menu-item { display:block; width:100%; text-align:left; padding:6px 8px; border-radius:6px; }
-.menu-item:hover { background:#f3f4f6; }
-
-/* Font size control */
-.font-size-ctrl {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+/* ───────────────── App Shell: keep footer at bottom ───────────────── */
+.app-shell{
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+.app-main{ flex:1; }
+.site-footer{
+  background:#fff;
+  color:#4b5563;
+  padding:12px;
+  text-align:center;
+  border-top:1px solid #e5e7eb;
 }
 
-.font-size-slider {
-  width: 90px;            /* shorter on desktop */
-}
-
-@media (max-width: 420px) {
-  .font-size-slider { width: 70px; }  /* even shorter on small phones */
-}
-
-/* Language toggle (a / ก) */
-.lang-toggle {
-  display: inline-flex;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.lgbtn {
-  padding: 4px 8px;
-  line-height: 1;
-  background: #fff;
-  color: #111;
-  border: 0;
-  cursor: pointer;
-}
-
-.lgbtn:hover { background: #f3f4f6; }
-
-.lgbtn.active {
-  background: #0f2454;
-  color: #fff;
-}
-/* ===== Thai flag theme (one source of truth) ===== */
-:root {
-  --thai-red:  #A51931;
-  --thai-white:#F4F5F8;
-  --thai-blue: #2D2A4A;
-  --thai-black:#000000;
-
-  /* you already use --base for font sizing */
-}
-
-/* Buttons */
-.btn-red {
-  background: var(--thai-red);
-  color: #fff;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.btn-red:hover { filter: brightness(0.95); }
-
-.btn-blue {
-  background: var(--thai-blue);
-  color: #fff;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.btn-blue:hover { filter: brightness(1.05); }
-
-/* Tiny linklike helper if you need it near blue/red buttons */
-.linklike { color: var(--thai-blue); text-decoration: underline; background: none; border: 0; cursor: pointer; }
-
-/* Top bar aligned right and above banner */
-.topbar {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  background: var(--thai-white);
+/* ───────────────── Top bar (right, above banner) ───────────────── */
+.topbar{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:10px;
+  padding:8px 12px;
+  background:var(--thai-white);
+  border-bottom:1px solid #e5e7eb;
 }
 
 /* Font-size control (small A — slider — big A) */
-.font-size-ctrl { display: inline-flex; align-items: center; gap: 6px; }
-.font-size-slider { width: 90px; }
-@media (max-width: 420px) { .font-size-slider { width: 70px; } }
-
-/* Language tiny toggle: a / ก */
-.lang-toggle {
-  display: inline-flex;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  overflow: hidden;
-  margin-left: 6px;
-}
-.lgbtn { padding: 4px 8px; line-height: 1; background: #fff; color: var(--thai-black); border: 0; cursor: pointer; }
-.lgbtn:hover { background: #f3f4f6; }
-.lgbtn.active { background: var(--thai-blue); color: #fff; }
-
-/* App shell keeps footer at the bottom */
-.app-shell {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-.app-main { flex: 1; } /* pushes footer down */
-.site-footer {
-  background: #fff;
-  color: #4b5563;
-  padding: 12px;
-  text-align: center;
+.font-size-ctrl{ display:inline-flex; align-items:center; gap:6px; }
+.font-size-slider{ width:90px; }
+@media (max-width:420px){
+  .font-size-slider{ width:70px; }
 }
 
-/* (Optional) If InstallPWA renders its own <button>, try to force it red */
-.install-pwa button { background: var(--thai-red) !important; color: #fff !important; border-radius: 10px !important; }
+/* Language toggle (a / ก) */
+.lang-toggle{
+  display:inline-flex;
+  border:1px solid #e5e7eb;
+  border-radius:8px;
+  overflow:hidden;
+}
+.lgbtn{
+  padding:4px 8px;
+  line-height:1;
+  background:#fff;
+  color:var(--thai-black);
+  border:0;
+  cursor:pointer;
+}
+.lgbtn:hover{ background:#f3f4f6; }
+.lgbtn.active{ background:var(--thai-blue); color:#fff; }
+
+/* ───────────────── Banner ───────────────── */
+.banner-wrap{ border-bottom:1px solid #111827; }
+.banner{
+  max-width:1200px;
+  width:100%;
+  display:block;
+  margin:0 auto;
+}
+
+/* ───────────────── Cards & header row ───────────────── */
+.header{ border-bottom:1px solid #e5e7eb; }
+.card{
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:12px;
+}
+
+/* Tiny checkbox for cards */
+.card-check{
+  transform:scale(1.1);
+  margin-right:6px;
+}
+
+/* ───────────────── Buttons (Thai-flag brand) ───────────────── */
+.btn-red{
+  background:var(--thai-red);
+  color:#fff;
+  border:none;
+  border-radius:10px;
+  padding:6px 12px;
+  font-weight:600;
+  cursor:pointer;
+}
+.btn-red:hover{ filter:brightness(0.95); }
+
+.btn-blue{
+  background:var(--thai-blue);
+  color:#fff;
+  border:none;
+  border-radius:10px;
+  padding:6px 12px;
+  font-weight:600;
+  cursor:pointer;
+}
+.btn-blue:hover{ filter:brightness(1.05); }
+
+.btn-disabled{
+  opacity:.5;
+  cursor:not-allowed;
+}
+
+/* Force InstallPWA’s inner <button> red if needed */
+.install-pwa button{
+  background:var(--thai-red) !important;
+  color:#fff !important;
+  border-radius:10px !important;
+}
+
+/* ───────────────── Share dropdown ───────────────── */
+.dropdown{
+  position:absolute;
+  top:110%;
+  left:0;
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:8px;
+  min-width:180px;
+  padding:6px;
+  box-shadow:0 6px 24px rgba(0,0,0,.08);
+  z-index:40;
+}
+.drop-item{
+  display:block;
+  width:100%;
+  text-align:left;
+  background:none;
+  border:none;
+  padding:8px 10px;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:14px;
+}
+.drop-item:hover{ background:#f3f4f6; }
+.drop-sep{
+  height:1px;
+  background:#e5e7eb;
+  margin:4px 2px;
+}
+
+/* ───────────────── QR / Share alignment helpers ───────────────── */
+.qr-center{ display:flex; justify-content:center; align-items:center; }
+.share-center{ display:flex; justify-content:center; }
+.share-row{
+  display:inline-flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+  justify-content:center;
+}
+
+/* ───────────────── Import helpers ───────────────── */
+.file-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+/* Red pill tag for “CSV / JSON / TSV” */
+.pill-red{
+  display:inline-block;
+  background:var(--thai-red);
+  color:#fff;
+  border-radius:999px;
+  padding:2px 10px;
+  font-size:12px;
+  line-height:18px;
+}
+
+/* ───────────────── Toast (Update available) ───────────────── */
+.toast{
+  position:fixed;
+  left:50%;
+  bottom:20px;
+  transform:translateX(-50%);
+  background:#111827;
+  color:#fff;
+  padding:10px 14px;
+  border-radius:10px;
+  box-shadow:0 6px 24px rgba(0,0,0,.25);
+  z-index:50;
+}
+.toast-row{ display:flex; gap:10px; align-items:center; }
+.toast-btn{
+  background:#fff;
+  color:#111827;
+  border:none;
+  border-radius:6px;
+  padding:6px 10px;
+  cursor:pointer;
+}
+.toast-btn.ghost{
+  background:transparent;
+  color:#fff;
+  border:1px solid #fff;
+}
+
+/* ───────────────── Auth card (Login/Signup) ───────────────── */
+.auth-wrap{
+  min-height:70vh;
+  display:grid;
+  place-items:center;
+  padding:16px;
+}
+.auth-card{
+  width:100%;
+  max-width:420px;
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:16px;
+}
+.auth-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:12px;
+}
+.auth-title{
+  font-size:1.125rem;
+  font-weight:600;
+  margin:0;
+}
