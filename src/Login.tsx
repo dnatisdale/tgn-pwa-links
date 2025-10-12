@@ -1,63 +1,104 @@
 // src/Login.tsx
 import React, { useState } from "react";
-import { strings, type Lang } from "./i18n";
 import { auth } from "./firebase";
-import { signInWithEmailAndPassword, signInAnonymously } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInAnonymously,
+} from "firebase/auth";
+import { t, tr, Lang } from "./i18n";
 
-type Props = {
+// save last login ISO to localStorage
+function saveLastLogin() {
+  localStorage.setItem("tgnLastLoginISO", new Date().toISOString());
+}
+
+export default function Login({
+  lang,
+  onLang,
+  onSignedIn,
+}: {
   lang: Lang;
   onLang: (l: Lang) => void;
   onSignedIn: () => void;
-};
-
-export default function Login({ lang, onLang, onSignedIn }: Props) {
-  const t = strings[lang];
+}) {
+  const i = t(lang);
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
-  const [err, setErr] = useState<string | null>(null);
+  const [msg, setMsg] = useState("");
 
-  async function doSignIn(e: React.FormEvent) {
-    e.preventDefault();
-    setErr(null);
+  const go = async (signup: boolean) => {
+    setMsg("");
     try {
-      await signInWithEmailAndPassword(auth, email, pw);
+      if (signup) {
+        await createUserWithEmailAndPassword(auth, email, pw);
+      } else {
+        await signInWithEmailAndPassword(auth, email, pw);
+      }
+      saveLastLogin();
       onSignedIn();
     } catch (e: any) {
-      setErr(e?.message || "Sign-in failed");
+      setMsg(e.message || String(e));
     }
-  }
+  };
 
-  async function doGuest() {
-    setErr(null);
+  const guest = async () => {
+    setMsg("");
     try {
       await signInAnonymously(auth);
+      saveLastLogin();
       onSignedIn();
     } catch (e: any) {
-      setErr(e?.message || "Guest sign-in failed");
+      setMsg(e.message || String(e));
     }
-  }
+  };
 
   return (
-    <div className="max-w-sm mx-auto">
-      <h1 className="text-2xl font-bold mb-3">{t.signIn}</h1>
+    <div className="max-w-sm mx-auto p-4">
+      <header className="flex items-center justify-between mb-4 header pb-3">
+        {/* Logo only (no title) */}
+        <img className="logo" src="/logo-square-1024.png" alt="logo" style={{ height: 44 }} />
+        <div className="text-sm">
+          <button className="linklike" onClick={() => onLang(lang === "en" ? "th" : "en")}>
+            {lang === "en" ? "ไทย" : "EN"}
+          </button>
+        </div>
+      </header>
 
-      <div className="flex items-center gap-2 mb-3">
-        <button className="btn btn-white" onClick={() => onLang(lang === "en" ? "th" : "en")}>a/ก</button>
+      <h1 className="text-xl font-semibold mb-3">{i.loginTitle}</h1>
+
+      <label className="block text-sm mb-1">{i.email}</label>
+      <input
+        className="w-full border rounded px-2 py-1 mb-3"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+
+      <label className="block text-sm mb-1">{i.password}</label>
+      <input
+        className="w-full border rounded px-2 py-1 mb-3"
+        type="password"
+        value={pw}
+        onChange={(e) => setPw(e.target.value)}
+      />
+
+      <div className="flex gap-4 justify-center">
+        <button className="linklike" onClick={() => go(false)}>
+          {i.signIn}
+        </button>
+        <button className="linklike" onClick={() => go(true)}>
+          {i.signUp}
+        </button>
       </div>
 
-      <form onSubmit={doSignIn} className="space-y-3">
-        <div>
-          <input className="w-full border rounded-lg h-9 px-2" type="email" placeholder="email" value={email} onChange={e=>setEmail(e.target.value)} />
-        </div>
-        <div>
-          <input className="w-full border rounded-lg h-9 px-2" type="password" placeholder="password" value={pw} onChange={e=>setPw(e.target.value)} />
-        </div>
-        <div className="flex gap-2">
-          <button className="btn btn-red" type="submit">{t.saveSignIn}</button>
-          <button className="btn btn-white" type="button" onClick={doGuest}>{t.continueGuest}</button>
-        </div>
-        {err && <div className="text-sm text-red-700">{err}</div>}
-      </form>
+      {/* Centered red 'Continue as guest' */}
+      <div className="mt-4 flex justify-center">
+        <button className="btn-red" onClick={guest}>
+          Continue as guest
+        </button>
+      </div>
+
+      {msg && <div className="mt-3 text-sm text-red-600 whitespace-pre-wrap">{msg}</div>}
     </div>
   );
 }

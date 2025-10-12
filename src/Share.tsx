@@ -1,24 +1,102 @@
 // src/Share.tsx
 import React, { useState } from "react";
+import { t, tr, Lang } from "./i18n";
 
-type Props = {
+/**
+ * Props:
+ *  - url: the https link to share
+ *  - title: optional title for message
+ *  - qrCanvasId: if provided, we will try to attach the QR image (from <canvas id=...>)
+ */
+export default function Share({
+  url,
+  title = "Thai Good News",
+  qrCanvasId,
+}: {
   url: string;
   title?: string;
   qrCanvasId?: string;
-  /** Button style: 'red' | 'blue' | 'link' */
-  variant?: "red" | "blue" | "link";
-};
+}) {
+  const [busy, setBusy] = useState(false);
 
-export default function Share({
-  url,
-  title = "Link",
-  qrCanvasId,
-  variant = "red",
-}: Props) {
-  const [open, setOpen] = useState(false);
+  async function getQrFile(): Promise<File | null> {
+    if (!qrCanvasId) return null;
+    const canvas = document.getElementById(qrCanvasId) as HTMLCanvasElement | null;
+    if (!canvas) return null;
 
-  const btnClass =
-    variant === "red" ? "btn-red" : variant === "blue" ? "btn-blue" : "linklike";
+    // make a ~300–400 KB PNG by controlling pixel size and quality (canvas.toBlob controls quality for JPEG; PNG is lossless)
+    // if your canvas is large, we can downscale to keep file smaller:
+    const MAX = 512;
+    const w = canvas.width, h = canvas.height;
+    const scale = Math.min(1, MAX / Math.max(w, h));
+    let outCanvas = canvas;
+
+    if (scale < 1) {
+      const c = document.createElement("canvas");
+      c.width = Math.round(w * scale);
+      c.height = Math.round(h * scale);
+      const ctx = c.getContext("2d");
+      if (!ctx) return null;
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(canvas, 0, 0, c.width, c.height);
+      outCanvas = c;
+    }
+
+    const blob: Blob | null = await new Promise((res) =>
+      outCanvas.toBlob((b) => res(b), "image/png")
+    );
+    if (!blob) return null;
+
+    // Use URL-friendly name (use hostname if possible)
+    let namePart = "qr";
+    try {
+      const u = new URL(url);
+      namePart = (u.hostname + u.pathname).replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "");
+      if (!namePart) namePart = "qr";
+    } catch {
+      // ignore
+    }
+
+    return new File([blob], `${namePart}.png`, { type: "image/png" });
+  }
+
+  async function doWebShare() {
+    setBusy(true);
+    try {
+      const files: File[] = [];
+      const qr = await getQrFile();
+      if (qr) files.push(qr);
+
+      const shareData: ShareData = {
+        title,
+        text: `${title}\n${url}`,
+        url, // some platforms use this field too
+        files: files.length ? files : undefined,
+      };
+
+      // Can this platform share files?
+      // If files present, we must check navigator.canShare({files})
+      if (shareData.files && navigator.canShare && !navigator.canShare({ files: shareData.files })) {
+        // fall back without files
+        delete shareData.files;
+      }
+
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback to mailto (no attachments allowed via mailto)
+        const subject = encodeURIComponent(title);
+        const body = encodeURIComponent(`${title}\n${url}`);
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+      }
+    } catch {
+      // swallow user-cancel or errors
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function copyLink() {
     try {
@@ -29,122 +107,38 @@ export default function Share({
     }
   }
 
-  async function shareNative() {
-    if (navigator.share) {
-      try {
-        await navigator.share({ title, text: title, url });
-      } catch {
-        /* user canceled or unsupported payload */
-      }
-    } else {
-      copyLink();
-    }
-  }
-
-  // Build a data URL for the QR image if present
-  function qrDataUrl(): string | null {
-    if (!qrCanvasId) return null;
-    const el = document.getElementById(qrCanvasId) as HTMLCanvasElement | null;
-    if (!el) return null;
-    try {
-      return el.toDataURL("image/png");
-    } catch {
-      return null;
-    }
-  }
-
-  function mailtoHref() {
-    const subject = encodeURIComponent(title);
-    const body = encodeURIComponent(`${title}\n${url}`);
-    return `mailto:?subject=${subject}&body=${body}`;
-  }
-
   return (
-    <div className="relative inline-block">
-      <button className={btnClass} onClick={() => setOpen((v) => !v)}>
-        Share
-      </button>
+    <div className="share-center">
+      <div className="share-row">
+        {/* Red Share button (dropdown look optional; we just do a single button now) */}
+        <button className="btn-red" onClick={doWebShare} disabled={busy} title="Share QR + link">
+          {busy ? "Sharing…" : "Share"}
+        </button>
 
-      {open && (
-        <div
-          className="menu"
-          style={{
-            position: "absolute",
-            zIndex: 20,
-            marginTop: 8,
-            background: "#fff",
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
-            minWidth: 220,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
-            padding: 8,
-          }}
-          onMouseLeave={() => setOpen(false)}
-        >
-          <button className="menu-item" onClick={shareNative}>
-            System Share (best)
-          </button>
+        {/* Fallback helpers visible always */}
+        <button className="linklike" onClick={copyLink} title="Copy link">
+          Copy link
+        </button>
 
-          <a className="menu-item" href={mailtoHref()} onClick={() => setOpen(false)}>
-            Email link
-          </a>
-
+        {/* Let user download the QR image (so they can attach to email manually) */}
+        {qrCanvasId && (
           <button
-            className="menu-item"
-            onClick={() => {
-              window.open(
-                `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-                "_blank",
-                "noopener,noreferrer"
-              );
-              setOpen(false);
+            className="linklike"
+            onClick={async () => {
+              const qr = await getQrFile();
+              if (!qr) return;
+              const a = document.createElement("a");
+              a.href = URL.createObjectURL(qr);
+              a.download = qr.name;
+              a.click();
+              URL.revokeObjectURL(a.href);
             }}
+            title="Download QR image"
           >
-            Facebook
+            Download QR image
           </button>
-
-          <button
-            className="menu-item"
-            onClick={() => {
-              window.open(
-                `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`,
-                "_blank",
-                "noopener,noreferrer"
-              );
-              setOpen(false);
-            }}
-          >
-            X / Twitter
-          </button>
-
-          <button className="menu-item" onClick={copyLink}>
-            Copy link
-          </button>
-
-          {/* Attach QR image in a new tab (user can save from there) */}
-          {qrCanvasId && (
-            <button
-              className="menu-item"
-              onClick={() => {
-                const data = qrDataUrl();
-                if (!data) {
-                  alert("QR image not available");
-                  return;
-                }
-                const w = window.open();
-                if (w) {
-                  w.document.write(
-                    `<img src="${data}" alt="QR" style="max-width:100%;height:auto"/>`
-                  );
-                }
-                setOpen(false);
-              }}
-            >
-              Open QR image
-            </button>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

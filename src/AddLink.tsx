@@ -1,65 +1,138 @@
 // src/AddLink.tsx
 import React, { useState } from "react";
-import { strings, type Lang } from "./i18n";
+import { t, tr, Lang } from "./i18n";
+import { auth, db } from "./firebase";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+
+// helper: ensure https (auto-add if missing), reject http and invalid
+function toHttpsOrNull(input: string): string | null {
+  const raw = input.trim();
+  if (!raw) return null;
+
+  // If user typed http:// — reject (only secure allowed)
+  if (/^http:\/\//i.test(raw)) return null;
+
+  // If no scheme, prepend https://
+  const withScheme = /^(https?:)?\/\//i.test(raw) ? raw : `https://${raw}`;
+
+  try {
+    const u = new URL(withScheme);
+    if (u.protocol !== "https:") return null;
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
 
 type Props = { lang: Lang };
 
-function toHttps(raw: string): string {
-  let u = (raw || "").trim();
-  if (!u) return "";
-  if (u.startsWith("//")) u = "https:" + u;
-  if (u.startsWith("http://")) u = "https://" + u.slice(7);
-  if (!/^https?:\/\//i.test(u)) u = "https://" + u;
-  // force https only
-  u = u.replace(/^http:\/\//i, "https://");
-  return u;
-}
-
 export default function AddLink({ lang }: Props) {
-  const t = strings[lang];
-  const [name, setName] = useState("");
-  const [language, setLanguage] = useState(lang === "th" ? "th" : "en");
-  const [url, setUrl] = useState("");
-  const [msg, setMsg] = useState<string | null>(null);
+  const i = t(lang);
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const fixed = toHttps(url);
+  const [name, setName] = useState("");
+  const [language, setLanguage] = useState("");
+  const [url, setUrl] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const onSave = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("Please sign in first.");
+      return;
+    }
+
+    const nameTrim = name.trim();
+    const languageTrim = language.trim();
+    const urlHttps = toHttpsOrNull(url);
+
+    if (!nameTrim) {
+      alert(lang === "th" ? "กรุณากรอกชื่อเรื่อง" : "Please enter a name");
+      return;
+    }
+    if (!urlHttps) {
+      alert(
+        lang === "th"
+          ? "ลิงก์ต้องเป็น https:// เท่านั้น หรือพิมพ์โดยไม่ต้องใส่ https://"
+          : "URL must be secure (https). You can type it with or without https://"
+      );
+      return;
+    }
+
     try {
-      const ok = fixed.startsWith("https://");
-      if (!ok) throw new Error("invalid");
-      // TODO: save to Firestore later; for now, just show success
-      setMsg(`Saved: ${name} → ${fixed}`);
-      setUrl(fixed);
-    } catch {
-      setMsg(t.tipInvalid);
+      setSaving(true);
+      await addDoc(collection(db, "users", user.uid, "links"), {
+        name: nameTrim,
+        language: languageTrim,
+        url: urlHttps,
+        createdAt: serverTimestamp(),
+      });
+      // clear form
+      setName("");
+      setLanguage("");
+      setUrl("");
+      alert(lang === "th" ? "บันทึกแล้ว" : "Saved");
+    } catch (e: any) {
+      alert(e?.message || String(e));
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
-    <div className="max-w-lg">
-      <h1 className="text-2xl font-bold mb-3">{t.add}</h1>
-      <form onSubmit={submit} className="space-y-3">
-        <div>
-          <label className="block text-sm mb-1">{t.name}</label>
-          <input className="w-full border rounded-lg h-9 px-2" value={name} onChange={e=>setName(e.target.value)} />
-        </div>
-        <div>
-          <label className="block text-sm mb-1">{t.language}</label>
-          <select className="w-full border rounded-lg h-9 px-2" value={language} onChange={e=>setLanguage(e.target.value)}>
-            <option value="en">English</option>
-            <option value="th">ไทย</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm mb-1">{t.url}</label>
-          <input className="w-full border rounded-lg h-9 px-2" value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://example.com" />
-        </div>
-        <div className="flex gap-2">
-          <button className="btn btn-blue" type="submit">{t.saveSignIn}</button>
-        </div>
-        {msg && <div className="text-sm opacity-80">{msg}</div>}
-      </form>
+    <div className="max-w-md">
+      {/* Name */}
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder={i.name}               // label inside the field
+        aria-label={i.name}
+        className="w-full border rounded px-3 py-2 mb-3"
+      />
+
+      {/* Language */}
+      <input
+        value={language}
+        onChange={(e) => setLanguage(e.target.value)}
+        placeholder={i.language}           // label inside the field
+        aria-label={i.language}
+        className="w-full border rounded px-3 py-2 mb-3"
+      />
+
+      {/* URL (https optional; we’ll normalize and enforce https) */}
+      <input
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        placeholder={i.url}                // uses your new “https optional” text
+        aria-label={i.url}
+        className="w-full border rounded px-3 py-2 mb-1"
+        inputMode="url"
+        autoCapitalize="off"
+        autoCorrect="off"
+        spellCheck={false}
+      />
+      <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 12 }}>
+        {lang === "th"
+          ? "จะเพิ่ม https:// ให้อัตโนมัติ และไม่อนุญาต http://"
+          : "We’ll add https:// for you automatically; http:// is not allowed."}
+      </div>
+
+      {/* Thai-flag RED Save button */}
+      <button
+        onClick={onSave}
+        disabled={saving}
+        className="btn-red"
+        style={{
+          background: "#a51931",   // Thai red
+          color: "#fff",
+          borderRadius: 8,
+          padding: "10px 16px",
+          fontWeight: 600,
+          border: "none",
+          cursor: "pointer",
+        }}
+      >
+        {saving ? (lang === "th" ? "กำลังบันทึก…" : "Saving…") : i.save}
+      </button>
     </div>
   );
 }

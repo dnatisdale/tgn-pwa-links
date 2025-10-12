@@ -1,44 +1,47 @@
 // src/InstallPWA.tsx
-import React from "react";
-import { strings, type Lang } from "./i18n";
+import React, { useEffect, useState } from "react";
+import { t, tr, Lang } from "./i18n";
 
-type Props = { lang: Lang; className?: string };
+declare global {
+  interface Window {
+    __tgnUpdateSW?: (reload?: boolean) => void;
+  }
+}
 
-export default function InstallPWA({ lang, className }: Props) {
-  const [promptEvent, setPromptEvent] = React.useState<any | null>(null);
-  const t = strings[lang];
+export default function InstallPWA() {
+  const [promptEvent, setPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
+  const [canInstall, setCanInstall] = useState(false);
 
-  // Capture the install prompt event once, and clean up on unmount.
-  React.useEffect(() => {
-    const handler = (e: any) => {
+  useEffect(() => {
+    const onBeforeInstall = (e: any) => {
       e.preventDefault();
       setPromptEvent(e);
+      setCanInstall(true);
     };
-    window.addEventListener("beforeinstallprompt", handler as any);
-    return () => window.removeEventListener("beforeinstallprompt", handler as any);
+    window.addEventListener("beforeinstallprompt", onBeforeInstall as any);
+    return () => window.removeEventListener("beforeinstallprompt", onBeforeInstall as any);
   }, []);
 
-  const onClick = async () => {
+  async function doInstall() {
     try {
       if (promptEvent) {
         await promptEvent.prompt();
-        // After prompting, the event can't be used again.
+        await promptEvent.userChoice;
         setPromptEvent(null);
-        return;
+        setCanInstall(false);
+      } else if ((navigator as any).standalone === false) {
+        alert("On iPhone/iPad: Share → Add to Home Screen");
+      } else {
+        alert("If your browser supports it, an install prompt will show here.");
       }
-      // Fallback: if no prompt available, try updating SW if exposed.
-      const update = (window as any).__tgnUpdateSW;
-      if (typeof update === "function") {
-        update();
-      }
-    } catch {
-      // keep it silent for now (simplest behavior)
+    } catch (e: any) {
+      alert(e?.message || String(e));
     }
-  };
+  }
 
   return (
-    <button className={`btn ${className ?? "btn-red"}`} onClick={onClick}>
-      {t.installPwa}
+    <button className="btn-red" onClick={doInstall} aria-label="Install app">
+      Install
     </button>
   );
 }
