@@ -378,6 +378,14 @@ export default function App() {
               </div>
             </div>
 
+<button className="linklike" onClick={copySelectedLinks}>
+  Copy link
+</button>
+
+{selectedIds.length === 0 && (
+  <div className="hint-under">( Select at least one item )</div>
+)}
+
             {!filtered.length && (
               <div className="text-sm text-gray-600 mb-3">{i.empty}</div>
             )}
