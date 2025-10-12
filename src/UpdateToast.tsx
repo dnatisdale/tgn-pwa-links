@@ -17,6 +17,16 @@ export default function UpdateToast() {
     fn?.(true); // update SW + reload page
   };
 
+
+
+// inside the toast render
+<div>
+  New version available — refresh
+  {typeof __APP_VERSION__ !== "undefined" && __APP_VERSION__ ? ` (${__APP_VERSION__})` : ""}
+</div>
+
+
+
   return (
     <div className="toast">
       <div className="toast-row">
