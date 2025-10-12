@@ -58,7 +58,7 @@ export const t = (l: Lang) => ({
   sharePWA: l === "th" ? "แชร์แอป" : "Share PWA",
   install: l === "th" ? "ติดตั้ง" : "Install",
   selectAtLeastOne:
-    l === "th" ? "( เลือกอย่างน้อยหนึ่งรายการ )" : "( Select at least one item )",
+    l === "th" ? "( เลือกอย่างน้อยหนึ่งรายการ )" : "(Select at least one item)",
   downloadQrCards:
     l === "th" ? "ดาวน์โหลดการ์ด QR" : "Download QR cards",
   importFormatsNote:
