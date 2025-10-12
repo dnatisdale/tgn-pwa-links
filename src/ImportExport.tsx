@@ -187,9 +187,8 @@ export default function ImportExport({ lang }: Props) {
 
   return (
     <section>
-      {/* Title = Import (no / Export) */}
-      <h2 className="text-lg font-semibold mb-2">{i.exportTitle}</h2>
-
+      {/* Title = Import (no “/ Export”) */}
+      <h2 className="text-lg font-semibold mb-2">Import</h2>
 
       {/* Top row: Choose file (Thai red) + formats box (70% gray) */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
@@ -251,8 +250,10 @@ export default function ImportExport({ lang }: Props) {
 
       {/* File name + status */}
       {file && (
-        <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
-          {lang === "th" ? "ไฟล์:" : "File:"} {file.name}
+        <div style={{ fontSize: 12, color: "#6b7280", marginTop: 8 }}>
+          {lang === "th"
+            ? "เคล็ดลับ: ถ้า URL (https) ว่าง เราปฏิเสธ (http หรือไม่ถูกต้อง) กรุณาแก้ไฟล์แล้วนำเข้าใหม่"
+            : "Tip: if URL (https) is empty, we rejected it (http or invalid). Fix your file and re-import."}
         </div>
       )}
 
