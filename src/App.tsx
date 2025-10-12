@@ -72,6 +72,7 @@ export default function App() {
   const [route, setRoute] = useState<string>(window.location.hash || "#/browse");
   const isBrowse = route.startsWith("#/browse");
   const isAdd = route.startsWith("#/add");
+  const isAbout = route.startsWith("#/about");
   const isImport = route.startsWith("#/import");
   const isExport = route.startsWith("#/export");
 
