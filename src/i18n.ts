@@ -1,5 +1,14 @@
 // src/i18n.ts
-export type Lang = "en" | "th";
+ export type Lang = 'en' | 'th';
+
+ export const strings: Record<Lang, Record<string, string>> = {
+   // … your EN / TH entries …
+ };
+
+ // Legacy-friendly helper so callers can do: tr(lang, 'export')
+ export function tr(lang: Lang, key: string): string {
+   return strings[lang]?.[key] ?? key;
+ }
 
 export const t = (l: Lang) => ({
   appTitle:        l === "th" ? "ข่าวประเสริฐภาษาไทย" : "Thai Good News",
