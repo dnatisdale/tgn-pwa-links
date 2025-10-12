@@ -1,5 +1,7 @@
 // src/App.tsx
 import React, { useEffect, useMemo, useState } from "react";
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './firebase';
 import { t, Lang } from "./i18n";
 import Login from "./Login";
 import QR from "./QR";
@@ -309,11 +311,11 @@ return (
   );
 };
 
-  // Auth subscribe
-  useEffect(() => {
-    const off = onAuthStateChanged(auth, (u) => setUser(u));
-    return () => off();
-  }, []);
+// Auth subscribe — must be at top-level of the component
+useEffect(() => {
+  const off = onAuthStateChanged(auth, (u) => setUser(u as any));
+  return () => off();
+}, []);
 
   // Last login from localStorage (set in your Login.tsx)
   useEffect(() => {
@@ -537,8 +539,10 @@ return (
         </button>
       </div>
 
-     {/* ===== MAIN CONTENT (single renderPage) ===== */}
-      <main className="app-main p-3 max-w-5xl mx-auto">{renderPage()}</main>
+      {/* MAIN (single source of truth) */}
+      <main className="app-main p-3 max-w-5xl mx-auto">
+        {renderPage()}
+      </main>
 
         {/* Banner */}
         <div className="banner-wrap">
@@ -546,13 +550,13 @@ return (
         </div>
 
         {/* Nav */}
-        <nav className="p-3 flex flex-wrap gap-4 text-sm">
-          <a className="underline" href="#/browse">{i.browse}</a>
-          <a className="underline" href="#/add">{i.add}</a>
-          <a className="underline" href="#/import">Import</a>
-          <a className="underline" href="#/export">Export</a>
-          <a className="underline" href="#/about">About</a>
-        </nav>
+     <nav className="p-3 flex flex-wrap gap-2 text-sm">
+  <a className="btn btn-white" href="#/browse">{i.browse}</a>
+  <a className="btn btn-white" href="#/add">{i.add}</a>
+  <a className="btn btn-white" href="#/import">{i.import}</a>
+  <a className="btn btn-white" href="#/export">{i.export}</a>
+  <a className="btn btn-white" href="#/about">{i.about}</a>
+</nav>
 
         {/* (Removed duplicate inline routing; renderPage handles all routes) */}
       </main>
