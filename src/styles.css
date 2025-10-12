@@ -233,3 +233,42 @@ button.linklike {
 
 .menu-item { display:block; width:100%; text-align:left; padding:6px 8px; border-radius:6px; }
 .menu-item:hover { background:#f3f4f6; }
+
+/* Font size control */
+.font-size-ctrl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.font-size-slider {
+  width: 90px;            /* shorter on desktop */
+}
+
+@media (max-width: 420px) {
+  .font-size-slider { width: 70px; }  /* even shorter on small phones */
+}
+
+/* Language toggle (a / ก) */
+.lang-toggle {
+  display: inline-flex;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.lgbtn {
+  padding: 4px 8px;
+  line-height: 1;
+  background: #fff;
+  color: #111;
+  border: 0;
+  cursor: pointer;
+}
+
+.lgbtn:hover { background: #f3f4f6; }
+
+.lgbtn.active {
+  background: #0f2454;
+  color: #fff;
+}

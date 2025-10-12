@@ -10,11 +10,26 @@ import InstallPWA from "./InstallPWA";
 import UpdateToast from "./UpdateToast";
 import IOSInstallHint from "./IOSInstallHint";
 import Share from "./Share";
-
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { collection, onSnapshot, orderBy, query, doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { toHttpsOrNull as toHttps } from "./url";
+
+function SmallAIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
+      <path d="M6 16l2-8h1.5l2 8h-1.5l-.35-1.5H7.85L7.5 16H6zm2.2-3h1.6l-.8-3.3L8.2 13z" fill="#111" />
+    </svg>
+  );
+}
+
+function BigAIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden>
+      <path d="M10 18l3-12h2l3 12h-2l-.5-2H12.5l-.5 2h-2zm2.6-4h3l-1.5-6-1.5 6z" fill="#111" />
+    </svg>
+  );
+}
 
 type Row = { id: string; name: string; language: string; url: string };
 
@@ -275,55 +290,51 @@ export default function App() {
       </div>
 
       {/* Header */}
-      <header className="header p-3 flex items-center justify-between">
-        <div />
-        <div className="flex items-center gap-4 text-sm">
-          {/* Install (red) */}
-          <button
-            className="btn-red"
-            onClick={() => {
-              // InstallPWA has the actual logic; we expose a click target here.
-              // If your InstallPWA has its own button, you can hide it and call a global fn instead.
-              const el = document.getElementById("tgn-install-trigger");
-              el?.dispatchEvent(new Event("click", { bubbles: true }));
-            }}
-          >
-            {lang === "th" ? "ติดตั้ง" : "Install"}
-          </button>
+     <div className="flex items-center gap-3 text-sm">
+  {/* Install button (unchanged) */}
+  <InstallPWA />
 
-          {/* Share PWA (blue) */}
-          <button className="btn-blue" onClick={sharePWA}>
-            {lang === "th" ? "แชร์แอป" : "Share PWA"}
-          </button>
+  {/* Font size control: small A — slider — big A */}
+  <span className="font-size-ctrl" title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}>
+    <SmallAIcon />
+    <input
+      type="range"
+      min={14}
+      max={22}
+      step={1}
+      value={textPx}
+      onChange={(e) => setTextPx(parseInt(e.target.value, 10))}
+      aria-label={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
+      className="font-size-slider"
+    />
+    <BigAIcon />
+  </span>
 
-          {/* Font-size slider */}
-          <span
-            title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
-            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-          >
-            {AAA}
-            <input
-              type="range"
-              min={14}
-              max={22}
-              step={1}
-              value={textPx}
-              onChange={(e) => setTextPx(parseInt(e.target.value, 10))}
-              aria-label={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
-              style={{ width: 110 }}
-            />
-            <span style={{ fontSize: 12, color: "#6b7280" }}>{textPx}px</span>
-          </span>
+  {/* Language toggle: a / ก */}
+  <div className="lang-toggle" aria-label="Language">
+    <button
+      className={lang === "en" ? "lgbtn active" : "lgbtn"}
+      onClick={() => setLang("en")}
+      title="English"
+      aria-label="English"
+    >
+      a
+    </button>
+    <button
+      className={lang === "th" ? "lgbtn active" : "lgbtn"}
+      onClick={() => setLang("th")}
+      title="ไทย"
+      aria-label="Thai"
+    >
+      ก
+    </button>
+  </div>
 
-          {/* Lang + Logout */}
-          <button className="linklike" onClick={() => setLang(lang === "en" ? "th" : "en")}>
-            {lang === "en" ? "ไทย" : "EN"}
-          </button>
-          <button className="linklike" onClick={() => signOut(auth)}>
-            {i.logout}
-          </button>
-        </div>
-      </header>
+  {/* Logout */}
+  <button className="linklike" onClick={() => signOut(auth)}>
+    {i.logout}
+  </button>
+</div>
 
       {/* Hidden real install component (kept for functionality) */}
       <div style={{ display: "none" }}>
