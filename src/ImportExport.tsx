@@ -193,6 +193,9 @@ export default function ImportExport({ lang }: { lang: Lang }) {
       <div className="flex flex-wrap items-center gap-12 mb-4">
         <div className="flex items-center gap-10">
           {/* Choose file (button only) */}
+          {/* Right next to your Choose File UI */}
+<span style={{ fontSize: 12, color: "#6b7280" }}>(CSV / TSV / JSON)</span>
+
           <label className="linklike" style={{ cursor: "pointer" }}>
             {labelChoose}
             <input
