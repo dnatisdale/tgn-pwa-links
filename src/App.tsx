@@ -334,16 +334,20 @@ export default function App() {
             <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
             <AddLink lang={lang} />
           </section>
-        ) : isImport ? (
-          <section>
-            <h2 className="text-lg font-semibold mb-2">{i.importTitle}</h2>
-            <ImportExport lang={lang} />
-          </section>
-        ) : isExport ? (
-          <section>
-            <h2 className="text-lg font-semibold mb-2">{i.exportTitle}</h2>
-            <ExportPage lang={lang} rows={rows} />
-          </section>
+          {isImport ? (
+  <section>
+    <h2 className="text-lg font-semibold mb-2">Import</h2>
+    <ImportExport lang={lang} />
+  </section>
+) : /* ...other routes... */ null}
+
+{isExport ? (
+  <section>
+    <h2 className="text-lg font-semibold mb-2">Export</h2>
+    <ExportPage lang={lang} rows={rows} />
+  </section>
+) : null}
+
         ) : isAbout ? (
           <section>
             <h2 className="text-lg font-semibold mb-3">About</h2>
