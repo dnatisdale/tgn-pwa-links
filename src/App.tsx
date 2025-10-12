@@ -42,6 +42,46 @@ function formatPacific(iso?: string) {
   return `${dateStr} — ${timeStr} PT`;
 }
 
+function toggleSelect(id: string, on: boolean) {
+  setSelectedIds(prev => {
+    const next = new Set(prev);
+    if (on) next.add(id);
+    else next.delete(id);
+    return next;
+  });
+}
+
+function selectAllVisible() {
+  setSelectedIds(new Set(filtered.map(r => r.id)));
+}
+
+function clearSelection() {
+  setSelectedIds(new Set());
+}
+
+async function copySelectedLinks() {
+  // Collect URLs for selected rows
+  const urls = filtered
+    .filter(r => selectedIds.has(r.id))
+    .map(r => r.url)
+    .filter(Boolean);
+
+  if (urls.length === 0) {
+    // Optional: quick feedback
+    try { await navigator.clipboard.writeText(""); } catch {}
+    alert("Select at least one item");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(urls.join("\n"));
+    // Optional: feedback
+    // alert(`Copied ${urls.length} link(s)`);
+  } catch (e) {
+    alert("Could not copy to clipboard");
+  }
+}
+
 export default function App() {
   // language
   const [lang, setLang] = useState<Lang>("en");
