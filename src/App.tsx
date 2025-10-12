@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { t, Lang } from "./i18n";
 import Login from "./Login";
 import QR from "./QR";
-import About from "./About";
+import About from "./About";nav
 import AddLink from "./AddLink";
 import ImportExport from "./ImportExport";
 import ExportPage from "./Export";
@@ -292,12 +292,14 @@ export default function App() {
 </header>
 
       {/* Nav */}
-      <nav className="p-3 flex flex-wrap gap-4 text-sm">
-        <a className="underline" href="#/browse">{i.browse}</a>
-        <a className="underline" href="#/add">{i.add}</a>
-        <a className="underline" href="#/import">{i.importExport}</a>
-        <a className="underline" href="#/export">Export</a>
-      </nav>
+     <nav className="p-3 flex flex-wrap gap-4 text-sm">
+  <a className="underline" href="#/browse">{i.browse}</a>
+  <a className="underline" href="#/add">{i.add}</a>
+  <a className="underline" href="#/import">Import</a>
+  <a className="underline" href="#/export">Export</a>
+  <a className="underline" href="#/about">About</a>
+</nav>
+
 
       {/* Main */}
       <main className="p-3 max-w-5xl mx-auto">
