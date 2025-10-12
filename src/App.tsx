@@ -28,6 +28,7 @@ type Row = { id: string; name: string; language: string; url: string };
 
 function formatPacific(iso?: string) {
   const date = iso ? new Date(iso) : new Date();
+  const isExport = route.startsWith("#/export");
   const dateStr = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Los_Angeles", year: "numeric", month: "long", day: "numeric",
   }).format(date);
