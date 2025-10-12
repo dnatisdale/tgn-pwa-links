@@ -4,9 +4,14 @@ import { auth } from "./firebase";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInAnonymously,            // <-- add this
+  signInAnonymously,
 } from "firebase/auth";
 import { t, Lang } from "./i18n";
+
+// save last login ISO to localStorage
+function saveLastLogin() {
+  localStorage.setItem("tgnLastLoginISO", new Date().toISOString());
+}
 
 export default function Login({
   lang,
@@ -30,6 +35,18 @@ export default function Login({
       } else {
         await signInWithEmailAndPassword(auth, email, pw);
       }
+      saveLastLogin();
+      onSignedIn();
+    } catch (e: any) {
+      setMsg(e.message || String(e));
+    }
+  };
+
+  const guest = async () => {
+    setMsg("");
+    try {
+      await signInAnonymously(auth);
+      saveLastLogin();
       onSignedIn();
     } catch (e: any) {
       setMsg(e.message || String(e));
@@ -39,7 +56,7 @@ export default function Login({
   return (
     <div className="max-w-sm mx-auto p-4">
       <header className="flex items-center justify-between mb-4 header pb-3">
-        {/* Logo only (no 'Thai Good News' title, per your earlier request) */}
+        {/* Logo only (no title) */}
         <img className="logo" src="/logo-square-1024.png" alt="logo" style={{ height: 44 }} />
         <div className="text-sm">
           <button className="linklike" onClick={() => onLang(lang === "en" ? "th" : "en")}>
@@ -65,7 +82,7 @@ export default function Login({
         onChange={(e) => setPw(e.target.value)}
       />
 
-      <div className="flex gap-4">
+      <div className="flex gap-4 justify-center">
         <button className="linklike" onClick={() => go(false)}>
           {i.signIn}
         </button>
@@ -74,23 +91,12 @@ export default function Login({
         </button>
       </div>
 
-      {/* ---- Add this block (Guest sign-in) ---- */}
-      <div className="mt-3">
-        <button
-          className="linklike"
-          onClick={async () => {
-            try {
-              await signInAnonymously(auth);
-              onSignedIn();
-            } catch (e: any) {
-              alert(e.message || String(e));
-            }
-          }}
-        >
+      {/* Centered red 'Continue as guest' */}
+      <div className="mt-4 flex justify-center">
+        <button className="btn-red" onClick={guest}>
           Continue as guest
         </button>
       </div>
-      {/* --------------------------------------- */}
 
       {msg && <div className="mt-3 text-sm text-red-600 whitespace-pre-wrap">{msg}</div>}
     </div>
