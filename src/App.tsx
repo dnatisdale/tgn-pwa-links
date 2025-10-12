@@ -114,6 +114,13 @@ export default function App() {
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
+  useEffect(() => {
+  const saved = localStorage.getItem("lang") as Lang | null;
+  if (saved) setLang(saved);
+  else setLang(navigator.language.startsWith("th") ? "th" : "en");
+}, []);
+useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
+
   // filtered list
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
