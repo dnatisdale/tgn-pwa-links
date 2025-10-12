@@ -1,27 +1,26 @@
 // src/App.tsx
 import React, { useEffect, useMemo, useState } from "react";
 
-// PAGES / PARTS that already exist in your project
-import InstallPWA from "./InstallPWA"; // accepts { lang, className? }
-import UpdateToast from "./UpdateToast";
-import ExportPage from "./Export";
-import ImportOnly from "./ImportExport";
-import AddLink from "./AddLink";
-import Login from "./Login";
-import Share from "./Share";
+// Allow build constants even if types aren’t injected yet
+declare const __APP_VERSION__: string | undefined;
+declare const __BUILD_DATE__: string | undefined;
+declare const __BUILD_TIME__: string | undefined;
+
+// PAGES / PARTS
+import InstallPWA from "./InstallPWA"; // expects { lang, className? }
+import UpdateToast from "./UpdateToast"; // no props (we'll just show/hide)
+import ExportPage from "./Export";       // expects { lang, rows }
+import ImportOnly from "./ImportExport"; // expects { lang }
+import AddLink from "./AddLink";         // expects { lang }
+import Login from "./Login";             // expects { lang, onLang, onSignedIn }
+import Share from "./Share";             // use with NO props to match your file
 
 // i18n
 import { strings, type Lang } from "./i18n";
 
 // Firebase
 import { auth } from "./firebase";
-import {
-  onAuthStateChanged,
-  signInAnonymously,
-  signInWithEmailAndPassword,
-  signOut,
-  type User,
-} from "firebase/auth";
+import { onAuthStateChanged, type User } from "firebase/auth";
 
 // Types
 export type RecordItem = { id: string; name: string; language: string; url: string };
@@ -37,7 +36,7 @@ function useHashRoute() {
   return hash;
 }
 
-// Format Pacific time (24h, no seconds) for footer fallback
+// Format Pacific time (24h, no seconds) for footer
 function formatPacific(dt = new Date()) {
   const fmt = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Los_Angeles",
@@ -59,12 +58,12 @@ export default function App() {
   // auth
   const [user, setUser] = useState<User | null>(null);
 
-  // demo data (local array just to keep UI happy)
+  // local data just to render cards (swap to Firestore later)
   const [data] = useState<RecordItem[]>([]);
   const [selection, setSelection] = useState<string[]>([]);
   const route = useHashRoute();
 
-  // SW update toast
+  // SW update toast on/off
   const [showUpdate, setShowUpdate] = useState(false);
 
   // last login (footer fallback)
@@ -99,7 +98,7 @@ export default function App() {
     return () => window.removeEventListener("tgn-sw-update", handler as any);
   }, []);
 
-  // ===== Handy helpers
+  // helpers
   const go = (hash: string) => {
     window.location.hash = hash;
   };
@@ -108,51 +107,29 @@ export default function App() {
     setSelection((s) => (checked ? [...s, id] : s.filter((x) => x !== id)));
   };
 
-  // selected pairs for Share (name + url)
-  const selectedPairs = data
-    .filter((d) => selection.includes(d.id))
-    .map(({ name, url }) => ({ name, url }));
-
-  // ===== Login actions (these are used by <Login/> internally if your file supports it; if not, they’re harmless)
-  async function handleSignIn(email: string, pw: string) {
-    await signInWithEmailAndPassword(auth, email, pw);
-    go("#/browse");
-  }
-  async function handleGuest() {
-    await signInAnonymously(auth);
-    go("#/browse");
-  }
-  async function handleSignOut() {
-    await signOut(auth);
-    go("#/browse");
-  }
-
-  // ===== Page renderer (simple and single)
+  // Page renderer
   function renderPage() {
     if (route.startsWith("#/login")) {
-      // IMPORTANT: Your Login.tsx Props did not include setLang earlier.
-      // So we pass ONLY what’s safe: { lang }.
-      // If your Login supports callbacks, wire them inside Login.tsx itself.
       return (
         <div className="max-w-lg mx-auto">
-          <Login lang={lang} />
+          <Login
+            lang={lang}
+            onLang={(l: Lang) => setLang(l)}
+            onSignedIn={() => go("#/browse")}
+          />
         </div>
       );
     }
 
     if (route.startsWith("#/add")) {
-      // Your AddLink.tsx Props did not include onAdd earlier — so pass only { lang }.
       return <AddLink lang={lang} />;
     }
 
     if (route.startsWith("#/import")) {
-      // Your ImportExport.tsx (Import-only) likely just needs { lang }.
-      // We’re not passing onBatchAdd here.
       return <ImportOnly lang={lang} />;
     }
 
     if (route.startsWith("#/export")) {
-      // Export.tsx expects { lang, rows }, not { data }.
       return <ExportPage lang={lang} rows={data} />;
     }
 
@@ -160,12 +137,12 @@ export default function App() {
       return (
         <div className="prose">
           <h1>{t.about}</h1>
-          <p>TGN minimal PWA. You can edit this text in <code>App.tsx</code>.</p>
+          <p>
+            Thai Good News (TGN) minimal PWA. Edit this text in <code>App.tsx</code>.
+          </p>
           <div className="mt-3">
             {user ? (
-              <button className="btn btn-ghost" onClick={handleSignOut}>
-                Sign out
-              </button>
+              <span className="text-sm opacity-70">Signed in</span>
             ) : (
               <a className="btn btn-blue" href="#/login">
                 {t.signIn}
@@ -200,14 +177,9 @@ export default function App() {
                 {r.url}
               </a>
 
-              {/* Simple Edit/Delete placeholders (you can wire Firestore later) */}
               <div className="mt-2 flex gap-2">
-                <button className="btn btn-white" onClick={() => alert("Edit later (wire Firestore)")}>
-                  {t.edit}
-                </button>
-                <button className="btn btn-white" onClick={() => alert("Delete later (wire Firestore)")}>
-                  {t.delete}
-                </button>
+                <button className="btn btn-white">{t.edit}</button>
+                <button className="btn btn-white">{t.delete}</button>
               </div>
             </div>
           ))}
@@ -232,8 +204,8 @@ export default function App() {
             {/* Install PWA (Thai red by className) */}
             <InstallPWA className="btn-red" lang={lang} />
 
-            {/* Share — your Share.tsx Props likely DO NOT include lang; so we pass only { selection } */}
-            <Share selection={selectedPairs} />
+            {/* Share — use with NO props to match your current Props */}
+            <Share />
 
             {/* Font size: A – slider – A (no px readout) */}
             <div className="flex items-center gap-2">
@@ -284,26 +256,16 @@ export default function App() {
       {/* FOOTER — Always visible, centered */}
       <footer className="footer">
         <div className="max-w-5xl mx-auto px-4 text-center py-2">
-          {/* Show version if defined, else show last login */}
           <div className="text-xs">
-            {typeof __APP_VERSION__ !== "undefined" && __APP_VERSION__
-              ? `${__APP_VERSION__ || "v0.0.0"} • ${typeof __BUILD_DATE__ !== "undefined" ? __BUILD_DATE__ : ""} ${
-                  typeof __BUILD_TIME__ !== "undefined" ? __BUILD_TIME__ : ""
-                }`
+            {__APP_VERSION__
+              ? `${__APP_VERSION__ || "v0.0.0"} • ${__BUILD_DATE__ ?? ""} ${__BUILD_TIME__ ?? ""}`
               : `Last login • ${lastLogin || formatPacific()}`}
           </div>
         </div>
       </footer>
 
-      {/* UPDATE TOAST */}
-      {showUpdate && (
-        <UpdateToast
-          onRefresh={() => {
-            (window as any).__tgnUpdateSW?.();
-          }}
-          onSkip={() => setShowUpdate(false)}
-        />
-      )}
+      {/* UPDATE TOAST — show only, no props */}
+      {showUpdate && <UpdateToast />}
     </div>
   );
 }
