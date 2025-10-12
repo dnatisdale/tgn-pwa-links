@@ -333,35 +333,34 @@ export default function App() {
             </div>
 
             {/* Bulk actions (outside the cards) */}
-            <div className="flex flex-wrap items-center gap-10 mb-3">
-              <label className="text-sm">
-                <input
-                  type="checkbox"
-                  className="card-check"
-                  checked={allSelected}
-                  onChange={() => (allSelected ? clearSelection() : selectAllVisible())}
-                />
-                Select all ({selectedRows.length}/{filtered.length})
-              </label>
+            {/* Bulk actions */}
+<div className="flex flex-col gap-2 mb-3">
+  <div className="flex flex-wrap items-center gap-6">
+    <div className="text-sm">
+      <button className="linklike" onClick={selectAllVisible}>Select all</button>
+      &nbsp;|&nbsp;
+      <button className="linklike" onClick={clearSelection}>Clear</button>
+      &nbsp;(<span>{selectedRows.length}</span>/<span>{filtered.length}</span>)
+    </div>
 
-              <div className="flex items-center gap-8">
-                {/* One Share for the first selected */}
-                <div>
-                  <Share
-                    url={firstSelected ? firstSelected.url : ""}
-                    title={firstSelected ? firstSelected.name || "Link" : ""}
-                    qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
-                  />
-                  {!firstSelected && (
-                    <span className="text-xs" style={{ color: "#6b7280", marginLeft: 8 }}>
-                      Select at least one item
-                    </span>
-                  )}
-                </div>
+    <div className="flex items-center gap-3">
+      <button className="linklike" onClick={copySelectedLinks}>Copy link</button>
+      <button
+        className="btn-blue"
+        onClick={batchDownload}
+        disabled={!selectedRows.length}
+        title="Download QR cards for selected items"
+      >
+        Download QR cards
+      </button>
+    </div>
+  </div>
 
-                <button className="btn-blue" onClick={batchDownload} disabled={!selectedRows.length}>
-                  Download QR cards ({selectedRows.length})
-                </button>
+  {/* The hint sits directly under the Copy/Download row and aligns visually */}
+  {selectedRows.length === 0 && (
+    <div className="hint-under">( Select at least one item )</div>
+  )}
+</div>
 
                 <div>
                   <button className="linklike" onClick={copySelectedLinks}>
