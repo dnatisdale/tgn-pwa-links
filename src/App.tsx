@@ -4,12 +4,9 @@ import { t, Lang } from "./i18n";
 import Login from "./Login";
 import QR from "./QR";
 import AddLink from "./AddLink";
-import ShareMenu from "./ShareMenu";
 import ImportExport from "./ImportExport";
 import ExportPage from "./Export";
 import InstallPWA from "./InstallPWA";
-import SharePWAButton from "./SharePWAButton";
-
 import UpdateToast from "./UpdateToast";
 import IOSInstallHint from "./IOSInstallHint";
 import Share from "./Share";
@@ -46,7 +43,7 @@ function formatPacific(iso?: string) {
 }
 
 export default function App() {
-  // language
+  // i18n
   const [lang, setLang] = useState<Lang>("en");
   const i = t(lang);
 
@@ -56,11 +53,9 @@ export default function App() {
   // data
   const [rows, setRows] = useState<Row[]>([]);
 
-  // search/filter
+  // UI state
   const [q, setQ] = useState("");
   const [filterThai, setFilterThai] = useState(false);
-
-  // UI state
   const [textPx, setTextPx] = useState<number>(16);
   const [qrEnlargedId, setQrEnlargedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -74,19 +69,19 @@ export default function App() {
   const isExport = route.startsWith("#/export");
   const isAbout = route.startsWith("#/about");
 
-  // auth subscribe
+  // subscribe auth
   useEffect(() => {
     const off = onAuthStateChanged(auth, (u) => setUser(u));
     return () => off();
   }, []);
 
-  // last login stamp
+  // last login stamp from Login.tsx
   useEffect(() => {
     const iso = localStorage.getItem("tgnLastLoginISO");
     if (iso) setLastLogin(iso);
   }, []);
 
-  // data subscribe
+  // subscribe data
   useEffect(() => {
     if (!user) {
       setRows([]);
@@ -98,10 +93,6 @@ export default function App() {
       const list: Row[] = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
       setRows(list);
       // prune selection for removed docs
-      // Selected items
-const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-const selectedRows = filtered.filter((r) => selectedIds.has(r.id));
-
       setSelectedIds((prev) => {
         const next = new Set<string>();
         for (const id of prev) if (list.find((r) => r.id === id)) next.add(id);
@@ -111,105 +102,21 @@ const selectedRows = filtered.filter((r) => selectedIds.has(r.id));
     return () => off();
   }, [user]);
 
-  // apply text size
+  // apply base text size
   useEffect(() => {
     document.documentElement.style.setProperty("--base", `${textPx}px`);
   }, [textPx]);
 
-  // hash change listener
+  // router
   useEffect(() => {
     const onHash = () => setRoute(window.location.hash || "#/browse");
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
-
-  <div className="flex items-center gap-8">
-  {/* Share all selected links */}
-  <ShareMenu
-    urls={selectedRows.map(r => r.url)}
-    title="Thai Good News"
-    label="Share"
-  />
-
-  {/* (Optional) keep your Download QR cards button right next to it */}
-  <button className="btn-blue" onClick={batchDownload} disabled={!selectedRows.length}>
-    Download QR cards ({selectedRows.length})
-  </button>
-
-  {/* (Optional) your Copy all links action */}
-  <button
-    className="linklike"
-    onClick={async () => {
-      const urls = selectedRows.map((r) => r.url);
-      if (!urls.length) {
-        alert("Select at least one");
-        return;
-      }
-      try {
-        await navigator.clipboard.writeText(urls.join("\n"));
-        alert("All selected links copied");
-      } catch {
-        alert("Copy failed");
-      }
-    }}
-  >
-    Copy all links
-  </button>
-</div>
-
-  // filter + search
-  const filtered = useMemo(() =>  {
+  // filtered list
+  const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    // --- Selection state & helpers (must be above any JSX that uses them) ---
-/** derive visible ids */
-const allVisibleIds = filtered.map(r => r.id);
-/** rows that are currently selected */
-const selectedRows = filtered.filter(r => selectedIds.has(r.id));
-/** first selected row (used by Share) */
-const firstSelected = selectedRows[0];
-/** is every visible row selected? */
-const allSelected =
-  allVisibleIds.length > 0 && allVisibleIds.every(id => selectedIds.has(id));
-
-/** toggle a single row id */
-const toggleSelect = (id: string) =>
-  setSelectedIds(prev => {
-    const next = new Set(prev);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    return next;
-  });
-
-/** toggle all visible rows */
-const toggleSelectAll = () =>
-  setSelectedIds(prev => {
-    const next = new Set(prev);
-    if (allSelected) {
-      // unselect all visible
-      for (const id of allVisibleIds) next.delete(id);
-    } else {
-      // select all visible
-      for (const id of allVisibleIds) next.add(id);
-    }
-    return next;
-  });
-
-/** utility: copy all selected links */
-const copySelectedLinks = async () => {
-  const urls = selectedRows.map(r => r.url).filter(Boolean);
-  if (!urls.length) {
-    alert("Select at least one item");
-    return;
-  }
-  try {
-    await navigator.clipboard.writeText(urls.join("\n"));
-    alert("Copied links");
-  } catch {
-    alert("Copy failed");
-  }
-};
-
     let out = rows.filter((row) => {
       if (
         filterThai &&
@@ -232,36 +139,27 @@ const copySelectedLinks = async () => {
     return out;
   }, [rows, q, filterThai]);
 
+  // gate: login
   if (!user) {
     return <Login lang={lang} onLang={setLang} onSignedIn={() => {}} />;
   }
 
-  // selection helpers (inside component so they see state)
+  // --- Selection helpers (declare BEFORE JSX uses them) ---
   const allVisibleIds = filtered.map((r) => r.id);
-  const allSelected =
-    allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
   const selectedRows = filtered.filter((r) => selectedIds.has(r.id));
   const firstSelected = selectedRows[0];
+  const allSelected =
+    allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
 
-// --- Batch download QR cards (needs to be above JSX that calls it) ---
-const batchDownload = async () => {
-  if (!selectedRows.length) {
-    alert("Select at least one");
-    return;
-  }
-  const mod = await import("./qrCard");
-  for (const r of selectedRows) {
-    await mod.downloadQrCard({
-      qrCanvasId: `qr-${r.id}`,
-      url: r.url,
-      name: r.name,
-      title: "Thai Good News",
+  const toggleSelect = (id: string) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
     });
-  }
-};
 
-
-  const toggleSelectAll = () => {
+  const toggleSelectAll = () =>
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (allSelected) {
@@ -271,19 +169,8 @@ const batchDownload = async () => {
       }
       return next;
     });
-  };
-
-  const toggleSelect = (id: string, on: boolean) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (on) next.add(id);
-      else next.delete(id);
-      return next;
-    });
-  };
 
   const clearSelection = () => setSelectedIds(new Set());
-  const selectAllVisible = () => setSelectedIds(new Set(allVisibleIds));
 
   const copySelectedLinks = async () => {
     const urls = selectedRows.map((r) => r.url).filter(Boolean);
@@ -293,13 +180,18 @@ const batchDownload = async () => {
     }
     try {
       await navigator.clipboard.writeText(urls.join("\n"));
-      // alert("Copied!");
+      alert("Copied links");
     } catch {
-      alert("Could not copy to clipboard");
+      alert("Copy failed");
     }
   };
 
- 
+  // batch download QR cards (selected)
+  const batchDownload = async () => {
+    if (!selectedRows.length) {
+      alert("Select at least one");
+      return;
+    }
     const mod = await import("./qrCard");
     for (const r of selectedRows) {
       await mod.downloadQrCard({
@@ -311,6 +203,7 @@ const batchDownload = async () => {
     }
   };
 
+  // per-card edit/delete (https only)
   const editRow = async (r: Row) => {
     const name = prompt("Name", r.name ?? "");
     if (name === null) return;
@@ -347,6 +240,7 @@ const batchDownload = async () => {
     }
   };
 
+  // AAA icon
   const AAA = (
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
       <rect x="2" y="2" width="20" height="20" rx="4" fill="#0f2454" />
@@ -357,7 +251,7 @@ const batchDownload = async () => {
     </svg>
   );
 
-  // -------- build the page (no nested ternaries) --------
+  // --------- page switcher (avoid nested crazy ternaries) ----------
   let page: React.ReactNode;
 
   if (isAdd) {
@@ -370,27 +264,30 @@ const batchDownload = async () => {
   } else if (isImport) {
     page = (
       <section>
+        <h2 className="text-lg font-semibold mb-2">{i.importExport /* title without /Export */}</h2>
         <ImportExport lang={lang} />
       </section>
     );
   } else if (isExport) {
     page = (
       <section>
-        <ExportPage lang={lang} rows={rows} />
+        {/* Export page already says “Export” inside; not “Import/Export” */}
+        <ExportPage lang={lang} />
       </section>
     );
   } else if (isAbout) {
     page = (
-      <section className="max-w-3xl">
-        <h2 className="text-lg font-semibold mb-2">About</h2>
-        <p className="text-sm">
-          Thai Good News helps you save, share, and print language resources. QR codes
-          and sharing use the original HTTPS link you add. Import CSV/TSV/JSON on the
-          Import page; export on the Export page.
+      <section className="prose max-w-2xl">
+        <h2>About</h2>
+        <p>Thai Good News — shareable links with QR codes for Thai &amp; English audiences.</p>
+        <p>
+          Need Thai strings polished? I can help translate / localize the labels
+          and messages—just send me your preferred wording.
         </p>
       </section>
     );
-  } else if (isBrowse) {
+  } else {
+    // Browse
     page = (
       <section>
         {/* Search + filter */}
@@ -401,6 +298,16 @@ const batchDownload = async () => {
             placeholder={i.searchPlaceholder}
             className="border rounded px-2 py-1 min-w-[260px]"
           />
+
+          {/* bulk select helpers */}
+          <div className="text-sm">
+            <button className="linklike" onClick={toggleSelectAll}>
+              {allSelected ? "Clear all" : "Select all"}
+            </button>
+            &nbsp;|&nbsp;
+            <button className="linklike" onClick={clearSelection}>Clear</button>
+          </div>
+
           <div className="text-sm">
             <button className="linklike" onClick={() => setFilterThai(false)}>
               {i.filterAll}
@@ -412,25 +319,37 @@ const batchDownload = async () => {
           </div>
         </div>
 
-        {/* Simple bulk toolbar */}
+        {/* Global toolbar (Share + Copy + Download) */}
         <div className="flex flex-wrap items-center gap-8 mb-3">
-          <div className="text-sm">
-            <button className="linklike" onClick={selectAllVisible}>Select all</button>
-            &nbsp;|&nbsp;
-            <button className="linklike" onClick={clearSelection}>Clear</button>
+          {/* Share (first selected) */}
+          <div className="flex items-center gap-2">
+            <Share
+              url={firstSelected ? firstSelected.url : ""}
+              title={firstSelected ? firstSelected.name || "Link" : ""}
+              qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
+            />
+            {!firstSelected && (
+              <span className="hint-under">( Select at least one item )</span>
+            )}
           </div>
 
-          <div className="flex items-center gap-6">
-            <button className="linklike" onClick={copySelectedLinks}>
-              Copy link
-            </button>
-            {selectedIds.size === 0 && (
+          {/* Copy links + hint */}
+          <div className="flex items-center gap-2">
+            <button className="linklike" onClick={copySelectedLinks}>Copy link</button>
+            {selectedRows.length === 0 && (
               <div className="hint-under">( Select at least one item )</div>
             )}
-            <button className="btn-blue" onClick={batchDownload} disabled={!selectedRows.length}>
-              Download QR cards ({selectedRows.length})
-            </button>
           </div>
+
+          {/* Download QR cards */}
+          <button
+            className="btn-blue"
+            onClick={batchDownload}
+            disabled={!selectedRows.length}
+            title="Download QR card images for selected items"
+          >
+            Download QR cards ({selectedRows.length})
+          </button>
         </div>
 
         {!filtered.length && (
@@ -442,6 +361,7 @@ const batchDownload = async () => {
           {filtered.map((row) => {
             const enlarged = qrEnlargedId === row.id;
             const qrSize = enlarged ? 320 : 192;
+            const checked = selectedIds.has(row.id);
             return (
               <li key={row.id} className="card">
                 {/* Selection checkbox */}
@@ -449,8 +369,8 @@ const batchDownload = async () => {
                   <label className="text-sm">
                     <input
                       type="checkbox"
-                      checked={selectedIds.has(row.id)}
-                      onChange={(e) => toggleSelect(row.id, e.target.checked)}
+                      checked={checked}
+                      onChange={() => toggleSelect(row.id)}
                       style={{ marginRight: 8 }}
                     />
                     Select
@@ -464,7 +384,9 @@ const batchDownload = async () => {
                 <div
                   role="button"
                   onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
-                  onKeyDown={(e) => { if (e.key === "Enter") setQrEnlargedId(enlarged ? null : row.id); }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") setQrEnlargedId(enlarged ? null : row.id);
+                  }}
                   tabIndex={0}
                   title={enlarged ? "Shrink QR" : "Enlarge QR"}
                   style={{ cursor: "pointer" }}
@@ -480,8 +402,12 @@ const batchDownload = async () => {
 
                 {/* Per-card actions */}
                 <div className="mt-2 flex justify-center gap-6 text-sm">
-                  <button className="linklike" onClick={() => editRow(row)}>Edit</button>
-                  <button className="linklike" onClick={() => deleteRow(row)}>Delete</button>
+                  <button className="linklike" onClick={() => editRow(row)}>
+                    Edit
+                  </button>
+                  <button className="linklike" onClick={() => deleteRow(row)}>
+                    Delete
+                  </button>
                 </div>
               </li>
             );
@@ -489,10 +415,36 @@ const batchDownload = async () => {
         </ul>
       </section>
     );
-  } else {
-    // default safeguard
-    page = <section />;
   }
+
+  // header AAA icon
+  const AAAIcon = (
+    <span
+      title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
+      style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+    >
+      {(
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+          <rect x="2" y="2" width="20" height="20" rx="4" fill="#0f2454" />
+          <path
+            d="M6 16l2.2-8h1.6L12 16h-1.6l-.4-1.6H8l-.4 1.6H6zm2.3-3h1.7l-.9-3.7L8.3 13zM13 16l2.2-8h1.6L19 16h-1.6l-.4-1.6h-2.1L14.6 16H13zm2.3-3h1.7l-.9-3.7-.8 3.7z"
+            fill="#fff"
+          />
+        </svg>
+      )}
+      <input
+        type="range"
+        min={14}
+        max={22}
+        step={1}
+        value={textPx}
+        onChange={(e) => setTextPx(parseInt(e.target.value, 10))}
+        aria-label={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
+        style={{ width: 110 }}
+      />
+      <span style={{ fontSize: 12, color: "#6b7280" }}>{textPx}px</span>
+    </span>
+  );
 
   return (
     <div>
@@ -505,39 +457,23 @@ const batchDownload = async () => {
       <header className="header p-3 flex items-center justify-between">
         <div />
         <div className="flex items-center gap-4 text-sm">
-          <InstallPWA />
-          <header className="header p-3 flex items-center justify-between">
-  <div />
-  <div className="flex items-center gap-4 text-sm">
-    {/* Install (red button per your request) */}
-    <InstallPWA />
-
-    {/* Share PWA (blue by default). If you want red, pass color="red". */}
-    <SharePWAButton title="Thai Good News" color="blue" />
-
-    {/* ...rest of your controls (AAA slider, lang toggle, logout) ... */}
-  </div>
-</header>
-
-          <span title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"} style={{display:"inline-flex",alignItems:"center",gap:6}}>
-            {/* AAA icon + slider */}
-            {AAA}
-            <input
-              type="range"
-              min={14}
-              max={22}
-              step={1}
-              value={textPx}
-              onChange={(e) => setTextPx(parseInt(e.target.value, 10))}
-              aria-label={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
-              style={{ width: 110 }}
-            />
-            <span style={{ fontSize: 12, color: "#6b7280" }}>{textPx}px</span>
-          </span>
-          <button className="linklike" onClick={() => setLang(lang === "en" ? "th" : "en")}>
-            {lang === "en" ? "ไทย" : "EN"}
+          {/* Red Install and Blue Share PWA buttons (styled via your CSS utility classes) */}
+          <button className="btn-red">
+            <InstallPWA />
           </button>
-          <button className="linklike" onClick={() => signOut(auth)}>{i.logout}</button>
+          <a className="btn-blue" href={location.origin} target="_blank" rel="noreferrer">
+            Share PWA
+          </a>
+
+          {AAAIcon}
+
+          {/* Language + Logout */}
+          <button className="linklike" onClick={() => setLang(lang === "en" ? "th" : "en")}>
+            {lang === "EN" || lang === "en" ? "ไทย" : "EN"}
+          </button>
+          <button className="linklike" onClick={() => signOut(auth)}>
+            {i.logout}
+          </button>
         </div>
       </header>
 
