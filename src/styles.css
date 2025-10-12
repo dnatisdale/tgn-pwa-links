@@ -109,3 +109,38 @@ button.linklike {
   color: #6b7280; /* gray-500 */
   margin-top: 4px;
 }
+/* --- Thai flag buttons --- */
+.btn-red {
+  background: #a51931;         /* Thai red */
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.btn-red:hover { opacity: .9; }
+
+.btn-blue {
+  background: #2d2a4b;         /* Thai blue/navy */
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.btn-blue:hover { opacity: .92; }
+
+/* inline hint that matches “( Select at least one item )” */
+.inline-hint {
+  font-size: 12px;
+  color: #6b7280;   /* ~gray-500 */
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+/* small gap group for toolbar actions */
+.toolbar-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
