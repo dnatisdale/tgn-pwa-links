@@ -1,230 +1,114 @@
-// src/ImportExport.tsx
-import React from "react";
+// src/ImportExport.tsx (Import-only page)
+import React, { useState } from "react";
 import { strings, type Lang } from "./i18n";
 
-export type Row = { name: string; language: string; url: string };
+type Props = { lang: Lang };
 
-type Props = {
-  lang: Lang;
-  // Optional callback. App.tsx currently doesn’t pass it, which is fine.
-  onBatchAdd?: (rows: Row[]) => void;
-};
+type Row = { name: string; language: string; url: string };
 
-type ParsedRow = Row & { _valid: boolean; _reason?: string };
-
-function toHttps(raw: string): string {
-  if (!raw) return "";
-  let s = raw.trim();
-
-  // Auto-fix common cases
-  if (s.startsWith("//")) s = "https:" + s;
-  if (s.startsWith("http://")) s = "https://" + s.slice("http://".length);
-  if (!/^https?:\/\//i.test(s)) s = "https://" + s;
-
-  return s;
-}
-
-function isValidHttpsUrl(u: string): boolean {
-  try {
-    const x = new URL(u);
-    return x.protocol === "https:" && !!x.host;
-  } catch {
-    return false;
-  }
+function toHttps(u: string): string {
+  let x = (u || "").trim();
+  if (!x) return "";
+  if (x.startsWith("//")) x = "https:" + x;
+  if (x.startsWith("http://")) x = "https://" + x.slice(7);
+  if (!/^https?:\/\//i.test(x)) x = "https://" + x;
+  return x.replace(/^http:\/\//i, "https://");
 }
 
 function parseCSVorTSV(text: string): Row[] {
-  // Simple parser: split lines; if any tab found, use TSV, else CSV.
-  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-  if (lines.length === 0) return [];
-  const delim = lines.some((l) => l.includes("\t")) ? "\t" : ",";
-
-  // detect header
-  const header = lines[0].toLowerCase();
-  const hasHeader =
-    header.includes("name") && (header.includes("language") || header.includes("lang")) && header.includes("url");
-
-  const start = hasHeader ? 1 : 0;
+  const lines = text.split(/\r?\n/).filter(Boolean);
   const rows: Row[] = [];
-  for (let i = start; i < lines.length; i++) {
-    const parts = lines[i].split(delim).map((p) => p.trim());
-    if (parts.length < 3) continue;
-    const [name, language, url] = parts;
+  for (const line of lines) {
+    const parts = line.split(/[\t,]/); // simple: split by tab or comma
+    const [name = "", language = "", url = ""] = parts.map(s => s.trim());
     rows.push({ name, language, url });
   }
   return rows;
 }
 
-function parseJSON(text: string): Row[] {
-  try {
-    const v = JSON.parse(text);
-    if (Array.isArray(v)) {
-      return v
-        .map((x) => ({
-          name: String(x.name ?? "").trim(),
-          language: String(x.language ?? "").trim(),
-          url: String(x.url ?? "").trim(),
-        }))
-        .filter((r) => r.name || r.language || r.url);
-    }
-    return [];
-  } catch {
-    return [];
+async function parseFile(file: File): Promise<Row[]> {
+  const text = await file.text();
+  const lower = file.name.toLowerCase();
+  if (lower.endsWith(".json")) {
+    const arr = JSON.parse(text);
+    return Array.isArray(arr) ? (arr as Row[]) : [];
   }
-}
-
-function parseByFilename(name: string, text: string): Row[] {
-  const lower = name.toLowerCase();
-  if (lower.endsWith(".json")) return parseJSON(text);
+  if (lower.endsWith(".csv")) return parseCSVorTSV(text);
   if (lower.endsWith(".tsv")) return parseCSVorTSV(text);
-  // default to CSV/TSV parser
+  // default: try CSV/TSV anyway
   return parseCSVorTSV(text);
 }
 
-export default function ImportOnly({ lang, onBatchAdd }: Props) {
+export default function ImportOnly({ lang }: Props) {
   const t = strings[lang];
-  const [fileName, setFileName] = React.useState<string>("");
-  const [rawText, setRawText] = React.useState<string>("");
-  const [parsed, setParsed] = React.useState<ParsedRow[]>([]);
-  const [msg, setMsg] = React.useState<string>("");
+  const [rows, setRows] = useState<Row[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  function validateRows(rows: Row[]): ParsedRow[] {
-    const out: ParsedRow[] = [];
-    for (const r of rows) {
-      const fixedUrl = toHttps(r.url);
-      if (!fixedUrl || !isValidHttpsUrl(fixedUrl)) {
-        out.push({
-          name: (r.name || "").trim(),
-          language: (r.language || "").trim(),
-          url: fixedUrl || r.url,
-          _valid: false,
-          _reason: t.tipInvalid,
-        });
-      } else {
-        out.push({
-          name: (r.name || "").trim(),
-          language: (r.language || "").trim(),
-          url: fixedUrl,
-          _valid: true,
-        });
-      }
-    }
-    return out;
-  }
-
-  function handleTextChange(text: string, nameHint = "data.csv") {
-    setRawText(text);
-    const baseRows = parseByFilename(nameHint, text);
-    const validated = validateRows(baseRows);
-    setParsed(validated);
-  }
-
-  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
-    setFileName(f.name);
-    const reader = new FileReader();
-    reader.onload = () => {
-      const text = String(reader.result || "");
-      handleTextChange(text, f.name);
-    };
-    reader.readAsText(f);
+    setError(null);
+    try {
+      const parsed = await parseFile(f);
+      // validate + autofix https
+      const cleaned: Row[] = parsed.map(r => ({
+        name: r.name?.trim() || "",
+        language: r.language?.trim() || "",
+        url: toHttps(r.url || "")
+      })).filter(r => r.name && r.url && r.url.startsWith("https://"));
+
+      // if any rejected, show the tip
+      if (cleaned.length === 0) {
+        setError(t.tipInvalid);
+      }
+      setRows(cleaned);
+    } catch {
+      setError(t.tipInvalid);
+    }
   }
 
   function doImport() {
-    const good = parsed.filter((r) => r._valid).map(({ name, language, url }) => ({ name, language, url }));
-    if (good.length === 0) {
-      setMsg(t.tipInvalid);
-      return;
-    }
-    if (onBatchAdd) {
-      onBatchAdd(good);
-    } else {
-      setMsg(`Imported ${good.length} row(s). (Wire Firestore later.)`);
-    }
+    // TODO: batch add to Firestore; for now just log
+    console.log("IMPORT", rows);
+    alert(`Imported ${rows.length} rows`);
   }
 
-  const goodCount = parsed.filter((r) => r._valid).length;
-  const badCount = parsed.length - goodCount;
-
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">{t.import}</h1>
+    <div>
+      <h1 className="text-2xl font-bold mb-3">{t.import}</h1>
 
-      {/* File chooser */}
-      <div className="flex items-center gap-2">
-        <input
-          type="file"
-          accept=".csv,.tsv,.json,text/csv,text/tab-separated-values,application/json"
-          onChange={handleFile}
-        />
-        <span className="text-sm opacity-70">{fileName || ""}</span>
-      </div>
+      <input type="file" accept=".csv,.tsv,.json,text/csv,text/tab-separated-values,application/json" onChange={onPick} />
 
-      {/* OR paste area */}
-      <div className="space-y-2">
-        <div className="text-sm opacity-80">Paste CSV / TSV / JSON:</div>
-        <textarea
-          className="w-full min-h-[160px] p-2 border rounded"
-          placeholder={`name,language,url
-John,en,https://example.com`}
-          value={rawText}
-          onChange={(e) => handleTextChange(e.target.value)}
-        />
-      </div>
+      {error && <div className="mt-3 text-sm text-red-700">{error}</div>}
 
-      {/* Summary */}
-      {parsed.length > 0 && (
-        <div className="text-sm">
-          <span className="font-semibold">{parsed.length}</span> rows •{" "}
-          <span className="text-green-700 font-semibold">{goodCount}</span> valid •{" "}
-          <span className="text-red-700 font-semibold">{badCount}</span> invalid
-        </div>
-      )}
-
-      {/* Preview table (compact) */}
-      {parsed.length > 0 && (
-        <div className="overflow-auto border rounded">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="text-left p-2">#</th>
-                <th className="text-left p-2">{strings.en.name}</th>
-                <th className="text-left p-2">{strings.en.language}</th>
-                <th className="text-left p-2">{strings.en.url}</th>
-                <th className="text-left p-2">OK?</th>
-              </tr>
-            </thead>
-            <tbody>
-              {parsed.slice(0, 200).map((r, i) => (
-                <tr key={i} className={r._valid ? "" : "bg-red-50"}>
-                  <td className="p-2">{i + 1}</td>
-                  <td className="p-2 break-words">{r.name}</td>
-                  <td className="p-2 break-words">{r.language}</td>
-                  <td className="p-2 break-words">
-                    <a className="underline" href={r.url} target="_blank" rel="noreferrer">
-                      {r.url}
-                    </a>
-                    {!r._valid && <div className="text-red-700 text-xs mt-1">{t.tipInvalid}</div>}
-                  </td>
-                  <td className="p-2">{r._valid ? "✓" : "✗"}</td>
+      {rows.length > 0 && (
+        <div className="mt-4">
+          <div className="text-sm opacity-70 mb-2">Preview ({rows.length})</div>
+          <div className="border rounded-lg overflow-auto" style={{maxHeight: 300}}>
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="text-left p-2">Name</th>
+                  <th className="text-left p-2">Language</th>
+                  <th className="text-left p-2">URL</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((r, i) => (
+                  <tr key={i} className="border-t">
+                    <td className="p-2">{r.name}</td>
+                    <td className="p-2">{r.language}</td>
+                    <td className="p-2 break-all">{r.url}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-3">
+            <button className="btn btn-blue" onClick={doImport}>Add {rows.length}</button>
+          </div>
         </div>
       )}
-
-      {/* Import button + message */}
-      <div className="flex items-center gap-3">
-        <button className="btn btn-blue" disabled={parsed.length === 0} onClick={doImport}>
-          {t.import}
-        </button>
-        {msg && <div className="text-sm">{msg}</div>}
-      </div>
-
-      {/* Required tip text on failure scenarios */}
-      <div className="text-xs opacity-80">{t.tipInvalid}</div>
     </div>
   );
 }

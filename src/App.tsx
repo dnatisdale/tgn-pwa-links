@@ -13,7 +13,7 @@ import ExportPage from "./Export";       // expects { lang, rows }
 import ImportOnly from "./ImportExport"; // expects { lang }
 import AddLink from "./AddLink";         // expects { lang }
 import Login from "./Login";             // expects { lang, onLang, onSignedIn }
-import Share from "./Share";             // use with NO props to match your file
+import Share from "./Share";             // if you have it
 
 // i18n
 import { strings, type Lang } from "./i18n";
@@ -22,10 +22,8 @@ import { strings, type Lang } from "./i18n";
 import { auth } from "./firebase";
 import { onAuthStateChanged, type User } from "firebase/auth";
 
-// Types
 export type RecordItem = { id: string; name: string; language: string; url: string };
 
-// Tiny hash router
 function useHashRoute() {
   const [hash, setHash] = useState(window.location.hash || "#/browse");
   useEffect(() => {
@@ -36,7 +34,6 @@ function useHashRoute() {
   return hash;
 }
 
-// Format Pacific time (24h, no seconds) for footer
 function formatPacific(dt = new Date()) {
   const fmt = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Los_Angeles",
@@ -51,27 +48,19 @@ function formatPacific(dt = new Date()) {
 }
 
 export default function App() {
-  // language + text bundle
   const [lang, setLang] = useState<Lang>("en");
   const t = useMemo(() => strings[lang], [lang]);
 
-  // auth
   const [user, setUser] = useState<User | null>(null);
-
-  // local data just to render cards (swap to Firestore later)
   const [data] = useState<RecordItem[]>([]);
   const [selection, setSelection] = useState<string[]>([]);
   const route = useHashRoute();
 
-  // SW update toast on/off
   const [showUpdate, setShowUpdate] = useState(false);
-
-  // last login (footer fallback)
   const [lastLogin, setLastLogin] = useState<string | undefined>(() =>
     localStorage.getItem("tgn:lastLogin") || undefined
   );
 
-  // ===== AUTH SUBSCRIBE (top-level hook)
   useEffect(() => {
     const off = onAuthStateChanged(auth, (u) => {
       setUser(u);
@@ -84,7 +73,6 @@ export default function App() {
     return () => off();
   }, []);
 
-  // ===== SW update wiring
   useEffect(() => {
     (window as any).__tgnOnNeedRefresh = () => setShowUpdate(true);
     (window as any).__tgnUpdateSW = async () => {
@@ -98,66 +86,41 @@ export default function App() {
     return () => window.removeEventListener("tgn-sw-update", handler as any);
   }, []);
 
-  // helpers
-  const go = (hash: string) => {
-    window.location.hash = hash;
-  };
-
+  const go = (hash: string) => { window.location.hash = hash; };
   const toggleSelect = (id: string, checked: boolean) => {
     setSelection((s) => (checked ? [...s, id] : s.filter((x) => x !== id)));
   };
 
-  // Page renderer
   function renderPage() {
     if (route.startsWith("#/login")) {
       return (
         <div className="max-w-lg mx-auto">
-          <Login
-            lang={lang}
-            onLang={(l: Lang) => setLang(l)}
-            onSignedIn={() => go("#/browse")}
-          />
+          <Login lang={lang} onLang={setLang} onSignedIn={() => go("#/browse")} />
         </div>
       );
     }
-
-    if (route.startsWith("#/add")) {
-      return <AddLink lang={lang} />;
-    }
-
-    if (route.startsWith("#/import")) {
-      return <ImportOnly lang={lang} />;
-    }
-
-    if (route.startsWith("#/export")) {
-      return <ExportPage lang={lang} rows={data} />;
-    }
-
+    if (route.startsWith("#/add")) return <AddLink lang={lang} />;
+    if (route.startsWith("#/import")) return <ImportOnly lang={lang} />;
+    if (route.startsWith("#/export")) return <ExportPage lang={lang} rows={data} />;
     if (route.startsWith("#/about")) {
       return (
         <div className="prose">
           <h1>{t.about}</h1>
-          <p>
-            Thai Good News (TGN) minimal PWA. Edit this text in <code>App.tsx</code>.
-          </p>
+          <p>Thai Good News (TGN) minimal PWA. Edit this text in <code>App.tsx</code>.</p>
           <div className="mt-3">
             {user ? (
               <span className="text-sm opacity-70">Signed in</span>
             ) : (
-              <a className="btn btn-blue" href="#/login">
-                {t.signIn}
-              </a>
+              <a className="btn btn-blue" href="#/login">{t.signIn}</a>
             )}
           </div>
         </div>
       );
     }
-
-    // default: BROWSE
+    // default browse
     return (
       <div className="space-y-3">
         <h1 className="text-2xl font-bold">{t.browse}</h1>
-
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {data.map((r) => (
             <div className="card" key={r.id}>
@@ -172,11 +135,9 @@ export default function App() {
                   onChange={(e) => toggleSelect(r.id, e.target.checked)}
                 />
               </div>
-
               <a className="text-sm break-all underline" href={r.url} target="_blank" rel="noreferrer">
                 {r.url}
               </a>
-
               <div className="mt-2 flex gap-2">
                 <button className="btn btn-white">{t.edit}</button>
                 <button className="btn btn-white">{t.delete}</button>
@@ -188,26 +149,16 @@ export default function App() {
     );
   }
 
-  // ===== RENDER SHELL
   return (
     <div className="app-shell">
-      {/* TOPBAR */}
       <div className="topbar">
         <div className="max-w-5xl mx-auto px-4 py-2 flex items-center justify-between">
-          {/* Banner / title */}
           <div className="flex items-center gap-3 banner rounded-xl px-3 py-2">
             <div className="font-bold">{t.appTitle}</div>
           </div>
-
-          {/* Controls (top-right) */}
           <div className="flex items-center gap-2">
-            {/* Install PWA (Thai red by className) */}
             <InstallPWA className="btn-red" lang={lang} />
-
-            {/* Share — use with NO props to match your current Props */}
             <Share />
-
-            {/* Font size: A – slider – A (no px readout) */}
             <div className="flex items-center gap-2">
               <span className="text-sm">A</span>
               <input
@@ -222,38 +173,21 @@ export default function App() {
               />
               <span className="text-lg">A</span>
             </div>
-
-            {/* Language switcher: a/ก */}
-            <button className="btn btn-white" onClick={() => setLang(lang === "en" ? "th" : "en")}>
-              a/ก
-            </button>
+            <button className="btn btn-white" onClick={() => setLang(lang === "en" ? "th" : "en")}>a/ก</button>
           </div>
         </div>
       </div>
 
-      {/* NAV */}
       <nav className="p-3 flex flex-wrap gap-2 text-sm max-w-5xl mx-auto px-4">
-        <a className="btn btn-white" href="#/browse">
-          {t.browse}
-        </a>
-        <a className="btn btn-white" href="#/add">
-          {t.add}
-        </a>
-        <a className="btn btn-white" href="#/import">
-          {t.import}
-        </a>
-        <a className="btn btn-white" href="#/export">
-          {t.export}
-        </a>
-        <a className="btn btn-white" href="#/about">
-          {t.about}
-        </a>
+        <a className="btn btn-white" href="#/browse">{t.browse}</a>
+        <a className="btn btn-white" href="#/add">{t.add}</a>
+        <a className="btn btn-white" href="#/import">{t.import}</a>
+        <a className="btn btn-white" href="#/export">{t.export}</a>
+        <a className="btn btn-white" href="#/about">{t.about}</a>
       </nav>
 
-      {/* MAIN */}
       <main className="content max-w-5xl mx-auto px-4 pb-8">{renderPage()}</main>
 
-      {/* FOOTER — Always visible, centered */}
       <footer className="footer">
         <div className="max-w-5xl mx-auto px-4 text-center py-2">
           <div className="text-xs">
@@ -264,7 +198,6 @@ export default function App() {
         </div>
       </footer>
 
-      {/* UPDATE TOAST — show only, no props */}
       {showUpdate && <UpdateToast />}
     </div>
   );

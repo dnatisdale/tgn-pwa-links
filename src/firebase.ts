@@ -1,16 +1,14 @@
-
+// src/firebase.ts
+// Minimal Firebase v9 setup; replace with your own config
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCJOIrS7vyauFUW7zUjuJoBxHigZHkKcWw",
-  authDomain: "web-app-a1fc0.firebaseapp.com",
-  projectId: "web-app-a1fc0",
-  storageBucket: "web-app-a1fc0.firebasestorage.app",
-  messagingSenderId: "284479469883",
-  appId: "1:284479469883:web:9fdcbc1c78f36cff36df1e",
-  measurementId: "G-P41MKP7HJE"
+  apiKey: import.meta.env.VITE_FB_API_KEY || "REPLACE_ME",
+  authDomain: import.meta.env.VITE_FB_AUTH_DOMAIN || "REPLACE_ME",
+  projectId: import.meta.env.VITE_FB_PROJECT_ID || "REPLACE_ME",
+  appId: import.meta.env.VITE_FB_APP_ID || "REPLACE_ME"
 };
 
 const app = initializeApp(firebaseConfig);

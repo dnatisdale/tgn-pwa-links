@@ -55,11 +55,8 @@ export const strings = {
 } as const;
 
 export type I18nKey = keyof typeof strings["en"];
-
-// Primary helper
 export function tr(lang: Lang, key: I18nKey): string {
   return strings[lang][key];
 }
-
-// **Compatibility alias** for old code that does `import { t } from "./i18n"`
+// compatibility alias so old code `import { t }` still works
 export const t = tr;

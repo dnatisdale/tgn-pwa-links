@@ -1,62 +1,53 @@
-// vite.config.ts
+// src/vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
-import pkg from "./package.json";
 
-// Build-time constants (Pacific, 24h, no seconds)
-function fmtPacific(date = new Date()) {
-  const d = new Intl.DateTimeFormat("en-CA", {
+function formatPacific() {
+  const fmt = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Los_Angeles",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(date); // YYYY-MM-DD
-  const t = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "America/Los_Angeles",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).format(date); // HH:mm
-  return { d, t };
+  });
+  // e.g. "2025-10-12, 14:05" => split
+  const str = fmt.format(new Date());
+  const [date, time] = str.split(", ");
+  return { date, time };
 }
-const { d: BUILD_DATE, t: BUILD_TIME } = fmtPacific();
+
+const { date: BUILD_DATE, time: BUILD_TIME } = formatPacific();
 
 export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "prompt",      // ← you asked for prompt
-      injectRegister: "auto",
-      devOptions: { enabled: false },
-      workbox: {
-        navigateFallbackDenylist: [/^\/api\//],
-        cleanupOutdatedCaches: true,
-        clientsClaim: true,
-        skipWaiting: false,        // we’ll show toast & call SKIP_WAITING ourselves
-      },
+      registerType: "prompt",
+      includeAssets: ["favicon.svg", "favicon.ico", "robots.txt", "apple-touch-icon.png"],
       manifest: {
         name: "Thai Good News",
         short_name: "TGN",
-        description: "Clean bilingual PWA to manage name/language/URL records",
-        theme_color: "#2D2A4A",    // thai blue
-        background_color: "#F4F5F8", // thai white
+        description: "Thai Good News - simple PWA for sharing links and QR",
+        theme_color: "#A51931",
         icons: [
-          { src: "icons/pwa-192.png", sizes: "192x192", type: "image/png" },
-          { src: "icons/pwa-512.png", sizes: "512x512", type: "image/png" },
-          { src: "icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" }
+          { src: "pwa-192x192.png", sizes: "192x192", type: "image/png" },
+          { src: "pwa-512x512.png", sizes: "512x512", type: "image/png" }
         ],
-        start_url: "./",
-        display: "standalone",
-        lang: "en",
+      },
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
+      },
+      devOptions: {
+        enabled: true,
       },
     }),
   ],
   define: {
-    __APP_VERSION__: JSON.stringify(pkg.version ?? "v0.0.0"),
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version || "v0.0.0"),
     __BUILD_DATE__: JSON.stringify(BUILD_DATE),
     __BUILD_TIME__: JSON.stringify(BUILD_TIME),
   },
-  // keep JSX automatic; TS must match (see tsconfig step)
-  esbuild: { jsx: "automatic" },
 });

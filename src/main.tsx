@@ -1,35 +1,29 @@
+// src/main.tsx
 import React from "react";
-import { createRoot } from "react-dom/client";
+import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./styles.css";
-import ErrorBoundary from "./ErrorBoundary";
+import { registerSW } from "virtual:pwa-register";
 
-// inside src/main.tsx (top-level file)
-(function safePWA() {
-  if (!("serviceWorker" in navigator)) return;
-  import("virtual:pwa-register")
-    .then(({ registerSW }) => {
-      const updateSW = registerSW({
-        onNeedRefresh() { window.dispatchEvent(new CustomEvent("tgn-sw-update")); },
-        onOfflineReady() { /* optional */ },
-      });
-      // @ts-ignore
-      window.__tgnUpdateSW = updateSW;
-    })
-    .catch(() => {});
-})();
+const root = ReactDOM.createRoot(document.getElementById("root")!);
+root.render(<App />);
 
-declare const __APP_VERSION__: string;
-declare const __BUILD_DATE__: string;
-declare const __BUILD_TIME__: string;
-console.log(`${__APP_VERSION__} — ${__BUILD_DATE__} ${__BUILD_TIME__}`);
-
-const container = document.getElementById("root");
-if (!container) throw new Error("#root not found");
-createRoot(container).render(
-  <React.StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
-  </React.StrictMode>
-);
+// Safe PWA registration with update events
+const updateSW = registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    // allow App to react
+    (window as any).__tgnOnNeedRefresh?.();
+    // also dispatch a custom event for any listener
+    window.dispatchEvent(new CustomEvent("tgn-sw-update"));
+  },
+  onRegistered(r) {
+    // expose manual updater
+    (window as any).__tgnUpdateSW = async () => {
+      try {
+        await r?.update();
+      } catch {}
+      location.reload();
+    };
+  }
+});
