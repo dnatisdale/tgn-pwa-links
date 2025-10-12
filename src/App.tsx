@@ -318,7 +318,12 @@ export default function App() {
           <section>
             <ExportPage lang={lang} />
           </section>
+        ) : isAbout ? (
+          <section>
+            <About lang={lang} />
+          </section>
         ) : (
+
           // ---- Browse ----
           <section>
             {/* Search + filter */}
