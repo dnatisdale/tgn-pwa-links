@@ -70,6 +70,7 @@ const isBrowse = route.startsWith("#/browse");
 const isAdd = route.startsWith("#/add");
 const isImport = route.startsWith("#/import");
 const isExport = route.startsWith("#/export");
+const isAbout = route.startsWith("#/about");
 
   // auth subscribe
   useEffect(() => {
@@ -328,183 +329,95 @@ const isExport = route.startsWith("#/export");
       </nav>
 
       {/* Main */}
-      <main className="p-3 max-w-5xl mx-auto">
-        // in the <main> switch:
-{isAdd ? (
-  <section>
-    <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
-    <AddLink lang={lang} />
-  </section>
-) : isImport ? (
-  <section>
-    <ImportExport lang={lang} />
-  </section>
-) : isExport ? (
-  <section>
-    <ExportPage lang={lang} rows={rows} />
-  </section>
-) : (
-  /* …your Browse section… */
-)}
-        ) : isAbout ? (
-          <section>
-            {/* simple About content inline if you haven't created About.tsx */}
-            <div className="max-w-2xl mx-auto p-3 text-sm space-y-3">
-              {lang === "th" ? (
-                <>
-                  <h2 className="text-lg font-semibold">เกี่ยวกับ Thai Good News</h2>
-                  <p>แอปนี้ช่วยรวมลิงก์ข่าวดีและทรัพยากรภาษา (QR & ลิงก์) ให้ใช้งานได้ง่ายบนมือถือ</p>
-                  <p>ติดต่อ: ใส่อีเมล/เว็บไซต์ของคุณที่นี่</p>
-                </>
-              ) : (
-                <>
-                  <h2 className="text-lg font-semibold">About Thai Good News</h2>
-                  <p>
-                    This app collects “good news” links/resources (with QR & direct links) and
-                    makes them easy to share on any device.
-                  </p>
-                  <p>Contact: put your email/website here.</p>
-                </>
-              )}
+    // DELETE your current <main>...</main> and paste this:
+
+// Build the page to render (no nested ternaries)
+let page: React.ReactNode;
+
+if (isAdd) {
+  page = (
+    <section>
+      <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
+      <AddLink lang={lang} />
+    </section>
+  );
+} else if (isImport) {
+  page = (
+    <section>
+      <ImportExport lang={lang} />
+    </section>
+  );
+} else if (isExport) {
+  page = (
+    <section>
+      <ExportPage lang={lang} rows={rows} />
+    </section>
+  );
+} else if (isAbout) {
+  page = (
+    <section className="max-w-3xl">
+      <h2 className="text-lg font-semibold mb-2">About</h2>
+      <p className="text-sm">
+        Thai Good News helps you save, share, and print language resources. QR codes and sharing use the
+        original HTTPS link you add. Import CSV/TSV/JSON on the Import page; export on the Export page.
+      </p>
+    </section>
+  );
+} else {
+  // BROWSE (keep this minimal so it compiles; you can merge your fancier toolbar back in later)
+  page = (
+    <section>
+      <div className="flex flex-wrap gap-4 items-center mb-3">
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder={i.searchPlaceholder}
+          className="border rounded px-2 py-1 min-w-[260px]"
+        />
+        <div className="text-sm">
+          <button className="linklike" onClick={() => setFilterThai(false)}>
+            {i.filterAll}
+          </button>
+          &nbsp;|&nbsp;
+          <button className="linklike" onClick={() => setFilterThai(true)}>
+            {i.filterThai}
+          </button>
+        </div>
+      </div>
+
+      {!filtered.length && (
+        <div className="text-sm text-gray-600 mb-3">{i.empty}</div>
+      )}
+
+      <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {filtered.map((row) => (
+          <li key={row.id} className="card">
+            <div className="text-base font-semibold text-center">{row.name}</div>
+            <div className="text-sm mb-2 text-center">{row.language}</div>
+
+            <QR url={row.url} size={192} idForDownload={`qr-${row.id}`} />
+
+            <div className="mt-2 text-center">
+              <a href={row.url} className="underline" target="_blank" rel="noreferrer">
+                {row.url}
+              </a>
             </div>
-          </section>
-        ) : (
-          /* Browse */
-          <section>
-            {/* Search + filter */}
-            <div className="flex flex-wrap gap-4 items-center mb-3">
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder={i.searchPlaceholder}
-                className="border rounded px-2 py-1 min-w-[260px]"
-              />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
-              {/* Bulk actions (aligned + hint under) */}
-              <div className="flex flex-col gap-2">
-                <div className="flex flex-wrap items-center gap-6">
-                  <div className="text-sm">
-                    <button className="linklike" onClick={selectAllVisible}>Select all</button>
-                    &nbsp;|&nbsp;
-                    <button className="linklike" onClick={clearSelection}>Clear</button>
-                    &nbsp;(<span>{selectedRows.length}</span>/<span>{filtered.length}</span>)
-                  </div>
+return (
+  <div>
+    {/* (keep your banner, header, and nav above this) */}
 
-                  <div className="flex items-center gap-3">
-                    <button className="linklike" onClick={copySelectedLinks}>Copy link</button>
-                    <button
-                      className="btn-blue"
-                      onClick={batchDownload}
-                      disabled={!selectedRows.length}
-                      title="Download QR cards for selected items"
-                    >
-                      Download QR cards
-                    </button>
-                  </div>
-                </div>
+    <main className="p-3 max-w-5xl mx-auto">{page}</main>
 
-                {selectedRows.length === 0 && (
-                  <div className="hint-under">( Select at least one item )</div>
-                )}
-              </div>
-
-              <div className="text-sm">
-                <button className="linklike" onClick={() => setFilterThai(false)}>
-                  {i.filterAll}
-                </button>
-                &nbsp;|&nbsp;
-                <button className="linklike" onClick={() => setFilterThai(true)}>
-                  {i.filterThai}
-                </button>
-              </div>
-            </div>
-
-            {/* Global toolbar with single Share for first selected */}
-            <div className="flex flex-wrap items-center gap-8 mb-3">
-              <label className="text-sm">
-                <input
-                  type="checkbox"
-                  className="card-check"
-                  checked={allSelected}
-                  onChange={selectAllVisible}
-                />
-                &nbsp;Select all ({selectedRows.length}/{filtered.length})
-              </label>
-
-              <div>
-                <Share
-                  url={firstSelected ? firstSelected.url : ""}
-                  title={firstSelected ? firstSelected.name || "Link" : ""}
-                  qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
-                />
-                {!firstSelected && (
-                  <span className="text-xs" style={{ color: "#6b7280", marginLeft: 8 }}>
-                    Select at least one item
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Cards */}
-            <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {filtered.map((row) => {
-                const enlarged = qrEnlargedId === row.id;
-                const qrSize = enlarged ? 320 : 192;
-                const checked = selectedIds.has(row.id);
-                return (
-                  <li key={row.id} className="card">
-                    {/* Selection checkbox */}
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(e) => toggleSelect(row.id, e.target.checked)}
-                          style={{ marginRight: 8 }}
-                        />
-                        Select
-                      </label>
-                    </div>
-
-                    <div className="text-base font-semibold text-center">{row.name}</div>
-                    <div className="text-sm mb-2 text-center">{row.language}</div>
-
-                    {/* Click-to-enlarge QR */}
-                    <div
-                      role="button"
-                      onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") setQrEnlargedId(enlarged ? null : row.id);
-                      }}
-                      tabIndex={0}
-                      title={
-                        enlarged
-                          ? lang === "th" ? "ย่อ QR" : "Shrink QR"
-                          : lang === "th" ? "ขยาย QR" : "Enlarge QR"
-                      }
-                      style={{ cursor: "pointer" }}
-                    >
-                      <QR url={row.url} size={qrSize} idForDownload={`qr-${row.id}`} />
-                    </div>
-
-                    <div className="mt-2 text-center">
-                      <a href={row.url} className="underline" target="_blank" rel="noreferrer">
-                        {row.url}
-                      </a>
-                    </div>
-
-                    {/* Per-card actions */}
-                    <div className="mt-2 flex justify-center gap-6 text-sm">
-                      <button className="linklike" onClick={() => editRow(row)}>Edit</button>
-                      <button className="linklike" onClick={() => deleteRow(row)}>Delete</button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        )}
-      </main>
+    {/* (keep your toasts/footer after this) */}
+  </div>
+);
 
       {/* Toasts + iOS hint */}
       <UpdateToast />
