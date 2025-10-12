@@ -42,46 +42,6 @@ function formatPacific(iso?: string) {
   return `${dateStr} — ${timeStr} PT`;
 }
 
-function toggleSelect(id: string, on: boolean) {
-  setSelectedIds(prev => {
-    const next = new Set(prev);
-    if (on) next.add(id);
-    else next.delete(id);
-    return next;
-  });
-}
-
-function selectAllVisible() {
-  setSelectedIds(new Set(filtered.map(r => r.id)));
-}
-
-function clearSelection() {
-  setSelectedIds(new Set());
-}
-
-async function copySelectedLinks() {
-  // Collect URLs for selected rows
-  const urls = filtered
-    .filter(r => selectedIds.has(r.id))
-    .map(r => r.url)
-    .filter(Boolean);
-
-  if (urls.length === 0) {
-    // Optional: quick feedback
-    try { await navigator.clipboard.writeText(""); } catch {}
-    alert("Select at least one item");
-    return;
-  }
-
-  try {
-    await navigator.clipboard.writeText(urls.join("\n"));
-    // Optional: feedback
-    // alert(`Copied ${urls.length} link(s)`);
-  } catch (e) {
-    alert("Could not copy to clipboard");
-  }
-}
-
 export default function App() {
   // language
   const [lang, setLang] = useState<Lang>("en");
@@ -90,24 +50,24 @@ export default function App() {
   // auth
   const [user, setUser] = useState<any>(null);
 
-  // Selected items (by id)
-const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
-
   // data
   const [rows, setRows] = useState<Row[]>([]);
 
-  // search/filter
+  // search / filter
   const [q, setQ] = useState("");
   const [filterThai, setFilterThai] = useState(false);
 
   // UI state
   const [textPx, setTextPx] = useState<number>(16);
   const [qrEnlargedId, setQrEnlargedId] = useState<string | null>(null);
+
+  // selection (IDs are kept in a Set)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // last login for footer
   const [lastLogin, setLastLogin] = useState<string | null>(null);
 
-  // simple hash routing — define BEFORE using
+  // simple hash routing
   const [route, setRoute] = useState<string>(window.location.hash || "#/browse");
   const isBrowse = route.startsWith("#/browse");
   const isAdd = route.startsWith("#/add");
@@ -120,7 +80,7 @@ const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     return () => off();
   }, []);
 
-  // last login stamp (you already set this in Login.tsx)
+  // last login stamp (set in Login.tsx)
   useEffect(() => {
     const iso = localStorage.getItem("tgnLastLoginISO");
     if (iso) setLastLogin(iso);
@@ -147,12 +107,12 @@ const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     return () => off();
   }, [user]);
 
-  // apply text size
+  // apply text size to :root
   useEffect(() => {
     document.documentElement.style.setProperty("--base", `${textPx}px`);
   }, [textPx]);
 
-  // hash change listener
+  // hash router listener
   useEffect(() => {
     const onHash = () => setRoute(window.location.hash || "#/browse");
     window.addEventListener("hashchange", onHash);
@@ -188,33 +148,45 @@ const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     return <Login lang={lang} onLang={setLang} onSignedIn={() => {}} />;
   }
 
-  // selection helpers
+  // ---- selection helpers (INSIDE component so they can see state) ----
   const allVisibleIds = filtered.map((r) => r.id);
   const allSelected =
     allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
   const selectedRows = filtered.filter((r) => selectedIds.has(r.id));
   const firstSelected = selectedRows[0];
 
-  const toggleSelectAll = () => {
+  function toggleSelect(id: string, on: boolean) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (allSelected) {
-        for (const id of allVisibleIds) next.delete(id);
-      } else {
-        for (const id of allVisibleIds) next.add(id);
-      }
+      if (on) next.add(id);
+      else next.delete(id);
       return next;
     });
-  };
-  const toggleSelect = (id: string) =>
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  }
 
-  // batch download QR cards (selected)
+  function selectAllVisible() {
+    setSelectedIds(new Set(allVisibleIds));
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+  }
+
+  async function copySelectedLinks() {
+    const urls = selectedRows.map((r) => r.url).filter(Boolean);
+    if (urls.length === 0) {
+      alert("Select at least one item");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(urls.join("\n"));
+      alert("Copied selected links");
+    } catch {
+      alert("Could not copy to clipboard");
+    }
+  }
+
+  // ---- batch & per-card actions ----
   const batchDownload = async () => {
     if (!selectedRows.length) {
       alert("Select at least one");
@@ -231,7 +203,6 @@ const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     }
   };
 
-  // per-card edit/delete
   const editRow = async (r: Row) => {
     const name = prompt("Name", r.name ?? "");
     if (name === null) return;
@@ -253,6 +224,7 @@ const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
       alert(e.message || String(e));
     }
   };
+
   const deleteRow = async (r: Row) => {
     if (!confirm(`Delete "${r.name || r.url}"?`)) return;
     try {
@@ -290,6 +262,8 @@ const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
         <div />
         <div className="flex items-center gap-4 text-sm">
           <InstallPWA />
+
+          {/* Text size slider */}
           <span
             title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
             style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
@@ -307,6 +281,7 @@ const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
             />
             <span style={{ fontSize: 12, color: "#6b7280" }}>{textPx}px</span>
           </span>
+
           <button className="linklike" onClick={() => setLang(lang === "en" ? "th" : "en")}>
             {lang === "en" ? "ไทย" : "EN"}
           </button>
@@ -318,18 +293,10 @@ const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
       {/* Nav */}
       <nav className="p-3 flex flex-wrap gap-4 text-sm">
-        <a className="underline" href="#/browse">
-          {i.browse}
-        </a>
-        <a className="underline" href="#/add">
-          {i.add}
-        </a>
-        <a className="underline" href="#/import">
-          {i.importExport}
-        </a>
-        <a className="underline" href="#/export">
-          Export
-        </a>
+        <a className="underline" href="#/browse">{i.browse}</a>
+        <a className="underline" href="#/add">{i.add}</a>
+        <a className="underline" href="#/import">{i.importExport}</a>
+        <a className="underline" href="#/export">Export</a>
       </nav>
 
       {/* Main */}
@@ -349,7 +316,7 @@ const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
             <ExportPage lang={lang} />
           </section>
         ) : (
-          /* Browse */
+          // ---- Browse ----
           <section>
             {/* Search + filter */}
             <div className="flex flex-wrap gap-4 items-center mb-3">
@@ -359,45 +326,21 @@ const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
                 placeholder={i.searchPlaceholder}
                 className="border rounded px-2 py-1 min-w-[260px]"
               />
-              {/* Bulk actions */}
-<div className="flex flex-wrap items-center gap-8 mb-3">
-  <div className="text-sm">
-    <button className="linklike" onClick={selectAllVisible}>Select all</button>
-    &nbsp;|&nbsp;
-    <button className="linklike" onClick={clearSelection}>Clear</button>
-  </div>
-
-  <div>
-    <button className="linklike" onClick={copySelectedLinks}>
-      Copy link
-    </button>
-    {selectedIds.size === 0 && (
-      <div className="hint-under">( Select at least one item )</div>
-    )}
-  </div>
-</div>
-
               <div className="text-sm">
-                <button className="linklike" onClick={() => setFilterThai(false)}>
-                  {i.filterAll}
-                </button>
+                <button className="linklike" onClick={() => setFilterThai(false)}>{i.filterAll}</button>
                 &nbsp;|&nbsp;
-                <button className="linklike" onClick={() => setFilterThai(true)}>
-                  {i.filterThai}
-                </button>
+                <button className="linklike" onClick={() => setFilterThai(true)}>{i.filterThai}</button>
               </div>
             </div>
 
-
-
-            {/* Global toolbar */}
+            {/* Bulk actions (outside the cards) */}
             <div className="flex flex-wrap items-center gap-10 mb-3">
               <label className="text-sm">
                 <input
                   type="checkbox"
                   className="card-check"
                   checked={allSelected}
-                  onChange={toggleSelectAll}
+                  onChange={() => (allSelected ? clearSelection() : selectAllVisible())}
                 />
                 Select all ({selectedRows.length}/{filtered.length})
               </label>
@@ -421,34 +364,16 @@ const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
                   Download QR cards ({selectedRows.length})
                 </button>
 
-                <button
-                  className="linklike"
-                  onClick={async () => {
-                    const urls = selectedRows.map((r) => r.url);
-                    if (!urls.length) {
-                      alert("Select at least one");
-                      return;
-                    }
-                    try {
-                      await navigator.clipboard.writeText(urls.join("\n"));
-                      alert("All selected links copied");
-                    } catch {
-                      alert("Copy failed");
-                    }
-                  }}
-                >
-                  Copy all links
-                </button>
+                <div>
+                  <button className="linklike" onClick={copySelectedLinks}>
+                    Copy link(s)
+                  </button>
+                  {selectedIds.size === 0 && (
+                    <div className="hint-under">( Select at least one item )</div>
+                  )}
+                </div>
               </div>
             </div>
-
-<button className="linklike" onClick={copySelectedLinks}>
-  Copy link
-</button>
-
-{selectedIds.length === 0 && (
-  <div className="hint-under">( Select at least one item )</div>
-)}
 
             {!filtered.length && (
               <div className="text-sm text-gray-600 mb-3">{i.empty}</div>
@@ -461,39 +386,33 @@ const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
                 const qrSize = enlarged ? 320 : 192;
                 const checked = selectedIds.has(row.id);
                 return (
-                 <li key={row.id} className="card">
-  {/* Selection checkbox */}
-  <div className="flex items-center justify-between mb-2">
-    <label className="text-sm">
-      <input
-        type="checkbox"
-        checked={selectedIds.has(row.id)}
-        onChange={(e) => toggleSelect(row.id, e.target.checked)}
-        style={{ marginRight: 8 }}
-      />
-      Select
-    </label>
-  </div>
+                  <li key={row.id} className="card">
+                    {/* Selection checkbox in each card */}
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => toggleSelect(row.id, e.target.checked)}
+                          style={{ marginRight: 8 }}
+                        />
+                        Select
+                      </label>
+                    </div>
 
-  <div className="text-base font-semibold text-center">{row.name}</div>
-  …
+                    <div className="text-base font-semibold text-center">{row.name}</div>
+                    <div className="text-sm mb-2 text-center">{row.language}</div>
 
                     {/* Click-to-enlarge QR */}
                     <div
                       role="button"
                       onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") setQrEnlargedId(enlarged ? null : row.id);
-                      }}
+                      onKeyDown={(e) => { if (e.key === "Enter") setQrEnlargedId(enlarged ? null : row.id); }}
                       tabIndex={0}
                       title={
                         enlarged
-                          ? lang === "th"
-                            ? "ย่อ QR"
-                            : "Shrink QR"
-                          : lang === "th"
-                          ? "ขยาย QR"
-                          : "Enlarge QR"
+                          ? (lang === "th" ? "ย่อ QR" : "Shrink QR")
+                          : (lang === "th" ? "ขยาย QR" : "Enlarge QR")
                       }
                       style={{ cursor: "pointer" }}
                     >
@@ -508,12 +427,8 @@ const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
                     {/* Per-card actions */}
                     <div className="mt-2 flex justify-center gap-6 text-sm">
-                      <button className="linklike" onClick={() => editRow(row)}>
-                        Edit
-                      </button>
-                      <button className="linklike" onClick={() => deleteRow(row)}>
-                        Delete
-                      </button>
+                      <button className="linklike" onClick={() => editRow(row)}>Edit</button>
+                      <button className="linklike" onClick={() => deleteRow(row)}>Delete</button>
                     </div>
                   </li>
                 );
