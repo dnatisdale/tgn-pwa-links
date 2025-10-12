@@ -59,12 +59,6 @@ function clearSelection() {
   setSelectedIds(new Set());
 }
 
-
-<li key={row.id} className="card">
-  <div className="text-base font-semibold text-center">{row.name}</div>
-  …
-
-
 async function copySelectedLinks() {
   // Collect URLs for selected rows
   const urls = filtered
@@ -467,20 +461,22 @@ const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
                 const qrSize = enlarged ? 320 : 192;
                 const checked = selectedIds.has(row.id);
                 return (
-                  <li key={row.id} className="card">
-                    {/* Header: checkbox + name + language */}
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          className="card-check"
-                          checked={checked}
-                          onChange={() => toggleSelect(row.id)}
-                        />
-                        <span className="text-base font-semibold">{row.name}</span>
-                      </label>
-                      <div className="text-xs text-gray-600">{row.language}</div>
-                    </div>
+                 <li key={row.id} className="card">
+  {/* Selection checkbox */}
+  <div className="flex items-center justify-between mb-2">
+    <label className="text-sm">
+      <input
+        type="checkbox"
+        checked={selectedIds.has(row.id)}
+        onChange={(e) => toggleSelect(row.id, e.target.checked)}
+        style={{ marginRight: 8 }}
+      />
+      Select
+    </label>
+  </div>
+
+  <div className="text-base font-semibold text-center">{row.name}</div>
+  …
 
                     {/* Click-to-enlarge QR */}
                     <div

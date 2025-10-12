@@ -10,7 +10,6 @@
   text-align:center; /* or left if it sits under a left-aligned button */
 }
 
-
 /* ---------- Custom CSS below ---------- */
 
 /* Base */
@@ -103,4 +102,10 @@ button.linklike {
 .card-check {
   transform: scale(1.1);
   margin-right: 6px;
+}
+
+.hint-under {
+  font-size: 12px;
+  color: #6b7280; /* gray-500 */
+  margin-top: 4px;
 }
