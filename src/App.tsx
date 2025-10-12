@@ -2,38 +2,42 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { t, Lang } from "./i18n";
 import Login from "./Login";
-import ExportPage from "./Export";
 import QR from "./QR";
 import AddLink from "./AddLink";
-import DownloadQRButton from "./DownloadQRButton";
 import ImportExport from "./ImportExport";
+import ExportPage from "./Export";
 import InstallPWA from "./InstallPWA";
 import UpdateToast from "./UpdateToast";
 import IOSInstallHint from "./IOSInstallHint";
-import Share from "./Share"; // single dropdown component
+import Share from "./Share";
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
-  collection, onSnapshot, orderBy, query,
-  doc, deleteDoc, updateDoc
+  collection,
+  onSnapshot,
+  orderBy,
+  query,
+  doc,
+  deleteDoc,
+  updateDoc,
 } from "firebase/firestore";
-import { toHttpsOrNull } from "./url";
-
-// Build-time constants (optional)
-declare const __APP_VERSION__: string | undefined;
-declare const __BUILD_DATE__: string | undefined;
-declare const __BUILD_TIME__: string | undefined;
+import { toHttpsOrNull as toHttps } from "./url";
 
 type Row = { id: string; name: string; language: string; url: string };
 
 function formatPacific(iso?: string) {
   const date = iso ? new Date(iso) : new Date();
-  const isExport = route.startsWith("#/export");
   const dateStr = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Los_Angeles", year: "numeric", month: "long", day: "numeric",
+    timeZone: "America/Los_Angeles",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   }).format(date);
   const timeStr = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Los_Angeles", hour12: false, hour: "2-digit", minute: "2-digit",
+    timeZone: "America/Los_Angeles",
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(date);
   return `${dateStr} — ${timeStr} PT`;
 }
@@ -46,69 +50,72 @@ export default function App() {
   // auth
   const [user, setUser] = useState<any>(null);
 
-  // rows
+  // data
   const [rows, setRows] = useState<Row[]>([]);
 
-  // search / filter
+  // search/filter
   const [q, setQ] = useState("");
   const [filterThai, setFilterThai] = useState(false);
 
-  // font size in px
+  // UI state
   const [textPx, setTextPx] = useState<number>(16);
-
-  // QR click-to-enlarge
   const [qrEnlargedId, setQrEnlargedId] = useState<string | null>(null);
-
-  // selection (per card) + select-all
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
-  // simple hash routing
-  const [route, setRoute] = useState<string>(window.location.hash || "#/browse");
-
-  // last login in footer
   const [lastLogin, setLastLogin] = useState<string | null>(null);
 
+  // simple hash routing — define BEFORE using
+  const [route, setRoute] = useState<string>(window.location.hash || "#/browse");
+  const isBrowse = route.startsWith("#/browse");
+  const isAdd = route.startsWith("#/add");
+  const isImport = route.startsWith("#/import");
+  const isExport = route.startsWith("#/export");
+
+  // auth subscribe
   useEffect(() => {
     const off = onAuthStateChanged(auth, (u) => setUser(u));
     return () => off();
   }, []);
 
+  // last login stamp (you already set this in Login.tsx)
   useEffect(() => {
     const iso = localStorage.getItem("tgnLastLoginISO");
     if (iso) setLastLogin(iso);
   }, []);
 
-  // subscribe to user links
+  // data subscribe
   useEffect(() => {
-    if (!user) { setRows([]); return; }
+    if (!user) {
+      setRows([]);
+      return;
+    }
     const col = collection(db, "users", user.uid, "links");
     const qry = query(col, orderBy("name"));
     const off = onSnapshot(qry, (snap) => {
       const list: Row[] = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
       setRows(list);
-      // Drop selections that vanished
-      setSelectedIds(prev => {
+      // prune selection for removed docs
+      setSelectedIds((prev) => {
         const next = new Set<string>();
-        for (const id of prev) if (list.find(r => r.id === id)) next.add(id);
+        for (const id of prev) if (list.find((r) => r.id === id)) next.add(id);
         return next;
       });
     });
     return () => off();
   }, [user]);
 
-  // apply font size
+  // apply text size
   useEffect(() => {
     document.documentElement.style.setProperty("--base", `${textPx}px`);
   }, [textPx]);
 
-  // hash change
+  // hash change listener
   useEffect(() => {
     const onHash = () => setRoute(window.location.hash || "#/browse");
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
-  // filtered list
+  // filter + search
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     let out = rows.filter((row) => {
@@ -116,7 +123,8 @@ export default function App() {
         filterThai &&
         row.language?.toLowerCase() !== "thai" &&
         row.language?.toLowerCase() !== "ไทย"
-      ) return false;
+      )
+        return false;
       if (!needle) return true;
       return (
         (row.name || "").toLowerCase().includes(needle) ||
@@ -136,51 +144,42 @@ export default function App() {
     return <Login lang={lang} onLang={setLang} onSignedIn={() => {}} />;
   }
 
-  const isBrowse = route.startsWith("#/browse");
-  const isAdd = route.startsWith("#/add");
-  const isImport = route.startsWith("#/import");
-
   // selection helpers
-  const allVisibleIds = filtered.map(r => r.id);
-  const allSelected = allVisibleIds.length > 0 && allVisibleIds.every(id => selectedIds.has(id));
+  const allVisibleIds = filtered.map((r) => r.id);
+  const allSelected =
+    allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
+  const selectedRows = filtered.filter((r) => selectedIds.has(r.id));
+  const firstSelected = selectedRows[0];
 
   const toggleSelectAll = () => {
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const next = new Set(prev);
       if (allSelected) {
-        // unselect all visible
         for (const id of allVisibleIds) next.delete(id);
       } else {
-        // select all visible
         for (const id of allVisibleIds) next.add(id);
       }
       return next;
     });
   };
-
-  const toggleSelect = (id: string) => {
-    setSelectedIds(prev => {
+  const toggleSelect = (id: string) =>
+    setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  };
 
-  const selectedRows = filtered.filter(r => selectedIds.has(r.id));
-
-  // top toolbar actions
-  const firstSelected = selectedRows[0];
-  const selectedUrls = selectedRows.map(r => r.url);
-
-  // batch download QR cards
+  // batch download QR cards (selected)
   const batchDownload = async () => {
-    if (!selectedRows.length) { alert("Select at least one"); return; }
+    if (!selectedRows.length) {
+      alert("Select at least one");
+      return;
+    }
+    const mod = await import("./qrCard");
     for (const r of selectedRows) {
-      const canvasId = `qr-${r.id}`;
-      // use the single-card helper
-      (await import("./qrCard")).downloadQrCard({
-        qrCanvasId: canvasId,
+      await mod.downloadQrCard({
+        qrCanvasId: `qr-${r.id}`,
         url: r.url,
         name: r.name,
         title: "Thai Good News",
@@ -195,8 +194,11 @@ export default function App() {
     const language = prompt("Language", r.language ?? "") ?? "";
     const url = prompt("URL (https only)", r.url ?? "");
     if (url === null) return;
-    const https = toHttpsOrNull(url);
-    if (!https) { alert("Please enter a valid https:// URL"); return; }
+    const https = toHttps(url);
+    if (!https) {
+      alert("Please enter a valid https:// URL");
+      return;
+    }
     try {
       await updateDoc(doc(db, "users", user.uid, "links", r.id), {
         name: name.trim(),
@@ -207,18 +209,21 @@ export default function App() {
       alert(e.message || String(e));
     }
   };
-
   const deleteRow = async (r: Row) => {
     if (!confirm(`Delete "${r.name || r.url}"?`)) return;
     try {
       await deleteDoc(doc(db, "users", user.uid, "links", r.id));
-      setSelectedIds(prev => { const n = new Set(prev); n.delete(r.id); return n; });
+      setSelectedIds((prev) => {
+        const n = new Set(prev);
+        n.delete(r.id);
+        return n;
+      });
     } catch (e: any) {
       alert(e.message || String(e));
     }
   };
 
-  // small AAA icon for text size
+  // AAA icon
   const AAA = (
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
       <rect x="2" y="2" width="20" height="20" rx="4" fill="#0f2454" />
@@ -241,7 +246,10 @@ export default function App() {
         <div />
         <div className="flex items-center gap-4 text-sm">
           <InstallPWA />
-          <span title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"} style={{display:"inline-flex",alignItems:"center",gap:6}}>
+          <span
+            title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
             {AAA}
             <input
               type="range"
@@ -258,18 +266,27 @@ export default function App() {
           <button className="linklike" onClick={() => setLang(lang === "en" ? "th" : "en")}>
             {lang === "en" ? "ไทย" : "EN"}
           </button>
-          <button className="linklike" onClick={() => signOut(auth)}>{i.logout}</button>
+          <button className="linklike" onClick={() => signOut(auth)}>
+            {i.logout}
+          </button>
         </div>
       </header>
 
       {/* Nav */}
- <nav className="p-3 flex flex-wrap gap-4 text-sm">
-  <a className="underline" href="#/browse">{i.browse}</a>
-  <a className="underline" href="#/add">{i.add}</a>
-  <a className="underline" href="#/import">{i.importExport}</a>
-  <a className="underline" href="#/export">Export</a>   {/* <-- add this */}
-</nav>
-
+      <nav className="p-3 flex flex-wrap gap-4 text-sm">
+        <a className="underline" href="#/browse">
+          {i.browse}
+        </a>
+        <a className="underline" href="#/add">
+          {i.add}
+        </a>
+        <a className="underline" href="#/import">
+          {i.importExport}
+        </a>
+        <a className="underline" href="#/export">
+          Export
+        </a>
+      </nav>
 
       {/* Main */}
       <main className="p-3 max-w-5xl mx-auto">
@@ -283,9 +300,14 @@ export default function App() {
             <h2 className="text-lg font-semibold mb-2">{i.importExport}</h2>
             <ImportExport lang={lang} />
           </section>
-        ) : (
+        ) : isExport ? (
           <section>
-            {/* Search + Thai filter */}
+            <ExportPage lang={lang} />
+          </section>
+        ) : (
+          /* Browse */
+          <section>
+            {/* Search + filter */}
             <div className="flex flex-wrap gap-4 items-center mb-3">
               <input
                 value={q}
@@ -294,13 +316,17 @@ export default function App() {
                 className="border rounded px-2 py-1 min-w-[260px]"
               />
               <div className="text-sm">
-                <button className="linklike" onClick={() => setFilterThai(false)}>{i.filterAll}</button>
+                <button className="linklike" onClick={() => setFilterThai(false)}>
+                  {i.filterAll}
+                </button>
                 &nbsp;|&nbsp;
-                <button className="linklike" onClick={() => setFilterThai(true)}>{i.filterThai}</button>
+                <button className="linklike" onClick={() => setFilterThai(true)}>
+                  {i.filterThai}
+                </button>
               </div>
             </div>
 
-            {/* Global toolbar: Select all + Share + Download */}
+            {/* Global toolbar */}
             <div className="flex flex-wrap items-center gap-10 mb-3">
               <label className="text-sm">
                 <input
@@ -312,12 +338,13 @@ export default function App() {
                 Select all ({selectedRows.length}/{filtered.length})
               </label>
 
-              {/* One Share dropdown for the FIRST selected item; plus copy-all fallback */}
               <div className="flex items-center gap-8">
+                {/* One Share for the first selected */}
                 <div>
                   <Share
                     url={firstSelected ? firstSelected.url : ""}
                     title={firstSelected ? firstSelected.name || "Link" : ""}
+                    qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
                   />
                   {!firstSelected && (
                     <span className="text-xs" style={{ color: "#6b7280", marginLeft: 8 }}>
@@ -333,11 +360,17 @@ export default function App() {
                 <button
                   className="linklike"
                   onClick={async () => {
-                    if (!selectedUrls.length) { alert("Select at least one"); return; }
+                    const urls = selectedRows.map((r) => r.url);
+                    if (!urls.length) {
+                      alert("Select at least one");
+                      return;
+                    }
                     try {
-                      await navigator.clipboard.writeText(selectedUrls.join("\n"));
+                      await navigator.clipboard.writeText(urls.join("\n"));
                       alert("All selected links copied");
-                    } catch { alert("Copy failed"); }
+                    } catch {
+                      alert("Copy failed");
+                    }
                   }}
                 >
                   Copy all links
@@ -349,7 +382,7 @@ export default function App() {
               <div className="text-sm text-gray-600 mb-3">{i.empty}</div>
             )}
 
-            {/* Grid of cards */}
+            {/* Cards */}
             <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
               {filtered.map((row) => {
                 const enlarged = qrEnlargedId === row.id;
@@ -357,7 +390,7 @@ export default function App() {
                 const checked = selectedIds.has(row.id);
                 return (
                   <li key={row.id} className="card">
-                    {/* Row header: checkbox + name */}
+                    {/* Header: checkbox + name + language */}
                     <div className="flex items-center justify-between mb-1">
                       <label className="flex items-center">
                         <input
@@ -371,26 +404,23 @@ export default function App() {
                       <div className="text-xs text-gray-600">{row.language}</div>
                     </div>
 
-{isAdd ? (
-  /* ... */
-) : isImport ? (
-  /* ... */
-) : isExport ? (
-  <section>
-    <ExportPage lang={lang} />
-  </section>
-) : (
-  /* browse section ... */
-)}
-
-
                     {/* Click-to-enlarge QR */}
                     <div
                       role="button"
                       onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
-                      onKeyDown={(e) => { if (e.key === "Enter") setQrEnlargedId(enlarged ? null : row.id); }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") setQrEnlargedId(enlarged ? null : row.id);
+                      }}
                       tabIndex={0}
-                      title={enlarged ? (lang==="th" ? "ย่อ QR" : "Shrink QR") : (lang==="th" ? "ขยาย QR" : "Enlarge QR")}
+                      title={
+                        enlarged
+                          ? lang === "th"
+                            ? "ย่อ QR"
+                            : "Shrink QR"
+                          : lang === "th"
+                          ? "ขยาย QR"
+                          : "Enlarge QR"
+                      }
                       style={{ cursor: "pointer" }}
                     >
                       <QR url={row.url} size={qrSize} idForDownload={`qr-${row.id}`} />
@@ -402,10 +432,14 @@ export default function App() {
                       </a>
                     </div>
 
-                    {/* Per-card actions (Edit/Delete) */}
+                    {/* Per-card actions */}
                     <div className="mt-2 flex justify-center gap-6 text-sm">
-                      <button className="linklike" onClick={() => editRow(row)}>Edit</button>
-                      <button className="linklike" onClick={() => deleteRow(row)}>Delete</button>
+                      <button className="linklike" onClick={() => editRow(row)}>
+                        Edit
+                      </button>
+                      <button className="linklike" onClick={() => deleteRow(row)}>
+                        Delete
+                      </button>
                     </div>
                   </li>
                 );
@@ -419,7 +453,7 @@ export default function App() {
       <UpdateToast />
       <IOSInstallHint />
 
-      {/* Footer: Last login (PT) */}
+      {/* Footer */}
       <footer className="footer">
         <div style={{ display: "flex", justifyContent: "center" }}>
           {lastLogin ? `Last login: ${formatPacific(lastLogin)}` : `Last login: ${formatPacific()}`}
