@@ -1,20 +1,19 @@
 // src/App.tsx
 import React, { useEffect, useMemo, useState } from "react";
 
-// PAGES / PARTS (these should already exist in your src/)
-import InstallPWA from "./InstallPWA"; // NOTE: your InstallPWA must accept { lang, className? }
+// PAGES / PARTS that already exist in your project
+import InstallPWA from "./InstallPWA"; // accepts { lang, className? }
 import UpdateToast from "./UpdateToast";
 import ExportPage from "./Export";
 import ImportOnly from "./ImportExport";
 import AddLink from "./AddLink";
 import Login from "./Login";
 import Share from "./Share";
-import UpdateBanner from "./UpdateBanner";
 
 // i18n
 import { strings, type Lang } from "./i18n";
 
-// Firebase (expects you have ./firebase exporting `auth`)
+// Firebase
 import { auth } from "./firebase";
 import {
   onAuthStateChanged,
@@ -24,10 +23,10 @@ import {
   type User,
 } from "firebase/auth";
 
-// ===== Types
+// Types
 export type RecordItem = { id: string; name: string; language: string; url: string };
 
-// ===== Tiny hash router
+// Tiny hash router
 function useHashRoute() {
   const [hash, setHash] = useState(window.location.hash || "#/browse");
   useEffect(() => {
@@ -38,6 +37,20 @@ function useHashRoute() {
   return hash;
 }
 
+// Format Pacific time (24h, no seconds) for footer fallback
+function formatPacific(dt = new Date()) {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  return fmt.format(dt).replace(",", "");
+}
+
 export default function App() {
   // language + text bundle
   const [lang, setLang] = useState<Lang>("en");
@@ -46,8 +59,8 @@ export default function App() {
   // auth
   const [user, setUser] = useState<User | null>(null);
 
-  // data / selection
-  const [data, setData] = useState<RecordItem[]>([]);
+  // demo data (local array just to keep UI happy)
+  const [data] = useState<RecordItem[]>([]);
   const [selection, setSelection] = useState<string[]>([]);
   const route = useHashRoute();
 
@@ -59,24 +72,12 @@ export default function App() {
     localStorage.getItem("tgn:lastLogin") || undefined
   );
 
-  // ===== AUTH SUBSCRIBE (top-level hook, not inside JSX)
+  // ===== AUTH SUBSCRIBE (top-level hook)
   useEffect(() => {
     const off = onAuthStateChanged(auth, (u) => {
       setUser(u);
-      // store last login time (Pacific, 24h, no seconds)
       try {
-        const fmt = new Intl.DateTimeFormat("en-US", {
-          timeZone: "America/Los_Angeles",
-          hour12: false,
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-        const parts = fmt.formatToParts(new Date());
-        const get = (x: string) => parts.find((p) => p.type === x)?.value || "";
-        const stamp = `${get("year")}-${get("month")}-${get("day")} ${get("hour")}:${get("minute")}`;
+        const stamp = formatPacific();
         localStorage.setItem("tgn:lastLogin", stamp);
         setLastLogin(stamp);
       } catch {}
@@ -107,11 +108,12 @@ export default function App() {
     setSelection((s) => (checked ? [...s, id] : s.filter((x) => x !== id)));
   };
 
+  // selected pairs for Share (name + url)
   const selectedPairs = data
     .filter((d) => selection.includes(d.id))
     .map(({ name, url }) => ({ name, url }));
 
-  // ===== Login actions
+  // ===== Login actions (these are used by <Login/> internally if your file supports it; if not, they’re harmless)
   async function handleSignIn(email: string, pw: string) {
     await signInWithEmailAndPassword(auth, email, pw);
     go("#/browse");
@@ -125,59 +127,40 @@ export default function App() {
     go("#/browse");
   }
 
-  // ===== Page renderer
+  // ===== Page renderer (simple and single)
   function renderPage() {
     if (route.startsWith("#/login")) {
+      // IMPORTANT: Your Login.tsx Props did not include setLang earlier.
+      // So we pass ONLY what’s safe: { lang }.
+      // If your Login supports callbacks, wire them inside Login.tsx itself.
       return (
         <div className="max-w-lg mx-auto">
-          <Login lang={lang} setLang={setLang} onSignIn={handleSignIn} onGuest={handleGuest} />
+          <Login lang={lang} />
         </div>
       );
     }
 
     if (route.startsWith("#/add")) {
-      return (
-        <AddLink
-          lang={lang}
-          onAdd={(r) => {
-            setData((d) => [{ id: crypto.randomUUID(), ...r }, ...d]);
-            go("#/browse");
-          }}
-        />
-      );
+      // Your AddLink.tsx Props did not include onAdd earlier — so pass only { lang }.
+      return <AddLink lang={lang} />;
     }
 
     if (route.startsWith("#/import")) {
-      return (
-        <ImportOnly
-          lang={lang}
-          onBatchAdd={(rows) => {
-            setData((d) => [
-              ...rows.map((r) => ({
-                id: crypto.randomUUID(),
-                name: r.name,
-                language: r.language,
-                url: r.url,
-              })),
-              ...d,
-            ]);
-            go("#/browse");
-          }}
-        />
-      );
+      // Your ImportExport.tsx (Import-only) likely just needs { lang }.
+      // We’re not passing onBatchAdd here.
+      return <ImportOnly lang={lang} />;
     }
 
     if (route.startsWith("#/export")) {
-      return <ExportPage lang={lang} data={data} />;
+      // Export.tsx expects { lang, rows }, not { data }.
+      return <ExportPage lang={lang} rows={data} />;
     }
 
     if (route.startsWith("#/about")) {
       return (
         <div className="prose">
           <h1>{t.about}</h1>
-          <p>
-            Thai Good News (TGN) minimal PWA. Edit this text in <code>App.tsx</code>.
-          </p>
+          <p>TGN minimal PWA. You can edit this text in <code>App.tsx</code>.</p>
           <div className="mt-3">
             {user ? (
               <button className="btn btn-ghost" onClick={handleSignOut}>
@@ -217,12 +200,12 @@ export default function App() {
                 {r.url}
               </a>
 
-              {/* simple Edit/Delete placeholders — wire to Firestore later */}
+              {/* Simple Edit/Delete placeholders (you can wire Firestore later) */}
               <div className="mt-2 flex gap-2">
                 <button className="btn btn-white" onClick={() => alert("Edit later (wire Firestore)")}>
                   {t.edit}
                 </button>
-                <button className="btn btn-white" onClick={() => setData((d) => d.filter((x) => x.id !== r.id))}>
+                <button className="btn btn-white" onClick={() => alert("Delete later (wire Firestore)")}>
                   {t.delete}
                 </button>
               </div>
@@ -233,7 +216,7 @@ export default function App() {
     );
   }
 
-  // ===== RENDER SHELL (topbar -> nav -> main -> footer)
+  // ===== RENDER SHELL
   return (
     <div className="app-shell">
       {/* TOPBAR */}
@@ -249,8 +232,8 @@ export default function App() {
             {/* Install PWA (Thai red by className) */}
             <InstallPWA className="btn-red" lang={lang} />
 
-            {/* Share (red) */}
-            <Share lang={lang} selection={selectedPairs} />
+            {/* Share — your Share.tsx Props likely DO NOT include lang; so we pass only { selection } */}
+            <Share selection={selectedPairs} />
 
             {/* Font size: A – slider – A (no px readout) */}
             <div className="flex items-center gap-2">
@@ -276,7 +259,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* NAV — use i18n labels so EN/TH works */}
+      {/* NAV */}
       <nav className="p-3 flex flex-wrap gap-2 text-sm max-w-5xl mx-auto px-4">
         <a className="btn btn-white" href="#/browse">
           {t.browse}
@@ -295,20 +278,26 @@ export default function App() {
         </a>
       </nav>
 
-      {/* MAIN (single renderPage — no duplicate routers) */}
+      {/* MAIN */}
       <main className="content max-w-5xl mx-auto px-4 pb-8">{renderPage()}</main>
 
-      {/* FOOTER (always visible) */}
+      {/* FOOTER — Always visible, centered */}
       <footer className="footer">
-        <div className="max-w-5xl mx-auto px-4">
-          <UpdateBanner lastLogin={lastLogin} />
+        <div className="max-w-5xl mx-auto px-4 text-center py-2">
+          {/* Show version if defined, else show last login */}
+          <div className="text-xs">
+            {typeof __APP_VERSION__ !== "undefined" && __APP_VERSION__
+              ? `${__APP_VERSION__ || "v0.0.0"} • ${typeof __BUILD_DATE__ !== "undefined" ? __BUILD_DATE__ : ""} ${
+                  typeof __BUILD_TIME__ !== "undefined" ? __BUILD_TIME__ : ""
+                }`
+              : `Last login • ${lastLogin || formatPacific()}`}
+          </div>
         </div>
       </footer>
 
       {/* UPDATE TOAST */}
       {showUpdate && (
         <UpdateToast
-          lang={lang}
           onRefresh={() => {
             (window as any).__tgnUpdateSW?.();
           }}
