@@ -54,7 +54,7 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // 6 MiB
 
         // 2) And/or ignore your giant banner so it’s not precached
-        globIgnores: ["**/banner-2400x600.png"],
+        globIgnores: ["**/banner-2400x600.jpeg"],
       },
     }),
   ],
