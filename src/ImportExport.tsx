@@ -188,9 +188,8 @@ export default function ImportExport({ lang }: Props) {
   return (
     <section>
       {/* Title = Import (no / Export) */}
-      <h2 className="text-lg font-semibold mb-3">
-        {lang === "th" ? "นำเข้า" : "Import"}
-      </h2>
+      <h2 className="text-lg font-semibold mb-2">{i.exportTitle}</h2>
+
 
       {/* Top row: Choose file (Thai red) + formats box (70% gray) */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>

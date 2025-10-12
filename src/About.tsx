@@ -1,27 +1,15 @@
 // src/About.tsx
 import React from "react";
-import { t, tr, Lang } from "./i18n";
-
+import { Lang, t } from "./i18n";
 
 export default function About({ lang }: { lang: Lang }) {
+  const i = t(lang);
   return (
-    <div className="max-w-2xl mx-auto p-3 space-y-3 text-sm">
-      {lang === "th" ? (
-        <>
-          <h2 className="text-lg font-semibold">เกี่ยวกับ Thai Good News</h2>
-          <p>แอปนี้ช่วยรวมลิงก์ข่าวดีและทรัพยากรภาษา (QR & ลิงก์) ให้ใช้งานได้ง่ายบนมือถือ</p>
-          <p>ติดต่อ: ใส่อีเมล/เว็บไซต์ของคุณที่นี่</p>
-        </>
-      ) : (
-        <>
-          <h2 className="text-lg font-semibold">About Thai Good News</h2>
-          <p>
-            This app collects “good news” links/resources (with QR & direct links) and makes
-            them easy to share on any device.
-          </p>
-          <p>Contact: put your email/website here.</p>
-        </>
-      )}
-    </div>
+    <section>
+      <h2 className="text-lg font-semibold mb-2">{i.about}</h2>
+      <p className="text-sm leading-6">
+        Thai Good News — a simple PWA to collect, share, and print QR codes and links in Thai and English.
+      </p>
+    </section>
   );
 }

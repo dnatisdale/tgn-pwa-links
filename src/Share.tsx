@@ -1,144 +1,135 @@
 // src/Share.tsx
 import React, { useState } from "react";
-import { t, tr, Lang } from "./i18n";
+import { t, Lang } from "./i18n";
 
-/**
- * Props:
- *  - url: the https link to share
- *  - title: optional title for message
- *  - qrCanvasId: if provided, we will try to attach the QR image (from <canvas id=...>)
- */
-export default function Share({
-  url,
-  title = "Thai Good News",
-  qrCanvasId,
-}: {
+type Props = {
   url: string;
   title?: string;
-  qrCanvasId?: string;
-}) {
-  const [busy, setBusy] = useState(false);
+  qrCanvasId?: string; // if provided, we’ll attach a PNG from <canvas id="...">
+  lang?: Lang;
+};
 
+export default function Share({ url, title = "Thai Good News", qrCanvasId, lang = "en" }: Props) {
+  const i = t(lang);
+  const [open, setOpen] = useState(false);
+
+  // Try to build an image File from a canvas
   async function getQrFile(): Promise<File | null> {
     if (!qrCanvasId) return null;
     const canvas = document.getElementById(qrCanvasId) as HTMLCanvasElement | null;
     if (!canvas) return null;
 
-    // make a ~300–400 KB PNG by controlling pixel size and quality (canvas.toBlob controls quality for JPEG; PNG is lossless)
-    // if your canvas is large, we can downscale to keep file smaller:
-    const MAX = 512;
-    const w = canvas.width, h = canvas.height;
-    const scale = Math.min(1, MAX / Math.max(w, h));
-    let outCanvas = canvas;
+    // Paint onto a white canvas to avoid transparent backgrounds in some apps
+    const c = document.createElement("canvas");
+    c.width = canvas.width;
+    c.height = canvas.height;
+    const ctx = c.getContext("2d");
+    if (!ctx) return null;
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(canvas, 0, 0, c.width, c.height);
 
-    if (scale < 1) {
-      const c = document.createElement("canvas");
-      c.width = Math.round(w * scale);
-      c.height = Math.round(h * scale);
-      const ctx = c.getContext("2d");
-      if (!ctx) return null;
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(0, 0, c.width, c.height);
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(canvas, 0, 0, c.width, c.height);
-      outCanvas = c;
-    }
-
-    const blob: Blob | null = await new Promise((res) =>
-      outCanvas.toBlob((b) => res(b), "image/png")
-    );
+    const blob: Blob | null = await new Promise((res) => c.toBlob((b) => res(b), "image/png"));
     if (!blob) return null;
-
-    // Use URL-friendly name (use hostname if possible)
-    let namePart = "qr";
-    try {
-      const u = new URL(url);
-      namePart = (u.hostname + u.pathname).replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "");
-      if (!namePart) namePart = "qr";
-    } catch {
-      // ignore
-    }
-
-    return new File([blob], `${namePart}.png`, { type: "image/png" });
+    return new File([blob], "qr.png", { type: "image/png" });
   }
 
-  async function doWebShare() {
-    setBusy(true);
+  // Web Share API first; fall back to targeted URLs
+  async function webShareOrFallback(kind: "email" | "line" | "facebook" | "x" | "whatsapp" | "telegram") {
+    const text = title ? `${title}\n${url}` : url;
+
+    // Try Web Share API (with optional image)
     try {
-      const files: File[] = [];
-      const qr = await getQrFile();
-      if (qr) files.push(qr);
-
-      const shareData: ShareData = {
-        title,
-        text: `${title}\n${url}`,
-        url, // some platforms use this field too
-        files: files.length ? files : undefined,
-      };
-
-      // Can this platform share files?
-      // If files present, we must check navigator.canShare({files})
-      if (shareData.files && navigator.canShare && !navigator.canShare({ files: shareData.files })) {
-        // fall back without files
-        delete shareData.files;
-      }
-
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        // Fallback to mailto (no attachments allowed via mailto)
-        const subject = encodeURIComponent(title);
-        const body = encodeURIComponent(`${title}\n${url}`);
-        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+      const canFiles = "canShare" in navigator && "share" in navigator;
+      if (canFiles) {
+        const file = await getQrFile(); // may be null
+        const shareData: ShareData = { title, text, url: undefined };
+        if (file) {
+          // some browsers require files array AND omit the url to actually attach the file
+          // @ts-ignore
+          shareData.files = [file];
+        } else {
+          // If no file, we can include url directly
+          shareData.url = url;
+        }
+        // @ts-ignore
+        if (!file || (navigator.canShare && navigator.canShare({ files: [file] }))) {
+          // @ts-ignore
+          await navigator.share(shareData);
+          return;
+        }
       }
     } catch {
-      // swallow user-cancel or errors
-    } finally {
-      setBusy(false);
+      // ignore and fall through
     }
-  }
 
-  async function copyLink() {
-    try {
-      await navigator.clipboard.writeText(url);
-      alert("Link copied");
-    } catch {
-      alert("Copy failed");
+    // Fallback to specific target
+    const encUrl = encodeURIComponent(url);
+    const encText = encodeURIComponent(text);
+
+    let href = "";
+    switch (kind) {
+      case "email":
+        href = `mailto:?subject=${encodeURIComponent(title || "Link")}&body=${encText}`;
+        break;
+      case "facebook":
+        href = `https://www.facebook.com/sharer/sharer.php?u=${encUrl}`;
+        break;
+      case "x":
+        href = `https://twitter.com/intent/tweet?text=${encText}`;
+        break;
+      case "whatsapp":
+        href = `https://api.whatsapp.com/send?text=${encText}`;
+        break;
+      case "telegram":
+        href = `https://t.me/share/url?url=${encUrl}&text=${encText}`;
+        break;
+      case "line":
+        href = `https://social-plugins.line.me/lineit/share?url=${encUrl}`;
+        break;
     }
+    window.open(href, "_blank", "noopener,noreferrer");
   }
 
   return (
-    <div className="share-center">
-      <div className="share-row">
-        {/* Red Share button (dropdown look optional; we just do a single button now) */}
-        <button className="btn-red" onClick={doWebShare} disabled={busy} title="Share QR + link">
-          {busy ? "Sharing…" : "Share"}
-        </button>
+    <div className="share-wrap" style={{ position: "relative", display: "inline-block" }}>
+      {/* Thai-flag RED button */}
+      <button
+        className="btn-red"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        {i.share}
+      </button>
 
-        {/* Fallback helpers visible always */}
-        <button className="linklike" onClick={copyLink} title="Copy link">
-          Copy link
-        </button>
-
-        {/* Let user download the QR image (so they can attach to email manually) */}
-        {qrCanvasId && (
-          <button
-            className="linklike"
-            onClick={async () => {
-              const qr = await getQrFile();
-              if (!qr) return;
-              const a = document.createElement("a");
-              a.href = URL.createObjectURL(qr);
-              a.download = qr.name;
-              a.click();
-              URL.revokeObjectURL(a.href);
-            }}
-            title="Download QR image"
-          >
-            Download QR image
-          </button>
-        )}
-      </div>
+      {/* Dropdown */}
+      {open && (
+        <div
+          role="menu"
+          className="menu"
+          style={{
+            position: "absolute",
+            top: "110%",
+            left: 0,
+            background: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: 8,
+            padding: 8,
+            minWidth: 180,
+            zIndex: 20,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.12)"
+          }}
+        >
+          <button className="menu-item" onClick={() => webShareOrFallback("email")}>{i.emailShare}</button>
+          <button className="menu-item" onClick={() => webShareOrFallback("line")}>LINE</button>
+          <button className="menu-item" onClick={() => webShareOrFallback("facebook")}>{i.fbShare}</button>
+          <button className="menu-item" onClick={() => webShareOrFallback("x")}>{i.xShare}</button>
+          <button className="menu-item" onClick={() => webShareOrFallback("whatsapp")}>{i.waShare}</button>
+          <button className="menu-item" onClick={() => webShareOrFallback("telegram")}>{i.tgShare}</button>
+        </div>
+      )}
     </div>
   );
 }

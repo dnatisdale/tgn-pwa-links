@@ -1,6 +1,6 @@
 // src/App.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import { t, tr, Lang } from "./i18n";
+import { t, Lang } from "./i18n";
 import Login from "./Login";
 import QR from "./QR";
 import AddLink from "./AddLink";
@@ -152,8 +152,63 @@ useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
   }
 
   // --- Selection helpers (declare BEFORE JSX uses them) ---
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+const [qrEnlargedId, setQrEnlargedId] = useState<string | null>(null);
+// ---- selection helpers (MUST come before JSX that uses them) ----
+const allVisibleIds = filtered.map((r) => r.id);
+const selectedRows = filtered.filter((r) => selectedIds.has(r.id));
+const firstSelected = selectedRows[0];
+const allSelected =
+  allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
+
+function toggleSelect(id: string) {
+  setSelectedIds((prev) => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+}
+function toggleSelectAll() {
+  setSelectedIds((prev) => {
+    const next = new Set(prev);
+    if (allSelected) {
+      for (const id of allVisibleIds) next.delete(id);
+    } else {
+      for (const id of allVisibleIds) next.add(id);
+    }
+    return next;
+  });
+}
+
+async function batchDownload() {
+  if (!selectedRows.length) {
+    alert("Select at least one");
+    return;
+  }
+  const mod = await import("./qrCard");
+  for (const r of selectedRows) {
+    await mod.downloadQrCard({
+      qrCanvasId: `qr-${r.id}`,
+      url: r.url,
+      name: r.name,
+      title: "Thai Good News",
+    });
+  }
+}
+
+async function copySelectedLinks() {
+  const urls = selectedRows.map((r) => r.url).filter(Boolean);
+  if (!urls.length) { alert("Select at least one item"); return; }
+  try {
+    await navigator.clipboard.writeText(urls.join("\n"));
+    // optional toast here
+  } catch {
+    alert("Copy failed");
+  }
+}
+// ---- end selection helpers ----
+
   const allVisibleIds = filtered.map((r) => r.id);
-  const selectedRows = filtered.filter((r) => selectedIds.has(r.id));
   const firstSelected = selectedRows[0];
   const allSelected =
     allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
@@ -491,6 +546,8 @@ useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
         <a className="underline" href="#/import">{i.importExport}</a>
         <a className="underline" href="#/export">Export</a>
         <a className="underline" href="#/about">About</a>
+        <a className="underline" href="#/about">{i.about}</a>
+
       </nav>
 
       {/* Main */}
