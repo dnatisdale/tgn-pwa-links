@@ -1,5 +1,7 @@
 // src/UpdateToast.tsx
 import React, { useEffect, useState } from "react";
+import { t, tr, Lang } from "./i18n";
+
 
 // Let TS know this global may exist (defined in vite.config.ts -> define)
 declare const __APP_VERSION__: string | undefined;

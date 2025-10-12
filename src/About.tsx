@@ -1,6 +1,7 @@
 // src/About.tsx
 import React from "react";
-import { Lang } from "./i18n";
+import { t, tr, Lang } from "./i18n";
+
 
 export default function About({ lang }: { lang: Lang }) {
   return (

@@ -1,6 +1,6 @@
 // src/Export.tsx
 import React from "react";
-import { Lang } from "./i18n";
+import { t, tr, Lang } from "./i18n";
 
 type Row = { id: string; name: string; language: string; url: string };
 

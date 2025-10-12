@@ -1,5 +1,6 @@
 // src/InstallPWA.tsx
 import React, { useEffect, useState } from "react";
+import { t, tr, Lang } from "./i18n";
 
 declare global {
   interface Window {

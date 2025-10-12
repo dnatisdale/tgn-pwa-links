@@ -1,6 +1,6 @@
 // src/App.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import { t, Lang } from "./i18n";
+import { t, tr, Lang } from "./i18n";
 import Login from "./Login";
 import QR from "./QR";
 import AddLink from "./AddLink";

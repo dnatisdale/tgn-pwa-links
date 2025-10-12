@@ -6,7 +6,7 @@ import {
   createUserWithEmailAndPassword,
   signInAnonymously,
 } from "firebase/auth";
-import { t, Lang } from "./i18n";
+import { t, tr, Lang } from "./i18n";
 
 // save last login ISO to localStorage
 function saveLastLogin() {
