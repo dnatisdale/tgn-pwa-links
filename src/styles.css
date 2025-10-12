@@ -60,3 +60,39 @@ button.linklike {
   padding: 6px 10px; cursor: pointer;
 }
 .toast-btn.ghost { background: transparent; color: #fff; border: 1px solid #fff; }
+
+/* Thai flag blue button */
+.btn-blue {
+  background: #00247d; /* Thai flag blue */
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+.btn-blue:hover { opacity: 0.92; }
+
+/* Red pill (for “CSV / JSON / TSV”) */
+.pill-red {
+  display: inline-block;
+  background: #a51931;
+  color: #fff;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/* File row layout on Import */
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Tiny checkbox for cards */
+.card-check {
+  transform: scale(1.1);
+  margin-right: 6px;
+}
