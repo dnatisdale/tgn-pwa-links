@@ -371,6 +371,19 @@ export default function App() {
                       <div className="text-xs text-gray-600">{row.language}</div>
                     </div>
 
+{isAdd ? (
+  /* ... */
+) : isImport ? (
+  /* ... */
+) : isExport ? (
+  <section>
+    <ExportPage lang={lang} />
+  </section>
+) : (
+  /* browse section ... */
+)}
+
+
                     {/* Click-to-enlarge QR */}
                     <div
                       role="button"
