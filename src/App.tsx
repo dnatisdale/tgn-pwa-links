@@ -64,12 +64,12 @@ export default function App() {
   const [lastLogin, setLastLogin] = useState<string | null>(null);
 
   // simple hash routing
-  const [route, setRoute] = useState<string>(window.location.hash || "#/browse");
-  const isBrowse = route.startsWith("#/browse");
-  const isAdd = route.startsWith("#/add");
-  const isImport = route.startsWith("#/import");
-  const isExport = route.startsWith("#/export");
-  const isAbout = route.startsWith("#/about");
+ // inside component:
+const [route, setRoute] = useState<string>(window.location.hash || "#/browse");
+const isBrowse = route.startsWith("#/browse");
+const isAdd = route.startsWith("#/add");
+const isImport = route.startsWith("#/import");
+const isExport = route.startsWith("#/export");
 
   // auth subscribe
   useEffect(() => {
@@ -329,21 +329,23 @@ export default function App() {
 
       {/* Main */}
       <main className="p-3 max-w-5xl mx-auto">
-        {isAdd ? (
-          <section>
-            <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
-            <AddLink lang={lang} />
-          </section>
-        ) : isImport ? (
-          <section>
-            <h2 className="text-lg font-semibold mb-2">Import</h2>
-            <ImportExport lang={lang} />
-          </section>
-        ) : isExport ? (
-          <section>
-            <h2 className="text-lg font-semibold mb-2">Export</h2>
-            <ExportPage lang={lang} />
-          </section>
+        // in the <main> switch:
+{isAdd ? (
+  <section>
+    <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
+    <AddLink lang={lang} />
+  </section>
+) : isImport ? (
+  <section>
+    <ImportExport lang={lang} />
+  </section>
+) : isExport ? (
+  <section>
+    <ExportPage lang={lang} rows={rows} />
+  </section>
+) : (
+  /* …your Browse section… */
+)}
         ) : isAbout ? (
           <section>
             {/* simple About content inline if you haven't created About.tsx */}
