@@ -403,6 +403,19 @@ export default function App() {
         <div />
         <div className="flex items-center gap-4 text-sm">
           <InstallPWA />
+          <header className="header p-3 flex items-center justify-between">
+  <div />
+  <div className="flex items-center gap-4 text-sm">
+    {/* Install (red button per your request) */}
+    <InstallPWA />
+
+    {/* Share PWA (blue by default). If you want red, pass color="red". */}
+    <SharePWAButton title="Thai Good News" color="blue" />
+
+    {/* ...rest of your controls (AAA slider, lang toggle, logout) ... */}
+  </div>
+</header>
+
           <span title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"} style={{display:"inline-flex",alignItems:"center",gap:6}}>
             {/* AAA icon + slider */}
             {AAA}
