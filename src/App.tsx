@@ -243,6 +243,24 @@ const copySelectedLinks = async () => {
   const selectedRows = filtered.filter((r) => selectedIds.has(r.id));
   const firstSelected = selectedRows[0];
 
+// --- Batch download QR cards (needs to be above JSX that calls it) ---
+const batchDownload = async () => {
+  if (!selectedRows.length) {
+    alert("Select at least one");
+    return;
+  }
+  const mod = await import("./qrCard");
+  for (const r of selectedRows) {
+    await mod.downloadQrCard({
+      qrCanvasId: `qr-${r.id}`,
+      url: r.url,
+      name: r.name,
+      title: "Thai Good News",
+    });
+  }
+};
+
+
   const toggleSelectAll = () => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -281,11 +299,7 @@ const copySelectedLinks = async () => {
     }
   };
 
-  const batchDownload = async () => {
-    if (!selectedRows.length) {
-      alert("Select at least one");
-      return;
-    }
+ 
     const mod = await import("./qrCard");
     for (const r of selectedRows) {
       await mod.downloadQrCard({
