@@ -64,13 +64,12 @@ export default function App() {
   const [lastLogin, setLastLogin] = useState<string | null>(null);
 
   // simple hash routing
- // inside component:
-const [route, setRoute] = useState<string>(window.location.hash || "#/browse");
-const isBrowse = route.startsWith("#/browse");
-const isAdd = route.startsWith("#/add");
-const isImport = route.startsWith("#/import");
-const isExport = route.startsWith("#/export");
-const isAbout = route.startsWith("#/about");
+  const [route, setRoute] = useState<string>(window.location.hash || "#/browse");
+  const isBrowse = route.startsWith("#/browse");
+  const isAdd = route.startsWith("#/add");
+  const isImport = route.startsWith("#/import");
+  const isExport = route.startsWith("#/export");
+  const isAbout = route.startsWith("#/about");
 
   // auth subscribe
   useEffect(() => {
@@ -78,7 +77,7 @@ const isAbout = route.startsWith("#/about");
     return () => off();
   }, []);
 
-  // last login stamp (Login.tsx stores tgnLastLoginISO)
+  // last login stamp
   useEffect(() => {
     const iso = localStorage.getItem("tgnLastLoginISO");
     if (iso) setLastLogin(iso);
@@ -117,7 +116,7 @@ const isAbout = route.startsWith("#/about");
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
-  // filtered list
+  // filter + search
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     let out = rows.filter((row) => {
@@ -125,9 +124,8 @@ const isAbout = route.startsWith("#/about");
         filterThai &&
         row.language?.toLowerCase() !== "thai" &&
         row.language?.toLowerCase() !== "ไทย"
-      ) {
+      )
         return false;
-      }
       if (!needle) return true;
       return (
         (row.name || "").toLowerCase().includes(needle) ||
@@ -147,13 +145,14 @@ const isAbout = route.startsWith("#/about");
     return <Login lang={lang} onLang={setLang} onSignedIn={() => {}} />;
   }
 
-  // selection helpers (depend on filtered)
+  // selection helpers (inside component so they see state)
   const allVisibleIds = filtered.map((r) => r.id);
+  const allSelected =
+    allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
   const selectedRows = filtered.filter((r) => selectedIds.has(r.id));
   const firstSelected = selectedRows[0];
-  const allSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
 
-  const selectAllVisible = () => {
+  const toggleSelectAll = () => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (allSelected) {
@@ -164,41 +163,40 @@ const isAbout = route.startsWith("#/about");
       return next;
     });
   };
-  const clearSelection = () => setSelectedIds(new Set());
-  const toggleSelect = (id: string, on: boolean) =>
+
+  const toggleSelect = (id: string, on: boolean) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (on) next.add(id);
       else next.delete(id);
       return next;
     });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+  const selectAllVisible = () => setSelectedIds(new Set(allVisibleIds));
 
   const copySelectedLinks = async () => {
-    const urls = filtered
-      .filter((r) => selectedIds.has(r.id))
-      .map((r) => r.url)
-      .filter(Boolean);
+    const urls = selectedRows.map((r) => r.url).filter(Boolean);
     if (!urls.length) {
       alert("Select at least one item");
       return;
     }
     try {
       await navigator.clipboard.writeText(urls.join("\n"));
-      // optional: alert("Copied");
+      // alert("Copied!");
     } catch {
       alert("Could not copy to clipboard");
     }
   };
 
-  // batch download QR cards (selected)
   const batchDownload = async () => {
-    const chosen = filtered.filter((r) => selectedIds.has(r.id));
-    if (!chosen.length) {
+    if (!selectedRows.length) {
       alert("Select at least one");
       return;
     }
     const mod = await import("./qrCard");
-    for (const r of chosen) {
+    for (const r of selectedRows) {
       await mod.downloadQrCard({
         qrCanvasId: `qr-${r.id}`,
         url: r.url,
@@ -208,7 +206,6 @@ const isAbout = route.startsWith("#/about");
     }
   };
 
-  // per-card edit/delete
   const editRow = async (r: Row) => {
     const name = prompt("Name", r.name ?? "");
     if (name === null) return;
@@ -230,6 +227,7 @@ const isAbout = route.startsWith("#/about");
       alert(e.message || String(e));
     }
   };
+
   const deleteRow = async (r: Row) => {
     if (!confirm(`Delete "${r.name || r.url}"?`)) return;
     try {
@@ -244,7 +242,6 @@ const isAbout = route.startsWith("#/about");
     }
   };
 
-  // AAA icon
   const AAA = (
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
       <rect x="2" y="2" width="20" height="20" rx="4" fill="#0f2454" />
@@ -254,6 +251,143 @@ const isAbout = route.startsWith("#/about");
       />
     </svg>
   );
+
+  // -------- build the page (no nested ternaries) --------
+  let page: React.ReactNode;
+
+  if (isAdd) {
+    page = (
+      <section>
+        <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
+        <AddLink lang={lang} />
+      </section>
+    );
+  } else if (isImport) {
+    page = (
+      <section>
+        <ImportExport lang={lang} />
+      </section>
+    );
+  } else if (isExport) {
+    page = (
+      <section>
+        <ExportPage lang={lang} rows={rows} />
+      </section>
+    );
+  } else if (isAbout) {
+    page = (
+      <section className="max-w-3xl">
+        <h2 className="text-lg font-semibold mb-2">About</h2>
+        <p className="text-sm">
+          Thai Good News helps you save, share, and print language resources. QR codes
+          and sharing use the original HTTPS link you add. Import CSV/TSV/JSON on the
+          Import page; export on the Export page.
+        </p>
+      </section>
+    );
+  } else if (isBrowse) {
+    page = (
+      <section>
+        {/* Search + filter */}
+        <div className="flex flex-wrap gap-4 items-center mb-3">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={i.searchPlaceholder}
+            className="border rounded px-2 py-1 min-w-[260px]"
+          />
+          <div className="text-sm">
+            <button className="linklike" onClick={() => setFilterThai(false)}>
+              {i.filterAll}
+            </button>
+            &nbsp;|&nbsp;
+            <button className="linklike" onClick={() => setFilterThai(true)}>
+              {i.filterThai}
+            </button>
+          </div>
+        </div>
+
+        {/* Simple bulk toolbar */}
+        <div className="flex flex-wrap items-center gap-8 mb-3">
+          <div className="text-sm">
+            <button className="linklike" onClick={selectAllVisible}>Select all</button>
+            &nbsp;|&nbsp;
+            <button className="linklike" onClick={clearSelection}>Clear</button>
+          </div>
+
+          <div className="flex items-center gap-6">
+            <button className="linklike" onClick={copySelectedLinks}>
+              Copy link
+            </button>
+            {selectedIds.size === 0 && (
+              <div className="hint-under">( Select at least one item )</div>
+            )}
+            <button className="btn-blue" onClick={batchDownload} disabled={!selectedRows.length}>
+              Download QR cards ({selectedRows.length})
+            </button>
+          </div>
+        </div>
+
+        {!filtered.length && (
+          <div className="text-sm text-gray-600 mb-3">{i.empty}</div>
+        )}
+
+        {/* Cards */}
+        <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filtered.map((row) => {
+            const enlarged = qrEnlargedId === row.id;
+            const qrSize = enlarged ? 320 : 192;
+            return (
+              <li key={row.id} className="card">
+                {/* Selection checkbox */}
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(row.id)}
+                      onChange={(e) => toggleSelect(row.id, e.target.checked)}
+                      style={{ marginRight: 8 }}
+                    />
+                    Select
+                  </label>
+                </div>
+
+                <div className="text-base font-semibold text-center">{row.name}</div>
+                <div className="text-sm mb-2 text-center">{row.language}</div>
+
+                {/* Click-to-enlarge QR */}
+                <div
+                  role="button"
+                  onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
+                  onKeyDown={(e) => { if (e.key === "Enter") setQrEnlargedId(enlarged ? null : row.id); }}
+                  tabIndex={0}
+                  title={enlarged ? "Shrink QR" : "Enlarge QR"}
+                  style={{ cursor: "pointer" }}
+                >
+                  <QR url={row.url} size={qrSize} idForDownload={`qr-${row.id}`} />
+                </div>
+
+                <div className="mt-2 text-center">
+                  <a href={row.url} className="underline" target="_blank" rel="noreferrer">
+                    {row.url}
+                  </a>
+                </div>
+
+                {/* Per-card actions */}
+                <div className="mt-2 flex justify-center gap-6 text-sm">
+                  <button className="linklike" onClick={() => editRow(row)}>Edit</button>
+                  <button className="linklike" onClick={() => deleteRow(row)}>Delete</button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    );
+  } else {
+    // default safeguard
+    page = <section />;
+  }
 
   return (
     <div>
@@ -266,35 +400,9 @@ const isAbout = route.startsWith("#/about");
       <header className="header p-3 flex items-center justify-between">
         <div />
         <div className="flex items-center gap-4 text-sm">
-          {/* Install (red) */}
           <InstallPWA />
-
-          {/* Share PWA (blue) */}
-          <button
-            className="btn-blue"
-            onClick={() => {
-              const shareData = {
-                title: "Thai Good News",
-                text: "Thai Good News (PWA)",
-                url: window.location.origin || window.location.href,
-              };
-              if (navigator.share) navigator.share(shareData).catch(() => {});
-              else {
-                navigator.clipboard.writeText(shareData.url).then(
-                  () => alert("PWA link copied"),
-                  () => alert("Could not copy link")
-                );
-              }
-            }}
-          >
-            Share PWA
-          </button>
-
-          {/* Font-size slider with AAA icon */}
-          <span
-            title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
-            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-          >
+          <span title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"} style={{display:"inline-flex",alignItems:"center",gap:6}}>
+            {/* AAA icon + slider */}
             {AAA}
             <input
               type="range"
@@ -308,14 +416,10 @@ const isAbout = route.startsWith("#/about");
             />
             <span style={{ fontSize: 12, color: "#6b7280" }}>{textPx}px</span>
           </span>
-
-          {/* Language + Logout */}
           <button className="linklike" onClick={() => setLang(lang === "en" ? "th" : "en")}>
             {lang === "en" ? "ไทย" : "EN"}
           </button>
-          <button className="linklike" onClick={() => signOut(auth)}>
-            {i.logout}
-          </button>
+          <button className="linklike" onClick={() => signOut(auth)}>{i.logout}</button>
         </div>
       </header>
 
@@ -323,101 +427,13 @@ const isAbout = route.startsWith("#/about");
       <nav className="p-3 flex flex-wrap gap-4 text-sm">
         <a className="underline" href="#/browse">{i.browse}</a>
         <a className="underline" href="#/add">{i.add}</a>
-        <a className="underline" href="#/import">Import</a>
+        <a className="underline" href="#/import">{i.importExport}</a>
         <a className="underline" href="#/export">Export</a>
         <a className="underline" href="#/about">About</a>
       </nav>
 
       {/* Main */}
-    // DELETE your current <main>...</main> and paste this:
-
-// Build the page to render (no nested ternaries)
-let page: React.ReactNode;
-
-if (isAdd) {
-  page = (
-    <section>
-      <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
-      <AddLink lang={lang} />
-    </section>
-  );
-} else if (isImport) {
-  page = (
-    <section>
-      <ImportExport lang={lang} />
-    </section>
-  );
-} else if (isExport) {
-  page = (
-    <section>
-      <ExportPage lang={lang} rows={rows} />
-    </section>
-  );
-} else if (isAbout) {
-  page = (
-    <section className="max-w-3xl">
-      <h2 className="text-lg font-semibold mb-2">About</h2>
-      <p className="text-sm">
-        Thai Good News helps you save, share, and print language resources. QR codes and sharing use the
-        original HTTPS link you add. Import CSV/TSV/JSON on the Import page; export on the Export page.
-      </p>
-    </section>
-  );
-} else {
-  // BROWSE (keep this minimal so it compiles; you can merge your fancier toolbar back in later)
-  page = (
-    <section>
-      <div className="flex flex-wrap gap-4 items-center mb-3">
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder={i.searchPlaceholder}
-          className="border rounded px-2 py-1 min-w-[260px]"
-        />
-        <div className="text-sm">
-          <button className="linklike" onClick={() => setFilterThai(false)}>
-            {i.filterAll}
-          </button>
-          &nbsp;|&nbsp;
-          <button className="linklike" onClick={() => setFilterThai(true)}>
-            {i.filterThai}
-          </button>
-        </div>
-      </div>
-
-      {!filtered.length && (
-        <div className="text-sm text-gray-600 mb-3">{i.empty}</div>
-      )}
-
-      <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {filtered.map((row) => (
-          <li key={row.id} className="card">
-            <div className="text-base font-semibold text-center">{row.name}</div>
-            <div className="text-sm mb-2 text-center">{row.language}</div>
-
-            <QR url={row.url} size={192} idForDownload={`qr-${row.id}`} />
-
-            <div className="mt-2 text-center">
-              <a href={row.url} className="underline" target="_blank" rel="noreferrer">
-                {row.url}
-              </a>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-return (
-  <div>
-    {/* (keep your banner, header, and nav above this) */}
-
-    <main className="p-3 max-w-5xl mx-auto">{page}</main>
-
-    {/* (keep your toasts/footer after this) */}
-  </div>
-);
+      <main className="p-3 max-w-5xl mx-auto">{page}</main>
 
       {/* Toasts + iOS hint */}
       <UpdateToast />
