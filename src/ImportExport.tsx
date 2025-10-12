@@ -8,7 +8,7 @@ import {
   serverTimestamp,
   doc,
 } from "firebase/firestore";
-import { toHttpsOrNull } from "./url";
+import { forceHttps } from "./url";
 
 type RowIn = { name?: string; language?: string; url?: string };
 type PreviewItem = {
@@ -86,18 +86,31 @@ export default function ImportExport({ lang }: { lang: Lang }) {
       if (rows.length === 0) rows = parseJson(text);
     }
 
-    const pv: PreviewItem[] = rows.map((r) => {
-      const urlHttps = toHttpsOrNull(r.url || "");
-      const valid = !!urlHttps;
-      return {
-        name: (r.name || "").trim(),
-        language: (r.language || "").trim(),
-        urlRaw: r.url || "",
-        urlHttps,
-        valid,
-        reason: valid ? undefined : "URL must be https (or valid domain to coerce)",
-      };
-    });
+ -    const pv: PreviewItem[] = rows.map((r) => {
+-      const urlHttps = toHttpsOrNull(r.url || "");
+-      const valid = !!urlHttps;
+-      return {
+-        name: (r.name || "").trim(),
+-        language: (r.language || "").trim(),
+-        urlRaw: r.url || "",
+-        urlHttps,
+-        valid,
+-        reason: valid ? undefined : "URL must be https (or valid domain to coerce)",
+-      };
+-    });
++    const pv: PreviewItem[] = rows.map((r) => {
++      const raw = (r.url || "").trim();
++      const urlHttps = forceHttps(raw);
++      const valid = !!urlHttps;
++      return {
++        name: (r.name || "").trim(),
++        language: (r.language || "").trim(),
++        urlRaw: raw,
++        urlHttps,
++        valid,
++        reason: valid ? undefined : "Invalid URL (couldn’t coerce to https)",
++      };
++    });
 
     setPreview(pv);
   }

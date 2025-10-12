@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { t, Lang } from "./i18n";
 import { db, auth } from "./firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { toHttpsOrNull } from "./url";
+import { forceHttps } from "./url";
 
 export default function AddLink({ lang }: { lang: Lang }) {
   const i = t(lang);
@@ -15,14 +15,16 @@ export default function AddLink({ lang }: { lang: Lang }) {
   const save = async () => {
     setMsg("");
 
-    const httpsUrl = toHttpsOrNull(url);
-    if (!httpsUrl) {
-      setMsg("URL must be a valid https:// address (no http).");
+    if (!auth.currentUser) {
+      setMsg("Not signed in.");
       return;
     }
 
-    if (!auth.currentUser) {
-      setMsg("Not signed in.");
+    const coerced = forceHttps(url);
+    if (!coerced) {
+      setMsg(lang === "th"
+        ? "ลิงก์ไม่ถูกต้อง (ต้องเป็น https:// หรือแก้ไขให้ถูกต้อง)"
+        : "Invalid URL (must be https or fixable to https)");
       return;
     }
 
@@ -31,7 +33,7 @@ export default function AddLink({ lang }: { lang: Lang }) {
       await addDoc(col, {
         name: name.trim(),
         language: language.trim(),
-        url: httpsUrl,
+        url: coerced, // <-- stored as https
         createdAt: serverTimestamp(),
       });
       setName("");
@@ -46,18 +48,30 @@ export default function AddLink({ lang }: { lang: Lang }) {
   return (
     <div className="max-w-md p-3">
       <label className="block text-sm mb-1">{i.name}</label>
-      <input className="w-full border rounded px-2 py-1 mb-3" value={name}
-        onChange={e => setName(e.target.value)} />
+      <input
+        className="w-full border rounded px-2 py-1 mb-3"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
 
       <label className="block text-sm mb-1">{i.language}</label>
-      <input className="w-full border rounded px-2 py-1 mb-3" value={language}
-        onChange={e => setLanguage(e.target.value)} placeholder="Thai, Karen, Hmong, ..." />
+      <input
+        className="w-full border rounded px-2 py-1 mb-3"
+        value={language}
+        onChange={(e) => setLanguage(e.target.value)}
+        placeholder="Thai, Karen, Hmong, ..."
+      />
 
-      <label className="block text-sm mb-1">{i.url} <span className="text-xs" style={{color:"#6b7280"}}>(https only)</span></label>
-      <input className="w-full border rounded px-2 py-1 mb-3" value={url}
-        onChange={e => setUrl(e.target.value)} placeholder="example.com/page or https://example.com/page" />
+      <label className="block text-sm mb-1">{i.url}</label>
+      <input
+        className="w-full border rounded px-2 py-1 mb-3"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        placeholder="5fish.mobi/A62808 or https://5fish.mobi/A62808"
+      />
 
       <button className="linklike" onClick={save}>{i.save}</button>
+
       {msg && <div className="mt-2 text-sm">{msg}</div>}
     </div>
   );
