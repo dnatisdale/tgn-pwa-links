@@ -9,6 +9,27 @@ declare global {
 }
 type Props = { lang: Lang; className?: string };
 export default function InstallPWA({ lang, className }: Props){
+  const [promptEvent, setPromptEvent] = React.useState<any>(null);
+   const t = strings[lang];
+
+   React.useEffect(() => {
+     const handler = (e: any) => {
+       e.preventDefault();
+       setPromptEvent(e);
+     };
+     window.addEventListener('beforeinstallprompt', handler);
+     return () => window.removeEventListener('beforeinstallprompt', handler);
+   }, []);
+
+   const onClick = async () => {
+     if (promptEvent) {
+       await promptEvent.prompt();
+       setPromptEvent(null);
+     } else if ((window as any).__tgnUpdateSW) {
+       (window as any).__tgnUpdateSW();
+     }
+   };
+
   const [promptEvent, setPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [canInstall, setCanInstall] = useState(false);
 
@@ -39,9 +60,12 @@ export default function InstallPWA({ lang, className }: Props){
     }
   }
 
-  return (
-    <button className="btn-red" onClick={doInstall} aria-label="Install app">
-      Install
-    </button>
-  );
-}
+return (
+  <button
+    className={`btn ${className ?? 'btn-red'}`}
+    onClick={onClick}
+  >
+    {t.installPwa}
+  </button>
++  );
+ }}
