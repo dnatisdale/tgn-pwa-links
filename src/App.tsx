@@ -17,22 +17,6 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { collection, onSnapshot, orderBy, query, doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { toHttpsOrNull as toHttps } from "./url";
 
-function SmallAIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
-      <path d="M6 16l2-8h1.5l2 8h-1.5l-.35-1.5H7.85L7.5 16H6zm2.2-3h1.6l-.8-3.3L8.2 13z" fill="#111" />
-    </svg>
-  );
-}
-
-function BigAIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden>
-      <path d="M10 18l3-12h2l3 12h-2l-.5-2H12.5l-.5 2h-2zm2.6-4h3l-1.5-6-1.5 6z" fill="#111" />
-    </svg>
-  );
-}
-
 type Row = { id: string; name: string; language: string; url: string };
 
 // ---- helpers ----
@@ -58,6 +42,21 @@ function formatPacific(iso?: string) {
 declare const __APP_VERSION__: string | undefined;
 declare const __BUILD_DATE__: string | undefined;
 declare const __BUILD_TIME__: string | undefined;
+
+function SmallAIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
+      <path d="M6 16l2-8h1.5l2 8h-1.5l-.35-1.5H7.85L7.5 16H6zm2.2-3h1.6l-.8-3.3L8.2 13z" fill="currentColor" />
+    </svg>
+  );
+}
+function BigAIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden>
+      <path d="M10 18l3-12h2l3 12h-2l-.5-2H12.5l-.5 2h-2zm2.6-4h3l-1.5-6-1.5 6z" fill="currentColor" />
+    </svg>
+  );
+}
 
 export default function App() {
   // language
