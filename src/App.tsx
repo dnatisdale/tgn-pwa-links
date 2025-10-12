@@ -98,6 +98,10 @@ export default function App() {
       const list: Row[] = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
       setRows(list);
       // prune selection for removed docs
+      // Selected items
+const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+const selectedRows = filtered.filter((r) => selectedIds.has(r.id));
+
       setSelectedIds((prev) => {
         const next = new Set<string>();
         for (const id of prev) if (list.find((r) => r.id === id)) next.add(id);
@@ -118,6 +122,41 @@ export default function App() {
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
+
+
+  <div className="flex items-center gap-8">
+  {/* Share all selected links */}
+  <ShareMenu
+    urls={selectedRows.map(r => r.url)}
+    title="Thai Good News"
+    label="Share"
+  />
+
+  {/* (Optional) keep your Download QR cards button right next to it */}
+  <button className="btn-blue" onClick={batchDownload} disabled={!selectedRows.length}>
+    Download QR cards ({selectedRows.length})
+  </button>
+
+  {/* (Optional) your Copy all links action */}
+  <button
+    className="linklike"
+    onClick={async () => {
+      const urls = selectedRows.map((r) => r.url);
+      if (!urls.length) {
+        alert("Select at least one");
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(urls.join("\n"));
+        alert("All selected links copied");
+      } catch {
+        alert("Copy failed");
+      }
+    }}
+  >
+    Copy all links
+  </button>
+</div>
 
   // filter + search
   const filtered = useMemo(() => {
