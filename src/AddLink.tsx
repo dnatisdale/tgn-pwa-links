@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { t, Lang } from "./i18n";
 import { db, auth } from "./firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { forceHttps } from "./url";
+import { toHttpsOrNull as toHttps } from "./url";
 
 export default function AddLink({ lang }: { lang: Lang }) {
   const i = t(lang);
@@ -14,31 +14,24 @@ export default function AddLink({ lang }: { lang: Lang }) {
 
   const save = async () => {
     setMsg("");
-
     if (!auth.currentUser) {
       setMsg("Not signed in.");
       return;
     }
-
-    const coerced = forceHttps(url);
-    if (!coerced) {
-      setMsg(lang === "th"
-        ? "ลิงก์ไม่ถูกต้อง (ต้องเป็น https:// หรือแก้ไขให้ถูกต้อง)"
-        : "Invalid URL (must be https or fixable to https)");
+    const https = toHttps(url); // accepts with or without https, ensures https://
+    if (!https) {
+      setMsg("Please enter a valid URL (https only).");
       return;
     }
-
     try {
       const col = collection(db, "users", auth.currentUser.uid, "links");
       await addDoc(col, {
         name: name.trim(),
         language: language.trim(),
-        url: coerced, // <-- stored as https
+        url: https,
         createdAt: serverTimestamp(),
       });
-      setName("");
-      setLanguage("");
-      setUrl("");
+      setName(""); setLanguage(""); setUrl("");
       setMsg(lang === "th" ? "บันทึกแล้ว" : "Saved");
     } catch (e: any) {
       setMsg(e.message || String(e));
@@ -46,32 +39,41 @@ export default function AddLink({ lang }: { lang: Lang }) {
   };
 
   return (
-    <div className="max-w-md p-3">
-      <label className="block text-sm mb-1">{i.name}</label>
-      <input
-        className="w-full border rounded px-2 py-1 mb-3"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
+    <div className="max-w-md p-3 space-y-3">
+      {/* Name */}
+      <div>
+        <label className="block text-sm mb-1">{i.name}</label>
+        <input
+          className="w-full border rounded px-2 py-1"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          placeholder=""
+        />
+      </div>
 
-      <label className="block text-sm mb-1">{i.language}</label>
-      <input
-        className="w-full border rounded px-2 py-1 mb-3"
-        value={language}
-        onChange={(e) => setLanguage(e.target.value)}
-        placeholder="Thai, Karen, Hmong, ..."
-      />
+      {/* Language */}
+      <div>
+        <label className="block text-sm mb-1">{i.language}</label>
+        <input
+          className="w-full border rounded px-2 py-1"
+          value={language}
+          onChange={e => setLanguage(e.target.value)}
+          placeholder="Thai, Karen, Hmong, …"
+        />
+      </div>
 
-      <label className="block text-sm mb-1">{i.url}</label>
-      <input
-        className="w-full border rounded px-2 py-1 mb-3"
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        placeholder="5fish.mobi/A62808 or https://5fish.mobi/A62808"
-      />
+      {/* URL */}
+      <div>
+        <label className="block text-sm mb-1">{i.url}</label>
+        <input
+          className="w-full border rounded px-2 py-1"
+          value={url}
+          onChange={e => setUrl(e.target.value)}
+          placeholder="URL (https:// not required)"
+        />
+      </div>
 
-      <button className="linklike" onClick={save}>{i.save}</button>
-
+      <button className="btn-red" onClick={save}>{i.save}</button>
       {msg && <div className="mt-2 text-sm">{msg}</div>}
     </div>
   );
