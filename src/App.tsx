@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { t, Lang } from "./i18n";
 import Login from "./Login";
+import ExportPage from "./Export";
 import QR from "./QR";
 import AddLink from "./AddLink";
 import DownloadQRButton from "./DownloadQRButton";
