@@ -1,114 +1,62 @@
-/* --- Tailwind (must be first) --- */
+/* Tailwind layers */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* --- Base variables & elements --- */
-:root { --base: 16px; }           /* updated by App.tsx for S / M / L */
+/* ---------- Custom CSS below ---------- */
+
+/* Base */
+:root { --base: 16px; }                  /* updated by App.tsx */
 html { font-size: var(--base); }
 a { text-decoration: underline; }
-
-/* Link-like button (text-only) */
 button.linklike {
-  background: none;
-  border: none;
-  padding: 2px 4px;               /* tiny tap target */
-  margin: 0;
-  text-decoration: underline;
-  cursor: pointer;
-  border-radius: 6px;
-}
-button.linklike:focus-visible {
-  outline: 2px solid #111827;     /* dark focus ring */
-  outline-offset: 2px;
+  background: none; border: none; padding: 0;
+  text-decoration: underline; cursor: pointer;
 }
 
-.toast {
-  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
-  background: #111827; color: #fff; padding: 10px 14px; border-radius: 10px;
-  box-shadow: 0 6px 24px rgba(0,0,0,.25); z-index: 50;
-}
-.toast-row { display: flex; gap: 10px; align-items: center; }
-.toast-btn { background: #fff; color: #111827; border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
-.toast-btn.ghost { background: transparent; color: #fff; border: 1px solid #fff; }
-.toast {
-  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
-  background: #111827; color: #fff; padding: 10px 14px; border-radius: 10px;
-  box-shadow: 0 6px 24px rgba(0,0,0,.25); z-index: 50;
-}
-.toast-row { display: flex; gap: 10px; align-items: center; }
-.toast-btn { background: #fff; color: #111827; border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
-.toast-btn.ghost { background: transparent; color: #fff; border: 1px solid #fff; }
+/* Layout atoms */
+.header { border-bottom: 1px solid #e5e7eb; }
+.card   { border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 0.75rem; }
 
-}
-.ios-hint { bottom: 64px; }
-
-
-/* --- Layout atoms --- */
-.header { border-bottom: 1px solid #e5e7eb; } /* light gray */
-
-.card {
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
-  padding: 0.75rem;
-}
-
-/* Banner (top) */
-.banner-wrap { border-bottom: 1px solid #111827; }  /* very dark, thin line */
+/* Banner */
+.banner-wrap { border-bottom: 1px solid #111827; } /* very dark thin line */
 .banner {
-  max-width: 1200px;
-  width: 100%;
-  display: block;
-  margin: 0 auto;                 /* centered */
+  max-width: 1200px; width: 100%; display: block; margin: 0 auto;
 }
 
-/* Centering helpers */
-.qr-center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+/* QR + share alignment */
+.qr-center { display: flex; justify-content: center; align-items: center; }
 .share-center { display: flex; justify-content: center; }
 .share-row {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
+  display: inline-flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center;
 }
 
-/* Optional logo (if used) */
-.logo {
-  height: 28px;
-  border-radius: 8px;
-  vertical-align: middle;
-}
+/* Logo (if used) */
+.logo { height: 28px; border-radius: 8px; vertical-align: middle; }
 
 /* Footer */
 .footer {
   border-top: 1px solid #e5e7eb;
-  margin-top: 20px;
-  padding: 10px 12px;
-  color: #6b7280;                 /* gray-500-ish */
-  font-size: 12px;
-  text-align: center;
-}
-
-/* --- Small niceties --- */
-@media (hover: hover) {
-  a:hover, button.linklike:hover { text-decoration-thickness: 2px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; transition: none !important; }
+  margin-top: 20px; padding: 10px 12px;
+  color: #6b7280; font-size: 12px; text-align: center;
 }
 
 /* Thai flag red button */
 .btn-red {
-  background: #a51931;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 14px;
-  cursor: pointer;
+  background: #a51931; color: #fff; border: none; border-radius: 8px;
+  padding: 10px 14px; cursor: pointer;
 }
 .btn-red:hover { opacity: 0.92; }
+
+/* Update toast */
+.toast {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+  background: #111827; color: #fff; padding: 10px 14px; border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.25); z-index: 50;
+}
+.toast-row { display: flex; gap: 10px; align-items: center; }
+.toast-btn {
+  background: #fff; color: #111827; border: none; border-radius: 6px;
+  padding: 6px 10px; cursor: pointer;
+}
+.toast-btn.ghost { background: transparent; color: #fff; border: 1px solid #fff; }
