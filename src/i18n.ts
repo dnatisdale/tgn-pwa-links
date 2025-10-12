@@ -1,59 +1,73 @@
 // src/i18n.ts
- export type Lang = 'en' | 'th';
+export type Lang = 'en' | 'th';
 
- export const strings: Record<Lang, Record<string, string>> = {
-   // … your EN / TH entries …
- };
+export const strings = {
+  en: {
+    appTitle: 'Thai Good News',
+    browse: 'Browse',
+    add: 'Add',
+    import: 'Import', // must be just “Import”
+    export: 'Export',
+    about: 'About',
+    installPwa: 'Install PWA',
+    sharePwa: 'Share PWA',
+    signIn: 'Save / Sign in',
+    continueGuest: 'Continue as guest',
+    name: 'Name',
+    language: 'Language',
+    url: 'URL (https)',
+    save: 'Save',
+    delete: 'Delete',
+    edit: 'Edit',
+    print: 'Print',
+    pdf: 'PDF',
+    csv: 'CSV',
+    newVersion: 'New Version Available',
+    refresh: 'Refresh',
+    skip: 'Skip',
+    share: 'Share',
+    copyLinks: 'Copy links',
+    emailLinks: 'Email links + QR',
+    tipInvalid:
+      'Tip: if URL (https) is empty, we rejected it (http or invalid). Fix your file and re-import.',
+  },
+  th: {
+    appTitle: 'ข่าวดีภาษาไทย',
+    browse: 'ดูรายการ',
+    add: 'เพิ่ม',
+    import: 'นำเข้า',
+    export: 'ส่งออก',
+    about: 'เกี่ยวกับ',
+    installPwa: 'ติดตั้งแอป',
+    sharePwa: 'แชร์แอป',
+    signIn: 'บันทึก / เข้าสู่ระบบ',
+    continueGuest: 'เข้าต่อแบบผู้เยี่ยมชม',
+    name: 'ชื่อ',
+    language: 'ภาษา',
+    url: 'ลิงก์ (https)',
+    save: 'บันทึก',
+    delete: 'ลบ',
+    edit: 'แก้ไข',
+    print: 'พิมพ์',
+    pdf: 'PDF',
+    csv: 'CSV',
+    newVersion: 'มีเวอร์ชันใหม่',
+    refresh: 'รีเฟรช',
+    skip: 'ข้าม',
+    share: 'แชร์',
+    copyLinks: 'คัดลอกลิงก์',
+    emailLinks: 'อีเมลลิงก์ + QR',
+    tipInvalid:
+      'เคล็ดลับ: ถ้า URL (https) ว่าง เราปฏิเสธ (http หรือไม่ถูกต้อง) กรุณาแก้ไฟล์แล้วนำเข้าใหม่',
+  },
+} as const satisfies Record<Lang, Record<string, string>>;
 
- // Legacy-friendly helper so callers can do: tr(lang, 'export')
- export function tr(lang: Lang, key: string): string {
-   return strings[lang]?.[key] ?? key;
- }
+// Optional convenience helper so existing imports `tr` work:
+export function tr(lang: Lang, key: string): string {
+  // If you want stricter typing, change `key: string` to
+  // `key: keyof typeof strings['en'] | keyof typeof strings['th']`
+  return strings[lang]?.[key] ?? key;
+}
 
-export const t = (l: Lang) => ({
-  appTitle:        l === "th" ? "ข่าวประเสริฐภาษาไทย" : "Thai Good News",
-  browse:          l === "th" ? "เรียกดู" : "Browse",
-  add:             l === "th" ? "เพิ่มลิงก์" : "Add",
-  importTitle:     l === "th" ? "นำเข้าข้อมูล" : "Import",
-  exportTitle:     l === "th" ? "ส่งออกข้อมูล" : "Export",
-  importExport:    l === "th" ? "นำเข้าข้อมูล" : "Import", // nav text for the Import page
-  about:           l === "th" ? "เกี่ยวกับ" : "About",
-
-  logout:          l === "th" ? "ออกจากระบบ" : "Log out",
-  loginTitle:      l === "th" ? "เข้าสู่ระบบด้วยอีเมล" : "Sign in with Email",
-  email:           l === "th" ? "อีเมล" : "Email",
-  password:        l === "th" ? "รหัสผ่าน" : "Password",
-  signIn:          l === "th" ? "เข้าสู่ระบบ" : "Sign in",
-  signUp:          l === "th" ? "สมัครสมาชิก" : "Sign up",
-
-  name:            l === "th" ? "ชื่อเรื่อง" : "Name",
-  language:        l === "th" ? "ภาษา" : "Language",
-  // Friendlier URL hint (you said you don’t want the strict message here)
-  url:             l === "th" ? "ลิงก์" : "URL",
-  urlHint:         l === "th" ? "ใส่ URL จะมีหรือไม่มี https:// ก็ได้" : "Enter URL (with or without https://)",
-  save:            l === "th" ? "บันทึก" : "Save",
-
-  searchPlaceholder: l === "th" ? "ค้นหาทุกภาษา…" : "Search all languages…",
-  size:              l === "th" ? "ขนาดตัวอักษร" : "Text size",
-  small:             l === "th" ? "เล็ก" : "Small",
-  medium:            l === "th" ? "กลาง" : "Medium",
-  large:             l === "th" ? "ใหญ่" : "Large",
-  filterAll:         l === "th" ? "ทั้งหมด" : "All",
-  filterThai:        l === "th" ? "เฉพาะภาษาไทย" : "Thai only",
-
-  share:          l === "th" ? "แชร์" : "Share",
-  emailShare:     l === "th" ? "อีเมล" : "Email",
-  fbShare:        l === "th" ? "เฟซบุ๊ก" : "Facebook",
-  xShare:         l === "th" ? "เอ็กซ์" : "X / Twitter",
-  waShare:        l === "th" ? "วอทส์แอป" : "WhatsApp",
-  tgShare:        l === "th" ? "เทเลแกรม" : "Telegram",
-  lineShare:      l === "th" ? "ไลน์" : "LINE",
-  copyLink:       l === "th" ? "คัดลอกลิงก์" : "Copy link",
-  downloadQR:     l === "th" ? "ดาวน์โหลดรูป QR" : "Download QR card",
-
-  empty:          l === "th" ? "ยังไม่มีลิงก์ — กด เพิ่มลิงก์ เพื่อเริ่มต้น" : "No links yet — click Add to create your first one.",
-  selectAtLeast:  l === "th" ? "( เลือกอย่างน้อย 1 รายการ )" : "( Select at least one item )",
-  select:         l === "th" ? "เลือก" : "Select",
-  selectAll:      l === "th" ? "เลือกทั้งหมด" : "Select all",
-  clear:          l === "th" ? "ล้างการเลือก" : "Clear",
-});
+// Optional: strongly-typed keys (useful for autocompletion):
+export type I18nKey = keyof typeof strings['en'];
