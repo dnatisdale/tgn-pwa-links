@@ -4,6 +4,8 @@ import { t, Lang } from "./i18n";
 import Login from "./Login";
 import QR from "./QR";
 import AddLink from "./AddLink";
+import SharePWA from "./SharePWA";
+import { THAI_RED, THAI_BLUE } from "./ColorTheme";
 import ImportExport from "./ImportExport";
 import ExportPage from "./Export";
 import InstallPWA from "./InstallPWA";
