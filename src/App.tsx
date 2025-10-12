@@ -262,11 +262,13 @@ export default function App() {
       </header>
 
       {/* Nav */}
-      <nav className="p-3 flex flex-wrap gap-4 text-sm">
-        <a className="underline" href="#/browse">{i.browse}</a>
-        <a className="underline" href="#/add">{i.add}</a>
-        <a className="underline" href="#/import">{i.importExport}</a>
-      </nav>
+ <nav className="p-3 flex flex-wrap gap-4 text-sm">
+  <a className="underline" href="#/browse">{i.browse}</a>
+  <a className="underline" href="#/add">{i.add}</a>
+  <a className="underline" href="#/import">{i.importExport}</a>
+  <a className="underline" href="#/export">Export</a>   {/* <-- add this */}
+</nav>
+
 
       {/* Main */}
       <main className="p-3 max-w-5xl mx-auto">
