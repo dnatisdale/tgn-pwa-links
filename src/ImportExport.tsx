@@ -142,29 +142,42 @@ export default function ImportExport({ lang }: { lang: Lang }) {
   }
 
   return (
-    <div className="max-w-3xl p-3">
-      {/* File picker */}
-      <div className="mb-1">
-        <span>Choose a file</span>{" "}
-        <span className="text-xs" style={{ color: "#6b7280" }}>(CSV / TSV / JSON)</span>
-      </div>
-      <input type="file"
-        accept=".csv,.tsv,.txt,.json,application/json,text/csv"
-        onChange={onFile}
-      />
+    // ---- File picker row (REPLACE your current picker + actions with this) ----
+<div className="file-row mb-2">
+  {/* Red "Choose file" as a styled label (keeps native file picker) */}
+  <label className="btn-red" style={{ cursor: "pointer" }}>
+    Choose file
+    <input
+      type="file"
+      accept=".csv,.tsv,.txt,.json,application/json,text/csv"
+      onChange={onFile}
+      style={{ display: "none" }}
+    />
+  </label>
 
-      {/* Actions */}
-      <div className="mt-3 flex items-center gap-3">
-        <button
-          className="btn-red"
-          onClick={doImport}
-          disabled={importing || validItems.length === 0}
-        >
-          {importing ? "Importing…" : `Import ${validItems.length} valid`}
-        </button>
+  {/* Red pill hint */}
+  <span className="pill-red">(CSV / JSON / TSV)</span>
 
-        <button className="linklike" onClick={exportCSV}>Export CSV (preview)</button>
-      </div>
+  {/* Selected filename (if any) */}
+  {fileName && (
+    <span className="text-sm" style={{ color: "#6b7280" }}>
+      {fileName}
+    </span>
+  )}
+
+  {/* Blue “Add” button appears only when a file has been chosen */}
+  {fileName && (
+    <button
+      className="btn-blue"
+      onClick={doImport}
+      disabled={importing || validItems.length === 0}
+      title={validItems.length ? `Import ${validItems.length} valid` : "No valid rows"}
+    >
+      {importing ? "Importing…" : `Add (${validItems.length})`}
+    </button>
+  )}
+</div>
+
 
       {importMsg && <div className="mt-2 text-sm">{importMsg}</div>}
 
