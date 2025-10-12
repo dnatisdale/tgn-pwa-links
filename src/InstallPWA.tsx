@@ -1,49 +1,45 @@
 // src/InstallPWA.tsx
 import React, { useEffect, useState } from "react";
 
-type PWAEvent = Event & {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-};
-
-function isStandalone() {
-  return (navigator as any).standalone === true ||
-         window.matchMedia?.("(display-mode: standalone)").matches;
-}
-function isIOS() {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+declare global {
+  interface Window {
+    __tgnUpdateSW?: (reload?: boolean) => void;
+  }
 }
 
 export default function InstallPWA() {
-  const [evt, setEvt] = useState<PWAEvent | null>(null);
-  const [installed, setInstalled] = useState(isStandalone());
+  const [promptEvent, setPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
+  const [canInstall, setCanInstall] = useState(false);
 
   useEffect(() => {
-    const onBeforeInstall = (e: Event) => { e.preventDefault(); setEvt(e as PWAEvent); };
-    const onAppInstalled = () => setInstalled(true);
-    window.addEventListener("beforeinstallprompt", onBeforeInstall);
-    window.addEventListener("appinstalled", onAppInstalled);
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
-      window.removeEventListener("appinstalled", onAppInstalled);
+    const onBeforeInstall = (e: any) => {
+      e.preventDefault();
+      setPromptEvent(e);
+      setCanInstall(true);
     };
+    window.addEventListener("beforeinstallprompt", onBeforeInstall as any);
+    return () => window.removeEventListener("beforeinstallprompt", onBeforeInstall as any);
   }, []);
 
-  if (installed) return null;
-
-  const install = async () => {
-    if (evt) {
-      await evt.prompt();
-      try { await evt.userChoice; } finally { setEvt(null); }
-    } else {
-      // Fallback guidance
-      if (isIOS()) alert("iOS: Tap Share (□↑) → Add to Home Screen");
-      else alert("Use your browser menu → Install app / Add to Home Screen");
+  async function doInstall() {
+    try {
+      if (promptEvent) {
+        await promptEvent.prompt();
+        await promptEvent.userChoice;
+        setPromptEvent(null);
+        setCanInstall(false);
+      } else if ((navigator as any).standalone === false) {
+        alert("On iPhone/iPad: Share → Add to Home Screen");
+      } else {
+        alert("If your browser supports it, an install prompt will show here.");
+      }
+    } catch (e: any) {
+      alert(e?.message || String(e));
     }
-  };
+  }
 
   return (
-    <button className="linklike" onClick={install} aria-label="Install app" title="Install">
+    <button className="btn-red" onClick={doInstall} aria-label="Install app">
       Install
     </button>
   );
