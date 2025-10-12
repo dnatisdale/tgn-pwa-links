@@ -1,58 +1,62 @@
-// vite.config.ts
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import { VitePWA } from "vite-plugin-pwa";
-import { readFileSync } from "fs";
-import { execSync } from "child_process";
+/* Tailwind layers */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-// ---- Build tag (automatic) ----
-// Priority: Netlify COMMIT_REF -> git rev-parse -> package.json version -> 'local-dev'
-function buildTag(): string {
-  const envSha = process.env.COMMIT_REF; // Netlify provides this
-  if (envSha) return `@${envSha.slice(0, 7)}`;
-  try {
-    const sha = execSync("git rev-parse --short HEAD").toString().trim();
-    if (sha) return `@${sha}`;
-  } catch {}
-  try {
-    const pkg = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf-8"));
-    if (pkg?.version) return `v${pkg.version}`;
-  } catch {}
-  return "local-dev";
+/* ---------- Custom CSS below ---------- */
+
+/* Base */
+:root { --base: 16px; }                  /* updated by App.tsx */
+html { font-size: var(--base); }
+a { text-decoration: underline; }
+button.linklike {
+  background: none; border: none; padding: 0;
+  text-decoration: underline; cursor: pointer;
 }
 
-const TAG = buildTag();
-const now = new Date();
-const BUILD_DATE = new Intl.DateTimeFormat("en-US", {
-  timeZone: "America/Los_Angeles", year: "numeric", month: "long", day: "numeric"
-}).format(now);             // e.g., "October 11, 2025"
-const BUILD_TIME = new Intl.DateTimeFormat("en-US", {
-  timeZone: "America/Los_Angeles", hour12: false, hour: "2-digit", minute: "2-digit"
-}).format(now);             // e.g., "14:52"
+/* Layout atoms */
+.header { border-bottom: 1px solid #e5e7eb; }
+.card   { border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 0.75rem; }
 
-export default defineConfig({
-  plugins: [
-    react(),
-    VitePWA({
-      registerType: "prompt",
-      includeAssets: ["robots.txt"],
-      manifest: {
-        name: "Thai Good News",
-        short_name: "TGN",
-        start_url: "/",
-        display: "standalone",
-        background_color: "#ffffff",
-        theme_color: "#0f2454",
-        icons: [
-          { src: "/icons/pwa-192.png", sizes: "192x192", type: "image/png" },
-          { src: "/icons/pwa-512.png", sizes: "512x512", type: "image/png" }
-        ]
-      }
-    })
-  ],
-  define: {
-    __APP_VERSION__: JSON.stringify(TAG),        // now a commit tag like "@a1b2c3d"
-    __BUILD_DATE__: JSON.stringify(BUILD_DATE),  // PT, full month day year
-    __BUILD_TIME__: JSON.stringify(BUILD_TIME),  // PT, 24h, no seconds
-  },
-});
+/* Banner */
+.banner-wrap { border-bottom: 1px solid #111827; } /* very dark thin line */
+.banner {
+  max-width: 1200px; width: 100%; display: block; margin: 0 auto;
+}
+
+/* QR + share alignment */
+.qr-center { display: flex; justify-content: center; align-items: center; }
+.share-center { display: flex; justify-content: center; }
+.share-row {
+  display: inline-flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center;
+}
+
+/* Logo (if used) */
+.logo { height: 28px; border-radius: 8px; vertical-align: middle; }
+
+/* Footer */
+.footer {
+  border-top: 1px solid #e5e7eb;
+  margin-top: 20px; padding: 10px 12px;
+  color: #6b7280; font-size: 12px; text-align: center;
+}
+
+/* Thai flag red button */
+.btn-red {
+  background: #a51931; color: #fff; border: none; border-radius: 8px;
+  padding: 10px 14px; cursor: pointer;
+}
+.btn-red:hover { opacity: 0.92; }
+
+/* Update toast */
+.toast {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+  background: #111827; color: #fff; padding: 10px 14px; border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.25); z-index: 50;
+}
+.toast-row { display: flex; gap: 10px; align-items: center; }
+.toast-btn {
+  background: #fff; color: #111827; border: none; border-radius: 6px;
+  padding: 6px 10px; cursor: pointer;
+}
+.toast-btn.ghost { background: transparent; color: #fff; border: 1px solid #fff; }
