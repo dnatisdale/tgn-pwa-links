@@ -1,69 +1,143 @@
+// src/Share.tsx
 import React, { useState } from "react";
-import { normalizeHttps } from "./utils";
 
-function enc(s: string) { return encodeURIComponent(s); }
-
+/**
+ * Props:
+ *  - url: the https link to share
+ *  - title: optional title for message
+ *  - qrCanvasId: if provided, we will try to attach the QR image (from <canvas id=...>)
+ */
 export default function Share({
   url,
-  title,
-}: { url: string; title?: string }) {
-  const [open, setOpen] = useState(false);
-  const href = normalizeHttps(url) || url;
+  title = "Thai Good News",
+  qrCanvasId,
+}: {
+  url: string;
+  title?: string;
+  qrCanvasId?: string;
+}) {
+  const [busy, setBusy] = useState(false);
 
-  const doWebShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: title || "Link", url: href });
-        setOpen(false);
-        return;
-      } catch {}
+  async function getQrFile(): Promise<File | null> {
+    if (!qrCanvasId) return null;
+    const canvas = document.getElementById(qrCanvasId) as HTMLCanvasElement | null;
+    if (!canvas) return null;
+
+    // make a ~300–400 KB PNG by controlling pixel size and quality (canvas.toBlob controls quality for JPEG; PNG is lossless)
+    // if your canvas is large, we can downscale to keep file smaller:
+    const MAX = 512;
+    const w = canvas.width, h = canvas.height;
+    const scale = Math.min(1, MAX / Math.max(w, h));
+    let outCanvas = canvas;
+
+    if (scale < 1) {
+      const c = document.createElement("canvas");
+      c.width = Math.round(w * scale);
+      c.height = Math.round(h * scale);
+      const ctx = c.getContext("2d");
+      if (!ctx) return null;
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(canvas, 0, 0, c.width, c.height);
+      outCanvas = c;
     }
-    setOpen(v => !v);
-  };
 
-  // Email links
-  const mailto = `mailto:?subject=${enc(title || "Link")}&body=${enc(href)}`;
-  // Direct Gmail compose (works even if Gmail isn't the default handler)
-  const gmail = `https://mail.google.com/mail/?view=cm&fs=1&su=${enc(title || "Link")}&body=${enc(href)}`;
+    const blob: Blob | null = await new Promise((res) =>
+      outCanvas.toBlob((b) => res(b), "image/png")
+    );
+    if (!blob) return null;
 
-  // Social
-  const lineURL = `https://line.me/R/msg/text/?${enc((title || "") + " " + href)}`;
-  const fbURL   = `https://www.facebook.com/sharer/sharer.php?u=${enc(href)}`;
-  const xURL    = `https://twitter.com/intent/tweet?url=${enc(href)}&text=${enc(title || "")}`;
-  const waURL   = `https://wa.me/?text=${enc((title || "") + " " + href)}`;
-  const tgURL   = `https://t.me/share/url?url=${enc(href)}&text=${enc(title || "")}`;
+    // Use URL-friendly name (use hostname if possible)
+    let namePart = "qr";
+    try {
+      const u = new URL(url);
+      namePart = (u.hostname + u.pathname).replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "");
+      if (!namePart) namePart = "qr";
+    } catch {
+      // ignore
+    }
 
-  const copy = async () => {
-    try { await navigator.clipboard.writeText(href); alert("Link copied"); }
-    catch { alert("Copy failed"); }
-    setOpen(false);
-  };
+    return new File([blob], `${namePart}.png`, { type: "image/png" });
+  }
+
+  async function doWebShare() {
+    setBusy(true);
+    try {
+      const files: File[] = [];
+      const qr = await getQrFile();
+      if (qr) files.push(qr);
+
+      const shareData: ShareData = {
+        title,
+        text: `${title}\n${url}`,
+        url, // some platforms use this field too
+        files: files.length ? files : undefined,
+      };
+
+      // Can this platform share files?
+      // If files present, we must check navigator.canShare({files})
+      if (shareData.files && navigator.canShare && !navigator.canShare({ files: shareData.files })) {
+        // fall back without files
+        delete shareData.files;
+      }
+
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback to mailto (no attachments allowed via mailto)
+        const subject = encodeURIComponent(title);
+        const body = encodeURIComponent(`${title}\n${url}`);
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+      }
+    } catch {
+      // swallow user-cancel or errors
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(url);
+      alert("Link copied");
+    } catch {
+      alert("Copy failed");
+    }
+  }
 
   return (
-    <div className="relative inline-block">
-      <button className="btn-red" onClick={doWebShare}>
-        Share ▾
-      </button>
+    <div className="share-center">
+      <div className="share-row">
+        {/* Red Share button (dropdown look optional; we just do a single button now) */}
+        <button className="btn-red" onClick={doWebShare} disabled={busy} title="Share QR + link">
+          {busy ? "Sharing…" : "Share"}
+        </button>
 
-      {open && (
-        <div
-          className="absolute z-10 mt-2 border rounded bg-white shadow p-2 text-sm"
-          style={{ minWidth: 220 }}
-          onMouseLeave={() => setOpen(false)}
-        >
-          <div className="px-2 py-1 text-gray-500">Share via</div>
-          <div className="grid grid-cols-2 gap-x-3 gap-y-1 px-2 pb-2">
-            <a className="underline" href={gmail} target="_blank" rel="noreferrer">Gmail</a>
-            <a className="underline" href={mailto}>Email (mailto)</a>
-            <a className="underline" href={lineURL} target="_blank" rel="noreferrer">LINE</a>
-            <a className="underline" href={fbURL}   target="_blank" rel="noreferrer">Facebook</a>
-            <a className="underline" href={xURL}    target="_blank" rel="noreferrer">X</a>
-            <a className="underline" href={waURL}   target="_blank" rel="noreferrer">WhatsApp</a>
-            <a className="underline" href={tgURL}   target="_blank" rel="noreferrer">Telegram</a>
-            <button className="linklike" onClick={copy}>Copy link</button>
-          </div>
-        </div>
-      )}
+        {/* Fallback helpers visible always */}
+        <button className="linklike" onClick={copyLink} title="Copy link">
+          Copy link
+        </button>
+
+        {/* Let user download the QR image (so they can attach to email manually) */}
+        {qrCanvasId && (
+          <button
+            className="linklike"
+            onClick={async () => {
+              const qr = await getQrFile();
+              if (!qr) return;
+              const a = document.createElement("a");
+              a.href = URL.createObjectURL(qr);
+              a.download = qr.name;
+              a.click();
+              URL.revokeObjectURL(a.href);
+            }}
+            title="Download QR image"
+          >
+            Download QR image
+          </button>
+        )}
+      </div>
     </div>
   );
 }
