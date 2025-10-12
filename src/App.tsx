@@ -151,9 +151,6 @@ useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
     return <Login lang={lang} onLang={setLang} onSignedIn={() => {}} />;
   }
 
-  // --- Selection helpers (declare BEFORE JSX uses them) ---
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-const [qrEnlargedId, setQrEnlargedId] = useState<string | null>(null);
 // ---- selection helpers (MUST come before JSX that uses them) ----
 const allVisibleIds = filtered.map((r) => r.id);
 const selectedRows = filtered.filter((r) => selectedIds.has(r.id));
