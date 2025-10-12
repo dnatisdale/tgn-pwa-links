@@ -59,6 +59,12 @@ function clearSelection() {
   setSelectedIds(new Set());
 }
 
+
+<li key={row.id} className="card">
+  <div className="text-base font-semibold text-center">{row.name}</div>
+  …
+
+
 async function copySelectedLinks() {
   // Collect URLs for selected rows
   const urls = filtered
