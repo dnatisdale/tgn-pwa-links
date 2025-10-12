@@ -9,17 +9,32 @@ import ImportExport from "./ImportExport";
 import InstallPWA from "./InstallPWA";
 import UpdateToast from "./UpdateToast";
 import IOSInstallHint from "./IOSInstallHint";
-import Share from "./Share";
+import Share from "./Share"; // single dropdown component
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import {
+  collection, onSnapshot, orderBy, query,
+  doc, deleteDoc, updateDoc
+} from "firebase/firestore";
+import { toHttpsOrNull } from "./url";
 
-// Build-time constants (injected by vite.config.ts)
-declare const __APP_VERSION__: string;
-declare const __BUILD_DATE__: string;
-declare const __BUILD_TIME__: string;
+// Build-time constants (optional)
+declare const __APP_VERSION__: string | undefined;
+declare const __BUILD_DATE__: string | undefined;
+declare const __BUILD_TIME__: string | undefined;
 
 type Row = { id: string; name: string; language: string; url: string };
+
+function formatPacific(iso?: string) {
+  const date = iso ? new Date(iso) : new Date();
+  const dateStr = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles", year: "numeric", month: "long", day: "numeric",
+  }).format(date);
+  const timeStr = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles", hour12: false, hour: "2-digit", minute: "2-digit",
+  }).format(date);
+  return `${dateStr} — ${timeStr} PT`;
+}
 
 export default function App() {
   // language
@@ -36,32 +51,45 @@ export default function App() {
   const [q, setQ] = useState("");
   const [filterThai, setFilterThai] = useState(false);
 
-  // font size in px (applies to :root --base)
+  // font size in px
   const [textPx, setTextPx] = useState<number>(16);
 
   // QR click-to-enlarge
   const [qrEnlargedId, setQrEnlargedId] = useState<string | null>(null);
 
+  // selection (per card) + select-all
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
   // simple hash routing
   const [route, setRoute] = useState<string>(window.location.hash || "#/browse");
 
-  // auth subscribe
+  // last login in footer
+  const [lastLogin, setLastLogin] = useState<string | null>(null);
+
   useEffect(() => {
     const off = onAuthStateChanged(auth, (u) => setUser(u));
     return () => off();
   }, []);
 
-  // data subscribe
   useEffect(() => {
-    if (!user) {
-      setRows([]);
-      return;
-    }
+    const iso = localStorage.getItem("tgnLastLoginISO");
+    if (iso) setLastLogin(iso);
+  }, []);
+
+  // subscribe to user links
+  useEffect(() => {
+    if (!user) { setRows([]); return; }
     const col = collection(db, "users", user.uid, "links");
     const qry = query(col, orderBy("name"));
     const off = onSnapshot(qry, (snap) => {
       const list: Row[] = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
       setRows(list);
+      // Drop selections that vanished
+      setSelectedIds(prev => {
+        const next = new Set<string>();
+        for (const id of prev) if (list.find(r => r.id === id)) next.add(id);
+        return next;
+      });
     });
     return () => off();
   }, [user]);
@@ -110,7 +138,85 @@ export default function App() {
   const isAdd = route.startsWith("#/add");
   const isImport = route.startsWith("#/import");
 
-  // small AAA icon
+  // selection helpers
+  const allVisibleIds = filtered.map(r => r.id);
+  const allSelected = allVisibleIds.length > 0 && allVisibleIds.every(id => selectedIds.has(id));
+
+  const toggleSelectAll = () => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (allSelected) {
+        // unselect all visible
+        for (const id of allVisibleIds) next.delete(id);
+      } else {
+        // select all visible
+        for (const id of allVisibleIds) next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectedRows = filtered.filter(r => selectedIds.has(r.id));
+
+  // top toolbar actions
+  const firstSelected = selectedRows[0];
+  const selectedUrls = selectedRows.map(r => r.url);
+
+  // batch download QR cards
+  const batchDownload = async () => {
+    if (!selectedRows.length) { alert("Select at least one"); return; }
+    for (const r of selectedRows) {
+      const canvasId = `qr-${r.id}`;
+      // use the single-card helper
+      (await import("./qrCard")).downloadQrCard({
+        qrCanvasId: canvasId,
+        url: r.url,
+        name: r.name,
+        title: "Thai Good News",
+      });
+    }
+  };
+
+  // per-card edit/delete
+  const editRow = async (r: Row) => {
+    const name = prompt("Name", r.name ?? "");
+    if (name === null) return;
+    const language = prompt("Language", r.language ?? "") ?? "";
+    const url = prompt("URL (https only)", r.url ?? "");
+    if (url === null) return;
+    const https = toHttpsOrNull(url);
+    if (!https) { alert("Please enter a valid https:// URL"); return; }
+    try {
+      await updateDoc(doc(db, "users", user.uid, "links", r.id), {
+        name: name.trim(),
+        language: language.trim(),
+        url: https,
+      });
+    } catch (e: any) {
+      alert(e.message || String(e));
+    }
+  };
+
+  const deleteRow = async (r: Row) => {
+    if (!confirm(`Delete "${r.name || r.url}"?`)) return;
+    try {
+      await deleteDoc(doc(db, "users", user.uid, "links", r.id));
+      setSelectedIds(prev => { const n = new Set(prev); n.delete(r.id); return n; });
+    } catch (e: any) {
+      alert(e.message || String(e));
+    }
+  };
+
+  // small AAA icon for text size
   const AAA = (
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
       <rect x="2" y="2" width="20" height="20" rx="4" fill="#0f2454" />
@@ -175,6 +281,7 @@ export default function App() {
           </section>
         ) : (
           <section>
+            {/* Search + Thai filter */}
             <div className="flex flex-wrap gap-4 items-center mb-3">
               <input
                 value={q}
@@ -189,18 +296,76 @@ export default function App() {
               </div>
             </div>
 
+            {/* Global toolbar: Select all + Share + Download */}
+            <div className="flex flex-wrap items-center gap-10 mb-3">
+              <label className="text-sm">
+                <input
+                  type="checkbox"
+                  className="card-check"
+                  checked={allSelected}
+                  onChange={toggleSelectAll}
+                />
+                Select all ({selectedRows.length}/{filtered.length})
+              </label>
+
+              {/* One Share dropdown for the FIRST selected item; plus copy-all fallback */}
+              <div className="flex items-center gap-8">
+                <div>
+                  <Share
+                    url={firstSelected ? firstSelected.url : ""}
+                    title={firstSelected ? firstSelected.name || "Link" : ""}
+                  />
+                  {!firstSelected && (
+                    <span className="text-xs" style={{ color: "#6b7280", marginLeft: 8 }}>
+                      Select at least one item
+                    </span>
+                  )}
+                </div>
+
+                <button className="btn-blue" onClick={batchDownload} disabled={!selectedRows.length}>
+                  Download QR cards ({selectedRows.length})
+                </button>
+
+                <button
+                  className="linklike"
+                  onClick={async () => {
+                    if (!selectedUrls.length) { alert("Select at least one"); return; }
+                    try {
+                      await navigator.clipboard.writeText(selectedUrls.join("\n"));
+                      alert("All selected links copied");
+                    } catch { alert("Copy failed"); }
+                  }}
+                >
+                  Copy all links
+                </button>
+              </div>
+            </div>
+
             {!filtered.length && (
               <div className="text-sm text-gray-600 mb-3">{i.empty}</div>
             )}
 
+            {/* Grid of cards */}
             <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
               {filtered.map((row) => {
                 const enlarged = qrEnlargedId === row.id;
                 const qrSize = enlarged ? 320 : 192;
+                const checked = selectedIds.has(row.id);
                 return (
                   <li key={row.id} className="card">
-                    <div className="text-base font-semibold text-center">{row.name}</div>
-                    <div className="text-sm mb-2 text-center">{row.language}</div>
+                    {/* Row header: checkbox + name */}
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          className="card-check"
+                          checked={checked}
+                          onChange={() => toggleSelect(row.id)}
+                        />
+                        <span className="text-base font-semibold">{row.name}</span>
+                      </label>
+                      <div className="text-xs text-gray-600">{row.language}</div>
+                    </div>
 
                     {/* Click-to-enlarge QR */}
                     <div
@@ -220,15 +385,10 @@ export default function App() {
                       </a>
                     </div>
 
-                    {/* Actions: Share dropdown + Download QR card */}
-                    <div className="mt-2 flex items-center justify-center gap-6">
-                      <Share url={row.url} title={row.name || "Link"} />
-                      <DownloadQRButton
-                        qrCanvasId={`qr-${row.id}`}
-                        url={row.url}
-                        name={row.name}
-                        title="Thai Good News"
-                      />
+                    {/* Per-card actions (Edit/Delete) */}
+                    <div className="mt-2 flex justify-center gap-6 text-sm">
+                      <button className="linklike" onClick={() => editRow(row)}>Edit</button>
+                      <button className="linklike" onClick={() => deleteRow(row)}>Delete</button>
                     </div>
                   </li>
                 );
@@ -242,10 +402,10 @@ export default function App() {
       <UpdateToast />
       <IOSInstallHint />
 
-      {/* Footer with version/date/time */}
+      {/* Footer: Last login (PT) */}
       <footer className="footer">
         <div style={{ display: "flex", justifyContent: "center" }}>
-          {__APP_VERSION__} — {__BUILD_DATE__} {__BUILD_TIME__}
+          {lastLogin ? `Last login: ${formatPacific(lastLogin)}` : `Last login: ${formatPacific()}`}
         </div>
       </footer>
     </div>
