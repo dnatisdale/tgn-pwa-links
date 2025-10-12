@@ -1,4 +1,3 @@
-// src/i18n.ts
 export type Lang = 'en' | 'th';
 
 export const strings = {
@@ -6,7 +5,7 @@ export const strings = {
     appTitle: 'Thai Good News',
     browse: 'Browse',
     add: 'Add',
-    import: 'Import', // must be just “Import”
+    import: 'Import',
     export: 'Export',
     about: 'About',
     installPwa: 'Install PWA',
@@ -60,14 +59,18 @@ export const strings = {
     tipInvalid:
       'เคล็ดลับ: ถ้า URL (https) ว่าง เราปฏิเสธ (http หรือไม่ถูกต้อง) กรุณาแก้ไฟล์แล้วนำเข้าใหม่',
   },
-} as const satisfies Record<Lang, Record<string, string>>;
+} as const;
 
-// Optional convenience helper so existing imports `tr` work:
-export function tr(lang: Lang, key: string): string {
-  // If you want stricter typing, change `key: string` to
-  // `key: keyof typeof strings['en'] | keyof typeof strings['th']`
-  return strings[lang]?.[key] ?? key;
+// Use the EN keys as the canonical key set
+export type I18nKey = keyof typeof strings['en'];
+
+// Legacy-friendly helper so callers can do: tr(lang, 'export')
+export function tr(lang: Lang, key: I18nKey): string {
+  return strings[lang][key];
 }
 
-// Optional: strongly-typed keys (useful for autocompletion):
-export type I18nKey = keyof typeof strings['en'];
+// Optional convenience to get a typed bundle:
+// const t = getT(lang); t.export -> autocompletes
+export function getT(lang: Lang) {
+  return strings[lang];
+}
