@@ -1,3 +1,4 @@
+// src/UpdateToast.tsx
 import React, { useEffect, useState } from "react";
 
 export default function UpdateToast() {
@@ -18,11 +19,13 @@ export default function UpdateToast() {
   };
 
   return (
-    <div className="toast" role="status" aria-live="polite" style={{ position: "fixed", right: 12, bottom: 12, background: "#111", color: "#fff", padding: 12, borderRadius: 10 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <span>New Version Available</span>
-        <button className="btn-blue" onClick={refresh}>Refresh</button>
-        <button className="btn-red" onClick={() => setShow(false)}>Skip</button>
+    <div className="toast">
+      <div className="toast-row">
+        <div>New Version Available</div>
+        <div className="toast-actions">
+          <button className="toast-btn primary" onClick={refresh}>Refresh</button>
+          <button className="toast-btn ghost" onClick={() => setShow(false)}>Skip</button>
+        </div>
       </div>
     </div>
   );
