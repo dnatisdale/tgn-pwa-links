@@ -159,8 +159,57 @@ const selectedRows = filtered.filter((r) => selectedIds.has(r.id));
 </div>
 
   // filter + search
-  const filtered = useMemo(() => {
+  const filtered = useMemo(() =>  {
     const needle = q.trim().toLowerCase();
+    // --- Selection state & helpers (must be above any JSX that uses them) ---
+/** derive visible ids */
+const allVisibleIds = filtered.map(r => r.id);
+/** rows that are currently selected */
+const selectedRows = filtered.filter(r => selectedIds.has(r.id));
+/** first selected row (used by Share) */
+const firstSelected = selectedRows[0];
+/** is every visible row selected? */
+const allSelected =
+  allVisibleIds.length > 0 && allVisibleIds.every(id => selectedIds.has(id));
+
+/** toggle a single row id */
+const toggleSelect = (id: string) =>
+  setSelectedIds(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    return next;
+  });
+
+/** toggle all visible rows */
+const toggleSelectAll = () =>
+  setSelectedIds(prev => {
+    const next = new Set(prev);
+    if (allSelected) {
+      // unselect all visible
+      for (const id of allVisibleIds) next.delete(id);
+    } else {
+      // select all visible
+      for (const id of allVisibleIds) next.add(id);
+    }
+    return next;
+  });
+
+/** utility: copy all selected links */
+const copySelectedLinks = async () => {
+  const urls = selectedRows.map(r => r.url).filter(Boolean);
+  if (!urls.length) {
+    alert("Select at least one item");
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(urls.join("\n"));
+    alert("Copied links");
+  } catch {
+    alert("Copy failed");
+  }
+};
+
     let out = rows.filter((row) => {
       if (
         filterThai &&
