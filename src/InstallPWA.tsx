@@ -7,8 +7,8 @@ declare global {
     __tgnUpdateSW?: (reload?: boolean) => void;
   }
 }
-
-export default function InstallPWA() {
+type Props = { lang: Lang; className?: string };
+export default function InstallPWA({ lang, className }: Props){
   const [promptEvent, setPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [canInstall, setCanInstall] = useState(false);
 
