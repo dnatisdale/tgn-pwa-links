@@ -359,6 +359,24 @@ const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
                 placeholder={i.searchPlaceholder}
                 className="border rounded px-2 py-1 min-w-[260px]"
               />
+              {/* Bulk actions */}
+<div className="flex flex-wrap items-center gap-8 mb-3">
+  <div className="text-sm">
+    <button className="linklike" onClick={selectAllVisible}>Select all</button>
+    &nbsp;|&nbsp;
+    <button className="linklike" onClick={clearSelection}>Clear</button>
+  </div>
+
+  <div>
+    <button className="linklike" onClick={copySelectedLinks}>
+      Copy link
+    </button>
+    {selectedIds.size === 0 && (
+      <div className="hint-under">( Select at least one item )</div>
+    )}
+  </div>
+</div>
+
               <div className="text-sm">
                 <button className="linklike" onClick={() => setFilterThai(false)}>
                   {i.filterAll}
@@ -369,6 +387,8 @@ const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
                 </button>
               </div>
             </div>
+
+
 
             {/* Global toolbar */}
             <div className="flex flex-wrap items-center gap-10 mb-3">
