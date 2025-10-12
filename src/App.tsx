@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { t, Lang } from "./i18n";
 import Login from "./Login";
 import QR from "./QR";
+import About from "./About";
 import AddLink from "./AddLink";
 import ImportExport from "./ImportExport";
 import ExportPage from "./Export";
