@@ -41,7 +41,11 @@ export default function ExportPage({ lang, rows }: { lang: Lang; rows: Row[] }) 
       <div className="flex items-center gap-8 mb-4">
         <button className="btn-blue" onClick={toCSV}>Export CSV</button>
         <button className="btn-blue" onClick={toJSON}>Export JSON</button>
-        <button className="btn-blue" onClick={doPrint}>Print</button>
+        <button className="btn-red" onClick={doPrint}>Print</button>
+        <button className="btn btn-red" onClick={handlePrint}>
+  Print
+</button>
+
       </div>
 
       <div className="text-sm" style={{ color: "#6b7280" }}>
