@@ -79,11 +79,9 @@ export default function ImportExport({ lang }: { lang: Lang }) {
 
     let rows: RowIn[] = [];
     if (lower.endsWith(".csv")) rows = parseDelimited(text, ",");
-    else if (lower.endsWith(".tsv") || lower.endsWith(".txt"))
-      rows = parseDelimited(text, "\t");
+    else if (lower.endsWith(".tsv") || lower.endsWith(".txt")) rows = parseDelimited(text, "\t");
     else if (lower.endsWith(".json")) rows = parseJson(text);
     else {
-      // try CSV, then JSON
       rows = parseDelimited(text, ",");
       if (rows.length === 0) rows = parseJson(text);
     }
@@ -122,7 +120,7 @@ export default function ImportExport({ lang }: { lang: Lang }) {
     setImporting(true);
     try {
       const CHUNK = 500;
-      const batchId = Date.now(); // simple tag for "this import"
+      const batchId = Date.now();
       for (let i = 0; i < items.length; i += CHUNK) {
         const chunk = items.slice(i, i + CHUNK);
         const batch = writeBatch(db);
@@ -131,7 +129,7 @@ export default function ImportExport({ lang }: { lang: Lang }) {
           batch.set(ref, {
             name: it.name,
             language: it.language,
-            url: it.urlHttps, // already https
+            url: it.urlHttps,
             createdAt: serverTimestamp(),
             importBatchId: batchId,
           });
@@ -139,8 +137,7 @@ export default function ImportExport({ lang }: { lang: Lang }) {
         await batch.commit();
       }
       setImportMsg(`Imported ${items.length} item(s).`);
-      // keep preview so you can export; or clear it:
-      // setPreview([]);
+      // Optionally: setPreview([]);
     } catch (e: any) {
       setImportMsg(e.message || String(e));
     } finally {
@@ -173,3 +170,85 @@ export default function ImportExport({ lang }: { lang: Lang }) {
           <input
             type="file"
             accept=".csv,.tsv,.txt,.json,application/json,text/csv"
+            onChange={onFile}
+            style={{ display: "none" }}
+          />
+        </label>
+
+        {/* Red pill with formats */}
+        <span className="pill-red">(CSV / JSON / TSV)</span>
+
+        {/* Chosen filename */}
+        {fileName && (
+          <span className="text-sm" style={{ color: "#6b7280" }}>
+            {fileName}
+          </span>
+        )}
+
+        {/* Blue “Add” button appears when a file is chosen */}
+        {fileName && (
+          <button
+            className="btn-blue"
+            onClick={doImport}
+            disabled={importing || validItems.length === 0}
+            title={validItems.length ? `Import ${validItems.length} valid` : "No valid rows"}
+          >
+            {importing ? "Importing…" : `Add (${validItems.length})`}
+          </button>
+        )}
+      </div>
+
+      {/* Optional export of current preview */}
+      <div className="mt-2">
+        <button className="linklike" onClick={exportCSV}>
+          Export CSV (preview)
+        </button>
+      </div>
+
+      {/* Status message */}
+      {importMsg && <div className="mt-2 text-sm">{importMsg}</div>}
+
+      {/* Preview table */}
+      {!!preview.length && (
+        <div className="mt-4">
+          <div className="text-sm mb-2">
+            Preview: {preview.length} row(s) —{" "}
+            <span style={{ color: "#059669" }}>{validItems.length} valid</span>,{" "}
+            <span style={{ color: "#b91c1c" }}>
+              {preview.length - validItems.length} invalid
+            </span>
+          </div>
+          <div className="overflow-auto">
+            <table className="min-w-full text-sm border">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border px-2 py-1 text-left">Valid</th>
+                  <th className="border px-2 py-1 text-left">Name</th>
+                  <th className="border px-2 py-1 text-left">Language</th>
+                  <th className="border px-2 py-1 text-left">URL (raw)</th>
+                  <th className="border px-2 py-1 text-left">URL (https)</th>
+                  <th className="border px-2 py-1 text-left">Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                {preview.map((p, idx) => (
+                  <tr key={idx}>
+                    <td className="border px-2 py-1">{p.valid ? "✓" : "✗"}</td>
+                    <td className="border px-2 py-1 whitespace-nowrap">{p.name}</td>
+                    <td className="border px-2 py-1 whitespace-nowrap">{p.language}</td>
+                    <td className="border px-2 py-1">{p.urlRaw}</td>
+                    <td className="border px-2 py-1">{p.urlHttps || ""}</td>
+                    <td className="border px-2 py-1 text-red-600">{p.reason || ""}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="text-xs mt-1" style={{ color: "#6b7280" }}>
+            Tip: if “URL (https)” is empty, we rejected it (http or invalid). Fix your file and re-import.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
