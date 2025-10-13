@@ -462,6 +462,26 @@ useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
         <img className="banner" src="/banner-2400x600.png" alt="Thai Good News banner" />
       </div>
 
+{/* Topbar */}
+<div className="topbar">
+  {/* Install */}
+  <span className="install-pwa"><InstallPWA /></span>
+
+  {/* Share PWA */}
+  <span className="share-pwa"><SharePWA /></span>
+
+  {/* Font size slider */}
+  <span className="font-size-ctrl">…</span>
+
+  {/* Language toggle (a/ก) */}
+  <div className="lang-toggle">…</div>
+
+  {/* Log out */}
+  <button className="linklike" onClick={() => signOut(auth)}>
+    {i.logout}
+  </button>
+</div>
+
       {/* Header */}
       <header className="header p-3 flex items-center justify-between">
         <div />
