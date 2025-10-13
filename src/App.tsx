@@ -360,10 +360,17 @@ export default function App() {
       </main>
 
       {/* FOOTER */}
-      <footer className="site-footer">
-  {lastLogin && <div style={{ marginBottom: 6 }}>Last login: {lastLogin}</div>}
+    <footer className="site-footer">
   <div>
-    build {__GIT_COMMIT__} — {__BUILD_DATE__} {__BUILD_TIME__}
+    {lastLogin ? (
+      <>
+        Last login: {formatLastLoginPacific(lastLogin)} — {__APP_VERSION__} — {__BUILD_DATE__} {__BUILD_TIME__}
+      </>
+    ) : (
+      <>
+        {__APP_VERSION__} — {__BUILD_DATE__} {__BUILD_TIME__}
+      </>
+    )}
   </div>
 </footer>
 
