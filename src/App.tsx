@@ -369,7 +369,10 @@ export default function App() {
       <UpdateToast
         lang={lang}
         show={showUpdate}
-        onRefresh={() => updateServiceWorker(true)}
+onRefresh={() => {
+  window.__REFRESH_SW__?.();
+  setShowUpdate(false);
+}}
         onSkip={() => setShowUpdate(false)}
       />
     </div>

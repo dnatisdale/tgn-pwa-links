@@ -5,6 +5,24 @@ import "./styles.css";
 import ErrorBoundary from "./ErrorBoundary";
 import { registerSW } from 'virtual:pwa-register';
 
+// Register the service worker and surface a refresh function for the app
+const updateSW = registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    // tell App to show the “New Version Available” toast
+    window.dispatchEvent(new Event('pwa:need-refresh'));
+  },
+  onOfflineReady() {
+    // optional: you could show “Ready to work offline”
+  },
+});
+
+// App calls this when user clicks Refresh
+window.__REFRESH_SW__ = () => {
+  // true => skipWaiting + reload when new SW is ready
+  updateSW(true);
+};
+
 // inside src/main.tsx (top-level file)
 (function safePWA() {
   if (!("serviceWorker" in navigator)) return;
