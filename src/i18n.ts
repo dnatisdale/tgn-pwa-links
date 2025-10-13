@@ -1,63 +1,95 @@
 // src/i18n.ts
 export type Lang = "en" | "th";
-export const t = (l: Lang) => ({ /* includes loginTitle, email, password, signIn, signUp, … */ });
 
-export const strings = {
-  en: {
-    appTitle: "Thai Good News",
-    browse: "Browse",
-    add: "Add",
-    import: "Import",
-    export: "Export",
-    about: "About",
-    installPwa: "Install PWA",
-    share: "Share",
-    signIn: "Sign in",
-    continueGuest: "Continue as guest",
-    saveSignIn: "Save / Sign in",
-    name: "Name",
-    language: "Language",
-    url: "URL",
-    edit: "Edit",
-    delete: "Delete",
-    print: "Print",
-    sharePwa: "Share PWA",
-    newVersion: "New Version Available",
-    refresh: "Refresh",
-    skip: "Skip",
-    tipInvalid:
-      "Tip: if URL (https) is empty, we rejected it (http or invalid). Fix your file and re-import."
-  },
-  th: {
-    appTitle: "ข่าวดีไทย",
-    browse: "เรียกดู",
-    add: "เพิ่ม",
-    import: "นำเข้า",
-    export: "ส่งออก",
-    about: "เกี่ยวกับ",
-    installPwa: "ติดตั้ง PWA",
-    share: "แชร์",
-    signIn: "ลงชื่อเข้าใช้",
-    continueGuest: "เข้าใช้งานแบบผู้เยี่ยมชม",
-    saveSignIn: "บันทึก / ลงชื่อเข้าใช้",
-    name: "ชื่อ",
-    language: "ภาษา",
-    url: "ลิงก์",
-    edit: "แก้ไข",
-    delete: "ลบ",
-    print: "พิมพ์",
-    sharePwa: "แชร์ PWA",
-    newVersion: "มีเวอร์ชันใหม่",
-    refresh: "รีเฟรช",
-    skip: "ข้าม",
-    tipInvalid:
-      "เคล็ดลับ: ถ้า URL (https) ว่าง เราปฏิเสธแล้ว (เป็น http หรือไม่ถูกต้อง) โปรดแก้ไฟล์แล้วนำเข้าใหม่"
-  }
-} as const;
+export type Strings = {
+  appTitle: string;
+  browse: string;
+  add: string;
+  importExport: string; // used for the nav label only
+  importLabel: string;  // page title for Import
+  exportLabel: string;  // page title for Export
+  logout: string;
 
-export type I18nKey = keyof typeof strings["en"];
-export function tr(lang: Lang, key: I18nKey): string {
-  return strings[lang][key];
-}
-// compatibility alias so old code `import { t }` still works
-export const t = tr;
+  // Auth
+  loginTitle: string;
+  email: string;
+  password: string;
+  signIn: string;
+  signUp: string;
+
+  // Add / fields
+  name: string;
+  language: string;
+  url: string;            // label text for URL field
+  save: string;
+
+  // Search/filter
+  searchPlaceholder: string;
+  filterAll: string;
+  filterThai: string;
+
+  // Sharing
+  share: string;
+  emailShare: string;
+  fbShare: string;
+  xShare: string;
+  waShare: string;
+  copyLink: string;
+
+  // Import/Export actions
+  importJSON: string;
+  importCSV: string;
+  exportJSON: string;
+
+  // Empty state
+  empty: string;
+
+  // Small UI bits
+  selectAtLeastOneInline: string; // "( Select at least one item )"
+  selectAtLeastOnePlain: string;  // "Select at least one item"
+};
+
+export const t = (l: Lang): Strings => ({
+  appTitle: l === "th" ? "ข่าวประเสริฐภาษาไทย" : "Thai Good News",
+  browse: l === "th" ? "เรียกดู" : "Browse",
+  add: l === "th" ? "เพิ่มลิงก์" : "Add",
+  importExport: l === "th" ? "นำเข้า / ส่งออก" : "Import / Export",
+  importLabel: l === "th" ? "นำเข้า" : "Import",
+  exportLabel: l === "th" ? "ส่งออก" : "Export",
+  logout: l === "th" ? "ออกจากระบบ" : "Log out",
+
+  loginTitle: l === "th" ? "เข้าสู่ระบบด้วยอีเมล" : "Sign in with Email",
+  email: l === "th" ? "อีเมล" : "Email",
+  password: l === "th" ? "รหัสผ่าน" : "Password",
+  signIn: l === "th" ? "เข้าสู่ระบบ" : "Sign in",
+  signUp: l === "th" ? "สมัครสมาชิก" : "Sign up",
+
+  name: l === "th" ? "ชื่อเรื่อง" : "Name",
+  language: l === "th" ? "ภาษา" : "Language",
+  // Per your latest wording: “URL with or without https:// is fine”
+  url: l === "th" ? "ลิงก์ (จะมีหรือไม่มีก็ได้ https://)" : "URL (with or without https://)",
+  save: l === "th" ? "บันทึก" : "Save",
+
+  searchPlaceholder: l === "th" ? "ค้นหาทุกภาษา…" : "Search all languages…",
+  filterAll: l === "th" ? "ทั้งหมด" : "All",
+  filterThai: l === "th" ? "เฉพาะภาษาไทย" : "Thai only",
+
+  share: l === "th" ? "แชร์" : "Share",
+  emailShare: l === "th" ? "อีเมล" : "Email",
+  fbShare: l === "th" ? "เฟซบุ๊ก" : "Facebook",
+  xShare: l === "th" ? "เอ็กซ์" : "X / Twitter",
+  waShare: l === "th" ? "วอทส์แอป" : "WhatsApp",
+  copyLink: l === "th" ? "คัดลอกลิงก์" : "Copy link",
+
+  importJSON: l === "th" ? "นำเข้า JSON" : "Import JSON",
+  importCSV: l === "th" ? "นำเข้า CSV" : "Import CSV",
+  exportJSON: l === "th" ? "ส่งออก JSON" : "Export JSON",
+
+  empty:
+    l === "th"
+      ? "ยังไม่มีลิงก์ — กด เพิ่มลิงก์ เพื่อเริ่มต้น"
+      : "No links yet — click Add to create your first one.",
+
+  selectAtLeastOneInline: l === "th" ? "( เลือกรายการอย่างน้อยหนึ่งรายการ )" : "( Select at least one item )",
+  selectAtLeastOnePlain: l === "th" ? "เลือกรายการอย่างน้อยหนึ่งรายการ" : "Select at least one item",
+});
