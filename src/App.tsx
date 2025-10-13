@@ -15,7 +15,6 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { collection, onSnapshot, orderBy, query, doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { toHttpsOrNull as toHttps } from "./url";
 
-declare global { interface Window { __REFRESH_SW__?: () => void } }
 declare const __GIT_COMMIT__: string;
 declare const __APP_VERSION__: string;
 declare const __BUILD_DATE__: string;
