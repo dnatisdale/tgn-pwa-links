@@ -500,7 +500,7 @@ useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
 
           {/* Language + Logout */}
           <button className="linklike" onClick={() => setLang(lang === "en" ? "th" : "en")}>
-            {lang === "EN" || lang === "en" ? "ไทย" : "EN"}
+            {lang === "en" || lang === "en" ? "ไทย" : "en"}
           </button>
           <button className="linklike" onClick={() => signOut(auth)}>
             {i.logout}
