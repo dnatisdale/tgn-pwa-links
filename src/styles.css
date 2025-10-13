@@ -331,6 +331,26 @@ a{ text-decoration: underline; }
 /* ===== TWEAKS (safe to append) ===== */
 
 /* Same height for all brand buttons */
+/* Base button sizing */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;            /* consistent height */
+  padding: 0 14px;         /* horizontal padding */
+  border-radius: 10px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+/* Reuse your theme colors */
+.btn-blue { background: var(--thai-blue); color: #fff; }
+.btn-blue:hover { filter: brightness(1.05); }
+
+.btn-red  { background: var(--thai-red);  color: #fff; }
+.btn-red:hover  { filter: brightness(0.95); }
+
 .btn,
 .btn-red,
 .btn-blue {

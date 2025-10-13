@@ -1,6 +1,6 @@
 // src/ImportExport.tsx
 import React, { useMemo, useState } from "react";
-import { t, tr, Lang } from "./i18n";
+import { t, Lang } from "./i18n";
 import { auth, db } from "./firebase";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 
@@ -29,7 +29,6 @@ function toHttpsOrNull(input: string): string | null {
 }
 
 function splitCSVorTSV(text: string): string[][] {
-  // super-lightweight: split by lines, then by comma or tab (detect by first line)
   const lines = text
     .split(/\r?\n/)
     .map((l) => l.trim())
@@ -55,15 +54,11 @@ export default function ImportExport({ lang }: Props) {
   const [preview, setPreview] = useState<PreviewItem[] | null>(null);
   const [msg, setMsg] = useState<string>("");
 
-  // counts
   const stats = useMemo(() => {
     if (!preview) return { valid: 0, invalid: 0 };
     let valid = 0;
     let invalid = 0;
-    for (const p of preview) {
-      if (p.urlHttps) valid++;
-      else invalid++;
-    }
+    for (const p of preview) (p.urlHttps ? valid++ : invalid++);
     return { valid, invalid };
   }, [preview]);
 
@@ -82,7 +77,6 @@ export default function ImportExport({ lang }: Props) {
 
       if (lower.endsWith(".json")) {
         const json = JSON.parse(text);
-        // expect array of objects or a single object
         const arr = asArray(json);
         rows = arr.map((o: any) => {
           const name = String(o.name ?? "").trim();
@@ -98,31 +92,23 @@ export default function ImportExport({ lang }: Props) {
           };
         });
       } else {
-        // CSV/TSV
         const grid = splitCSVorTSV(text);
         if (!grid.length) {
           setMsg("No rows found.");
           setParsing(false);
           return;
         }
-        // try to detect header
         const header = grid[0].map((h) => h.toLowerCase());
         const hasHeader = ["name", "language", "url"].some((h) => header.includes(h));
         const body = hasHeader ? grid.slice(1) : grid;
 
-        // map columns
-        let nameIdx = -1,
-          langIdx = -1,
-          urlIdx = -1;
+        let nameIdx = -1, langIdx = -1, urlIdx = -1;
         if (hasHeader) {
           nameIdx = header.indexOf("name");
           langIdx = header.indexOf("language");
           urlIdx = header.indexOf("url");
         } else {
-          // fallback: assume [name, language, url] by position
-          nameIdx = 0;
-          langIdx = 1;
-          urlIdx = 2;
+          nameIdx = 0; langIdx = 1; urlIdx = 2;
         }
 
         rows = body.map((cols) => {
@@ -177,7 +163,6 @@ export default function ImportExport({ lang }: Props) {
         });
       }
       setMsg(lang === "th" ? "นำเข้าสำเร็จ" : "Import complete");
-      // Clear file so they can pick another if they want
       setFile(null);
       setPreview(null);
     } catch (e: any) {
@@ -187,25 +172,15 @@ export default function ImportExport({ lang }: Props) {
 
   return (
     <section>
-      {/* Title = Import (no / Export) */}
+      {/* ✅ Title = Import (no duplicate “Import / Export”) */}
       <h2 className="text-lg font-semibold mb-3">
         {lang === "th" ? "นำเข้า" : "Import"}
       </h2>
 
-      {/* Top row: Choose file (Thai red) + formats box (70% gray) */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
-        <label
-          htmlFor="tgn-import-file"
-          style={{
-            background: "#a51931", // Thai-flag red
-            color: "#fff",
-            borderRadius: 8,
-            padding: "10px 16px",
-            fontWeight: 600,
-            cursor: "pointer",
-            display: "inline-block",
-          }}
-        >
+      {/* Top row */}
+      <div className="file-row" style={{ marginBottom: 12 }}>
+        {/* Choose file (Thai red) */}
+        <label htmlFor="tgn-import-file" className="btn btn-red" style={{ cursor: "pointer" }}>
           {lang === "th" ? "เลือกไฟล์" : "Choose file"}
         </label>
         <input
@@ -216,35 +191,12 @@ export default function ImportExport({ lang }: Props) {
           style={{ display: "none" }}
         />
 
-        <div
-          style={{
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
-            padding: "6px 10px",
-            fontSize: 12,
-            color: "#6b7280", // 70% gray-ish
-          }}
-        >
-          (CSV / TSV / JSON)
-        </div>
+        {/* Formats pill */}
+        <span className="pill-red">(CSV / TSV / JSON)</span>
 
-        {/* “Add” appears only once a file is parsed */}
+        {/* Add (only after preview) */}
         {preview && (
-          <button
-            onClick={doImport}
-            disabled={!stats.valid || parsing}
-            style={{
-              background: "#0f2454", // Thai-flag blue
-              color: "#fff",
-              borderRadius: 8,
-              padding: "10px 16px",
-              fontWeight: 600,
-              border: "none",
-              cursor: stats.valid ? "pointer" : "not-allowed",
-              opacity: stats.valid ? 1 : 0.5,
-              marginLeft: 4,
-            }}
-          >
+          <button className="btn btn-blue" onClick={doImport} disabled={!stats.valid || parsing}>
             {lang === "th" ? "เพิ่ม" : "Add"}
           </button>
         )}
@@ -252,18 +204,13 @@ export default function ImportExport({ lang }: Props) {
 
       {/* File name + status */}
       {file && (
-        <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
+        <div className="hint-under" style={{ marginBottom: 8 }}>
           {lang === "th" ? "ไฟล์:" : "File:"} {file.name}
         </div>
       )}
+      {msg && <div style={{ marginBottom: 12, color: "#a51931" }}>{msg}</div>}
 
-      {msg && (
-        <div style={{ marginBottom: 12, color: "#a51931" }}>
-          {msg}
-        </div>
-      )}
-
-      {/* Preview */}
+      {/* Preview table */}
       {preview && (
         <div className="card" style={{ padding: 12 }}>
           <div style={{ marginBottom: 8, fontSize: 14 }}>
@@ -287,9 +234,7 @@ export default function ImportExport({ lang }: Props) {
                   <tr key={idx}>
                     <td style={td}>{p.name || <em style={{ color: "#6b7280" }}>—</em>}</td>
                     <td style={td}>{p.language || <em style={{ color: "#6b7280" }}>—</em>}</td>
-                    <td style={td} title={p.urlRaw}>
-                      {p.urlRaw}
-                    </td>
+                    <td style={td} title={p.urlRaw}>{p.urlRaw}</td>
                     <td style={td}>
                       {p.urlHttps ? (
                         <span style={{ color: "#16a34a", fontWeight: 600 }}>
@@ -307,8 +252,7 @@ export default function ImportExport({ lang }: Props) {
             </table>
           </div>
 
-          {/* Little tip under the table */}
-          <div style={{ fontSize: 12, color: "#6b7280", marginTop: 8 }}>
+          <div className="hint-under" style={{ marginTop: 8 }}>
             {lang === "th"
               ? "เคล็ดลับ: ถ้าเว้นว่างหรือเป็น http:// จะถูกข้าม ให้แก้ไขไฟล์แล้วนำเข้าใหม่"
               : "Tip: if URL is empty or http:// it’s skipped. Fix your file and re-import."}
