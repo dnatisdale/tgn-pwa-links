@@ -1,10 +1,12 @@
 // src/Export.tsx
 import React from "react";
-import { t, tr, Lang } from "./i18n";
+import { t, Lang } from "./i18n";
 
 type Row = { id: string; name: string; language: string; url: string };
 
 export default function ExportPage({ lang, rows }: { lang: Lang; rows: Row[] }) {
+  const i = t(lang);
+
   const download = (filename: string, text: string, mime = "text/plain") => {
     const blob = new Blob([text], { type: mime + ";charset=utf-8" });
     const a = document.createElement("a");
@@ -36,16 +38,27 @@ export default function ExportPage({ lang, rows }: { lang: Lang; rows: Row[] }) 
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-lg font-semibold mb-3">Import / Export</h2>
+      {/* Title removed on purpose: App.tsx already renders the page title */}
 
       <div className="flex items-center gap-8 mb-4">
-        <button className="btn-blue" onClick={toCSV}>Export CSV</button>
-        <button className="btn-blue" onClick={toJSON}>Export JSON</button>
-        <button className="btn-blue" onClick={doPrint}>Print</button>
+        <button className="btn btn-blue" onClick={toCSV}>
+          {lang === "th" ? "ส่งออก CSV" : "Export CSV"}
+        </button>
+
+        <button className="btn btn-blue" onClick={toJSON}>
+          {/* use i18n if you have it; fallback to English/Thai */}
+          {i.exportJSON ?? (lang === "th" ? "ส่งออก JSON" : "Export JSON")}
+        </button>
+
+        <button className="btn btn-red" onClick={doPrint}>
+          {lang === "th" ? "พิมพ์" : "Print"}
+        </button>
       </div>
 
       <div className="text-sm" style={{ color: "#6b7280" }}>
-        Tip: Exports include only what’s currently in your list.
+        {lang === "th"
+          ? "เคล็ดลับ: การส่งออกจะรวมเฉพาะสิ่งที่อยู่ในรายการของคุณตอนนี้"
+          : "Tip: Exports include only what’s currently in your list."}
       </div>
     </div>
   );
