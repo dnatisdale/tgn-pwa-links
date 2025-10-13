@@ -1,6 +1,6 @@
 // src/UpdateToast.tsx
 import React, { useEffect, useState } from "react";
-import { t, Lang } from "./i18n";
+import { Lang } from "./i18n";
 
 // Let TS know the refresh helper may exist (set in main.tsx)
 declare global {
@@ -9,12 +9,6 @@ declare global {
   }
 }
 
-/**
- * Props are optional:
- * - lang: show labels in EN/TH
- * - show: force visible (otherwise it auto-opens when the SW fires an event)
- * - onRefresh/onSkip: optional callbacks (fall back to default behavior)
- */
 type Props = {
   lang: Lang;
   show?: boolean;
@@ -23,7 +17,6 @@ type Props = {
 };
 
 export default function UpdateToast({ lang, show, onRefresh, onSkip }: Props) {
-  const i = t(lang);
   const [visible, setVisible] = useState<boolean>(!!show);
 
   // Keep internal state in sync if parent passes a controlled `show`
@@ -64,12 +57,8 @@ export default function UpdateToast({ lang, show, onRefresh, onSkip }: Props) {
     <div className="toast" role="status" aria-live="polite">
       <div className="toast-row" style={{ justifyContent: "center", textAlign: "center" }}>
         <span style={{ marginRight: 8 }}>{label}</span>
-        <button className="toast-btn" onClick={handleRefresh}>
-          {refreshLabel}
-        </button>
-        <button className="toast-btn ghost" onClick={handleSkip} style={{ marginLeft: 6 }}>
-          {skipLabel}
-        </button>
+        <button className="toast-btn" onClick={handleRefresh}>{refreshLabel}</button>
+        <button className="toast-btn ghost" onClick={handleSkip} style={{ marginLeft: 6 }}>{skipLabel}</button>
       </div>
     </div>
   );

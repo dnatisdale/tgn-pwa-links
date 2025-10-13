@@ -2,18 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Base button style for consistent height */
-.btn {
+/* --- Uniform brand buttons --- */
+.btn,
+.btn-red,
+.btn-blue {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 38px;
-  padding: 8px 14px;
+  height: 40px;          /* same height for all */
+  padding: 0 14px;       /* looks balanced at 40px height */
   border: none;
   border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
-  line-height: 1;
+  text-decoration: none; /* so <a class="btn-blue"> looks like a button */
+}
+
+/* Colors (Thai flag) */
+.btn-red  { background: var(--thai-red);  color: #fff; }
+.btn-blue { background: var(--thai-blue); color: #fff; }
+
+/* Hover: brighten a bit (but do NOT reduce opacity) */
+.btn-red:hover  { filter: brightness(1.05); }
+.btn-blue:hover { filter: brightness(1.05); }
+
+/* Only dim when **actually disabled** */
+.btn:disabled,
+.btn-red:disabled,
+.btn-blue:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
 }
 
 /* Thai theme colors */
