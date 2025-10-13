@@ -48,6 +48,9 @@ export default function App() {
   // i18n
   const [lang, setLang] = useState<Lang>("en");
   const i = t(lang);
+  const isEN = lang === "en";
+const isTH = lang === "th";
+
 
   // auth
   const [user, setUser] = useState<any>(null);
