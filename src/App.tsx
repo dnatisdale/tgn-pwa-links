@@ -7,6 +7,7 @@ import AddLink from "./AddLink";
 import ImportExport from "./ImportExport";
 import ExportPage from "./Export";
 import InstallPWA from "./InstallPWA";
+import SharePWA from "./SharePWA";
 import UpdateToast from "./UpdateToast";
 import IOSInstallHint from "./IOSInstallHint";
 import Share from "./Share";
