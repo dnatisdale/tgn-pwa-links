@@ -1,104 +1,121 @@
 // src/Login.tsx
 import React, { useState } from "react";
+import { t, Lang } from "./i18n";
 import { auth } from "./firebase";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInAnonymously,
 } from "firebase/auth";
-import { t, tr, Lang } from "./i18n";
 
-// save last login ISO to localStorage
-function saveLastLogin() {
-  localStorage.setItem("tgnLastLoginISO", new Date().toISOString());
-}
-
-export default function Login({
-  lang,
-  onLang,
-  onSignedIn,
-}: {
+type Props = {
   lang: Lang;
   onLang: (l: Lang) => void;
   onSignedIn: () => void;
-}) {
+};
+
+export default function Login({ lang, onLang, onSignedIn }: Props) {
+  // ✅ always derive the translations from lang
   const i = t(lang);
+
   const [email, setEmail] = useState("");
-  const [pw, setPw] = useState("");
-  const [msg, setMsg] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const go = async (signup: boolean) => {
-    setMsg("");
+  async function doSignIn() {
     try {
-      if (signup) {
-        await createUserWithEmailAndPassword(auth, email, pw);
-      } else {
-        await signInWithEmailAndPassword(auth, email, pw);
-      }
-      saveLastLogin();
+      setBusy(true);
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+      localStorage.setItem("tgnLastLoginISO", new Date().toISOString());
       onSignedIn();
     } catch (e: any) {
-      setMsg(e.message || String(e));
+      alert(e?.message || String(e));
+    } finally {
+      setBusy(false);
     }
-  };
+  }
 
-  const guest = async () => {
-    setMsg("");
+  async function doSignUp() {
     try {
+      setBusy(true);
+      await createUserWithEmailAndPassword(auth, email.trim(), password);
+      localStorage.setItem("tgnLastLoginISO", new Date().toISOString());
+      onSignedIn();
+    } catch (e: any) {
+      alert(e?.message || String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function continueAsGuest() {
+    try {
+      setBusy(true);
       await signInAnonymously(auth);
-      saveLastLogin();
+      localStorage.setItem("tgnLastLoginISO", new Date().toISOString());
       onSignedIn();
     } catch (e: any) {
-      setMsg(e.message || String(e));
+      alert(e?.message || String(e));
+    } finally {
+      setBusy(false);
     }
-  };
+  }
 
   return (
-    <div className="max-w-sm mx-auto p-4">
-      <header className="flex items-center justify-between mb-4 header pb-3">
-        {/* Logo only (no title) */}
-        <img className="logo" src="/logo-square-1024.png" alt="logo" style={{ height: 44 }} />
-        <div className="text-sm">
-          <button className="linklike" onClick={() => onLang(lang === "en" ? "th" : "en")}>
-            {lang === "en" ? "ไทย" : "EN"}
+    <div className="auth-wrap">
+      <div className="auth-card">
+        <div className="auth-header">
+          <h2 className="auth-title">{i.loginTitle}</h2>
+
+          {/* tiny language toggle “a / ก” */}
+          <div className="lang-toggle" role="group" aria-label="Language">
+            <button
+              className={`lgbtn ${lang === "en" ? "active" : ""}`}
+              onClick={() => onLang("en")}
+              type="button"
+            >
+              a
+            </button>
+            <button
+              className={`lgbtn ${lang === "th" ? "active" : ""}`}
+              onClick={() => onLang("th")}
+              type="button"
+            >
+              ก
+            </button>
+          </div>
+        </div>
+
+        <label className="block mb-2 text-sm">{i.email}</label>
+        <input
+          className="border rounded w-full px-3 py-2 mb-3"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          type="email"
+          autoComplete="email"
+        />
+
+        <label className="block mb-2 text-sm">{i.password}</label>
+        <input
+          className="border rounded w-full px-3 py-2 mb-4"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          type="password"
+          autoComplete="current-password"
+        />
+
+        <div className="flex items-center gap-2">
+          <button className="btn-red" onClick={doSignIn} disabled={busy}>
+            {i.signIn}
+          </button>
+          <button className="btn-blue" onClick={doSignUp} disabled={busy}>
+            {i.signUp}
+          </button>
+          <button className="btn-blue" onClick={continueAsGuest} disabled={busy}>
+            Continue as guest
           </button>
         </div>
-      </header>
-
-      <h1 className="text-xl font-semibold mb-3">{i.loginTitle}</h1>
-
-      <label className="block text-sm mb-1">{i.email}</label>
-      <input
-        className="w-full border rounded px-2 py-1 mb-3"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-
-      <label className="block text-sm mb-1">{i.password}</label>
-      <input
-        className="w-full border rounded px-2 py-1 mb-3"
-        type="password"
-        value={pw}
-        onChange={(e) => setPw(e.target.value)}
-      />
-
-      <div className="flex gap-4 justify-center">
-        <button className="linklike" onClick={() => go(false)}>
-          {i.signIn}
-        </button>
-        <button className="linklike" onClick={() => go(true)}>
-          {i.signUp}
-        </button>
       </div>
-
-      {/* Centered red 'Continue as guest' */}
-      <div className="mt-4 flex justify-center">
-        <button className="btn-red" onClick={guest}>
-          Continue as guest
-        </button>
-      </div>
-
-      {msg && <div className="mt-3 text-sm text-red-600 whitespace-pre-wrap">{msg}</div>}
     </div>
   );
 }
