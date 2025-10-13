@@ -762,19 +762,32 @@ useEffect(() => {
         )}
       </main>
 
-      {/* Toasts + iOS hint */}
-      <UpdateToast />
-      <IOSInstallHint />
+            {/* ---------- MAIN CONTENT ENDS ABOVE ---------- */}
 
-      {/* Footer — pinned to bottom by .app-shell/.app-main */}
+      {/* ---------- FOOTER (sticks to bottom) ---------- */}
       <footer className="site-footer">
-        {lastLogin
-          ? `Last login: ${formatPacific(lastLogin)}`
-          : `Last login: ${formatPacific()}`}
-        <br />
-        {__APP_VERSION__} — {__BUILD_DATE__} {__BUILD_TIME__}
+        {/* If you render last-login, keep it here */}
+        {lastLogin && (
+          <div style={{ marginBottom: 6 }}>
+            Last login: {lastLogin}
+          </div>
+        )}
+
+        {/* Always-on version line */}
+        <div>
+          {__APP_VERSION__} — {__BUILD_DATE__} {__BUILD_TIME__}
+        </div>
       </footer>
+
+      {/* ---------- PWA UPDATE TOAST ---------- */}
+      <UpdateToast
+        lang={lang}
+        show={showUpdate}
+        onRefresh={() => updateServiceWorker(true)}
+        onSkip={() => setShowUpdate(false)}
+      />
     </div>
   );
 }
 
+export default App;
