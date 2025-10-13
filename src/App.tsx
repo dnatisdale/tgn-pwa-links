@@ -147,8 +147,7 @@ useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
   }, [rows, q, filterThai]);
 
   // gate: login
-  if (!user) {
-    return <Login lang={lang} onLang={setLang} onSignedIn={() => {}} />;
+if (!user) return <Login lang={lang} onLang={setLang} onSignedIn={() => {}} />;
   }
 
   // --- Selection helpers (declare BEFORE JSX uses them) ---
