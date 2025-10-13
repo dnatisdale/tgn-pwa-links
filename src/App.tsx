@@ -484,24 +484,21 @@ useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
   </button>
 </div>
 
-      {/* Header */}
-     {/* ===== HEADER ===== */}
+{/* ===== HEADER ===== */}
 <header className="header p-3 flex items-center justify-between">
-  <div /> {/* keeps content pushed to the right */}
+  <div /> {/* pushes the right group to the edge */}
 
   <div className="flex items-center gap-4 text-sm">
-    {/* Install (Thai-red) — works whether InstallPWA uses a render prop or self-renders */}
-    <InstallPWA>
-      {(install?: () => void) => (
-        <button className="btn-red" onClick={install ?? (() => {})}>
-          {lang === "th" ? "ติดตั้ง" : "Install"}
-        </button>
-      )}
-    </InstallPWA>
+    {/* Install (Thai red) */}
+    <InstallPWA
+      className="btn btn-red"
+      label={lang === "th" ? "ติดตั้ง" : "Install"}
+      disabledLabel={lang === "th" ? "ติดตั้ง" : "Install"}
+    />
 
-    {/* Share PWA (Thai-blue) — uses Web Share API, falls back to copy */}
+    {/* Share PWA (Thai blue) */}
     <button
-      className="btn-blue"
+      className="btn btn-blue"
       onClick={async () => {
         const shareData = {
           title: "Thai Good News",
@@ -515,15 +512,13 @@ useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
             await navigator.clipboard.writeText(location.href);
             alert(lang === "th" ? "คัดลอกลิงก์แล้ว" : "Link copied");
           }
-        } catch {
-          /* user cancelled or share not available — ignore */
-        }
+        } catch {}
       }}
     >
       {lang === "th" ? "แชร์ PWA" : "Share PWA"}
     </button>
 
-    {/* Font size control: small A — slider — big A */}
+    {/* Font size: small A — slider — big A */}
     <span className="font-size-ctrl" title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}>
       <span aria-hidden="true" style={{ fontWeight: 700 }}>A</span>
       <input
