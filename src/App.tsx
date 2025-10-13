@@ -1,6 +1,6 @@
 // src/App.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import { t, tr, Lang } from "./i18n";
+import { t, Lang } from "./i18n";
 import Login from "./Login";
 import QR from "./QR";
 import AddLink from "./AddLink";
@@ -24,6 +24,7 @@ import {
 import { toHttpsOrNull as toHttps } from "./url";
 
 type Row = { id: string; name: string; language: string; url: string };
+const [rows, setRows] = useState<Row[]>([]);
 
 function formatPacific(iso?: string) {
   const date = iso ? new Date(iso) : new Date();
@@ -281,7 +282,7 @@ useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
     page = (
       <section>
         {/* Export page already says “Export” inside; not “Import/Export” */}
-        <ExportPage lang={lang} />
+        <ExportPage lang={lang} rows={rows} />
       </section>
     );
   } else if (isAbout) {
