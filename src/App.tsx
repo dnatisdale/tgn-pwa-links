@@ -307,6 +307,14 @@ const renderPage = () => {
   );
 };
 
+const [showUpdate, setShowUpdate] = useState(false);
+
+useEffect(() => {
+  const onNeed = () => setShowUpdate(true);
+  window.addEventListener('pwa:need-refresh', onNeed);
+  return () => window.removeEventListener('pwa:need-refresh', onNeed);
+}, []);
+
   // Auth subscribe
   useEffect(() => {
     const off = onAuthStateChanged(auth, (u) => setUser(u));
