@@ -5,6 +5,10 @@ import App from "./App";
 import "./styles.css";
 import { registerSW } from "virtual:pwa-register";
 
+// TEMP debug
+console.log("HAS API KEY?", !!import.meta.env.VITE_FIREBASE_API_KEY);
+
+
 const root = ReactDOM.createRoot(document.getElementById("root")!);
 root.render(<App />);
 
