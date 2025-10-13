@@ -25,6 +25,74 @@ declare const __BUILD_TIME__: string;
 
 type Row = { id: string; name: string; language: string; url: string };
 
+<header className="header">
+  {/* RIGHT-ALIGNED TOP BAR */}
+  <div className="topbar">
+    {/* Install button (your component) */}
+    <InstallPWA>
+      {(install) => (
+        <button className="btn btn-red" onClick={install}>Install</button>
+      )}
+    </InstallPWA>
+
+    {/* Share PWA simple button */}
+    <button className="btn btn-blue" onClick={() => {
+      if (navigator.share) {
+        navigator.share({
+          title: "Thai Good News",
+          text: "Try this PWA!",
+          url: location.href,
+        }).catch(()=>{});
+      } else {
+        navigator.clipboard.writeText(location.href);
+        alert("Link copied.");
+      }
+    }}>
+      Share PWA
+    </button>
+
+    {/* Font size: small A — slider — big A */}
+    <div className="font-size-ctrl" aria-label="Font size">
+      <span aria-hidden="true" style={{fontWeight:700}}>A</span>
+      <input
+        type="range"
+        className="font-size-slider"
+        min={12}
+        max={20}
+        step={1}
+        value={textPx}
+        onChange={(e)=> setTextPx(parseInt(e.target.value,10))}
+        aria-label="Change text size"
+      />
+      <span aria-hidden="true" style={{fontSize:18,fontWeight:700}}>A</span>
+    </div>
+
+    {/* Language: a / ก */}
+    <div className="lang-toggle" role="group" aria-label="Language">
+      <button
+        className={"lgbtn" + (lang==="en" ? " active" : "")}
+        onClick={()=> setLang("en")}
+      >a</button>
+      <button
+        className={"lgbtn" + (lang==="th" ? " active" : "")}
+        onClick={()=> setLang("th")}
+      >ก</button>
+    </div>
+
+    {/* Logout */}
+    {user && (
+      <button className="linklike" onClick={logoutNow}>
+        {t(lang).logout}
+      </button>
+    )}
+  </div>
+
+  {/* Banner stays below the controls */}
+  <div className="banner-wrap">
+    <img className="banner" src="/banner-2400x600.png" alt="Thai Good News" />
+  </div>
+</header>
+
 // Small/Big "A" icons for font slider
 function SmallAIcon() {
   return (

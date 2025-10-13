@@ -1,54 +1,105 @@
-/* src/styles.css */
+/* Tailwind layers (keep these at the very top) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========== THEME (Thai flag) =========== */
 :root{
-  --thai-red:#A51931;
+  --thai-red:  #A51931;
   --thai-white:#F4F5F8;
-  --thai-blue:#2D2A4A;
+  --thai-blue: #2D2A4A;
   --thai-black:#000000;
+
+  /* base text size controlled by App.tsx */
+  --base: 16px;
 }
 
-html{ font-size:16px; }
-body{ background:var(--thai-white); color:var(--thai-black); font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,"Noto Sans",sans-serif; }
+html { font-size: var(--base); }
 
+/* Links + linklike buttons */
+a { text-decoration: underline; }
+.linklike{
+  background:none;border:none;padding:0;
+  text-decoration:underline;cursor:pointer;color:var(--thai-blue);
+}
+
+/* =========== LAYOUT =========== */
 .app-shell{ min-height:100vh; display:flex; flex-direction:column; }
-.content{ flex:1 0 auto; }
-
-.topbar{ position:sticky; top:0; z-index:20; background:linear-gradient(90deg,var(--thai-red),var(--thai-blue)); color:#fff; }
-.banner{ background: rgba(255,255,255,0.15); }
-
-.footer{ flex-shrink:0; position:sticky; bottom:0; background:#fff; border-top:1px solid #e5e7eb; }
-
-.btn{ height:36px; padding:0 12px; border-radius:10px; border:1px solid #e5e7eb; background:#fff; display:inline-flex; align-items:center; gap:6px; }
-.btn-white{ background:#fff; color:var(--thai-black); }
-.btn-blue{ background:var(--thai-blue); color:#fff; border-color:var(--thai-blue); }
-.btn-red{ background:var(--thai-red); color:#fff; border-color:var(--thai-red); }
-.btn:disabled{ opacity:.6; }
-
-.card{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; }
-
-/* Update toast */
-.toast{ position:fixed; left:50%; transform:translateX(-50%); bottom:16px; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:10px 12px; box-shadow:0 6px 20px rgba(0,0,0,.12); max-width:420px; width:calc(100% - 24px); }
-.toast-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.toast-actions{ display:flex; gap:8px; }
-.toast-btn{ height:32px; padding:0 12px; border-radius:10px; border:1px solid #e5e7eb; background:#fff; }
-.toast-btn.primary{ background:var(--thai-red); color:#fff; border-color:var(--thai-red); }
-
-/* share dropdown (if used) */
-.menu{ position:absolute; right:0; margin-top:6px; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:6px; min-width:180px; box-shadow:0 6px 20px rgba(0,0,0,.12); }
-.menu-item{ display:block; width:100%; text-align:left; height:36px; border:0; background:#fff; border-radius:8px; padding:0 10px; }
-.menu-item:hover{ background:#f2f2f2; }
-
-/* print button */
-.print-red{ background:var(--thai-red)!important; color:#fff!important; border-color:var(--thai-red)!important; }
-
-.install-pwa button { 
-  background: var(--thai-red) !important; 
-  color: #fff !important; 
-  border-radius: 10px !important; 
-  height: 36px; 
+.app-main{ flex:1; }
+.header{ border-bottom:1px solid #e5e7eb; }
+.banner-wrap{ border-bottom:1px solid #111827; }
+.banner{ max-width:1200px; width:100%; display:block; margin:0 auto; }
+.site-footer{
+  background:#fff; color:#6b7280; font-size:12px;
+  text-align:center; padding:12px; border-top:1px solid #e5e7eb;
 }
-.share-pwa button { 
-  background: var(--thai-blue) !important; 
-  color: #fff !important; 
-  border-radius: 10px !important; 
-  height: 36px; 
+
+/* Right-aligned top bar (Install, Share PWA, A/ก, slider, Logout) */
+.topbar{
+  display:flex; justify-content:flex-end; align-items:center; gap:10px;
+  padding:8px 12px; background:var(--thai-white);
 }
+
+/* =========== BUTTONS (one size for all) =========== */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  height:36px; min-width:36px; padding:0 14px; gap:6px;
+  border:none; border-radius:10px; font-weight:600; cursor:pointer;
+}
+.btn:disabled{ opacity:.5; cursor:not-allowed; }
+
+.btn-red{  background:var(--thai-red);  color:#fff; }
+.btn-blue{ background:var(--thai-blue); color:#fff; }
+.btn-ghost{ background:#fff; color:#111827; border:1px solid #e5e7eb; }
+
+/* =========== UPDATE TOAST (shorter + centered) =========== */
+.toast{
+  position:fixed; left:50%; bottom:20px; transform:translateX(-50%);
+  background:#111827; color:#fff; padding:10px 14px; border-radius:10px;
+  box-shadow:0 6px 24px rgba(0,0,0,.25); z-index:50; max-width:680px; width:90%;
+}
+.toast-row{
+  display:flex; align-items:center; justify-content:center; gap:10px;
+}
+.toast .label{ font-size:14px; }
+.toast .btn{ height:32px; padding:0 12px; border-radius:8px; }
+.toast .btn.ghost{ background:transparent; color:#fff; border:1px solid #fff; }
+
+/* =========== NAV & CARDS =========== */
+.card{ border:1px solid #e5e7eb; border-radius:12px; padding:12px; }
+.card-check{ transform:scale(1.1); margin-right:6px; }
+
+.qr-center{ display:flex; justify-content:center; align-items:center; }
+.share-center{ display:flex; justify-content:center; }
+.toolbar-row{ display:inline-flex; align-items:center; gap:10px; }
+
+/* =========== FONT SIZE + LANGUAGE =========== */
+.font-size-ctrl{ display:inline-flex; align-items:center; gap:6px; }
+.font-size-slider{ width:90px; }
+@media (max-width:420px){ .font-size-slider{ width:70px; } }
+
+.lang-toggle{
+  display:inline-flex; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;
+}
+.lgbtn{
+  padding:4px 8px; line-height:1; background:#fff; color:#111; border:0; cursor:pointer;
+}
+.lgbtn:hover{ background:#f3f4f6; }
+.lgbtn.active{ background:var(--thai-blue); color:#fff; }
+
+/* Small helper text */
+.hint-under{ font-size:12px; color:#6b7280; }
+.inline-hint{ font-size:12px; color:#6b7280; margin-left:8px; white-space:nowrap; }
+
+/* Dropdown (Share menu) */
+.dropdown{
+  position:absolute; top:110%; left:0; background:#fff;
+  border:1px solid #e5e7eb; border-radius:8px; min-width:180px; padding:6px;
+  box-shadow:0 6px 24px rgba(0,0,0,.08); z-index:40;
+}
+.drop-item{
+  display:block; width:100%; text-align:left; background:none; border:none;
+  padding:8px 10px; border-radius:6px; cursor:pointer; font-size:14px;
+}
+.drop-item:hover{ background:#f3f4f6; }
+.drop-sep{ height:1px; background:#e5e7eb; margin:4px 2px; }

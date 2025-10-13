@@ -28,6 +28,13 @@ export type Strings = {
   filterAll: string;
   filterThai: string;
 
+// example additions inside the t(lang) object you already have:
+newVersion:  l==="th" ? "มีเวอร์ชันใหม่" : "New Version Available",
+refresh:     l==="th" ? "รีเฟรช"        : "Refresh",
+skip:        l==="th" ? "ข้าม"          : "Skip",
+importOnly:  l==="th" ? "นำเข้า"        : "Import",
+chooseFile:  l==="th" ? "เลือกไฟล์"     : "Choose file",
+
   // Sharing
   share: string;
   emailShare: string;
