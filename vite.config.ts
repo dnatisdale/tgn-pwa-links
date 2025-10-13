@@ -36,7 +36,7 @@ export default defineConfig({
       manifest: {
         name: "Thai Good News",
         short_name: "TGN",
-        description: "Thai Good News - simple PWA for sharing links and QR",
+        description: "Thai Good News - simple PWA for sharing URL links and QR codes",
         start_url: "/",
         display: "standalone",
         background_color: "#F4F5F8", // Thai white
