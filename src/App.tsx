@@ -271,7 +271,9 @@ useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
   } else if (isImport) {
     page = (
       <section>
-        <h2 className="text-lg font-semibold mb-2">{i.importExport /* title without /Export */}</h2>
+<h2 className="text-lg font-semibold mb-2">
+  {lang === "th" ? "ส่งออก" : "Export"}
+</h2>
         <ImportExport lang={lang} />
       </section>
     );
