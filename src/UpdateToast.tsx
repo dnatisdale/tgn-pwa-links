@@ -1,23 +1,38 @@
-import React from "react";
-import { t, Lang } from "./i18n";
+// src/UpdateToast.tsx
+import React, { useEffect, useState } from "react";
+import { t, tr, Lang } from "./i18n";
 
-type Props = {
-  lang: Lang;
-  show: boolean;
-  onRefresh: () => void;
-  onSkip:    () => void;
-};
 
-export default function UpdateToast({ lang, show, onRefresh, onSkip }: Props) {
+// Let TS know this global may exist (defined in vite.config.ts -> define)
+declare const __APP_VERSION__: string | undefined;
+
+export default function UpdateToast() {
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    const onUpd = () => setShow(true);
+    window.addEventListener("tgn-sw-update", onUpd);
+    return () => window.removeEventListener("tgn-sw-update", onUpd);
+  }, []);
+
   if (!show) return null;
-  const L = t(lang);
+
+  const refresh = () => {
+    // set by main.tsx when registering the SW
+    (window as any).__tgnUpdateSW?.(true); // update SW + reload page
+  };
 
   return (
-    <div className="toast" role="status" aria-live="polite">
+    <div className="toast">
       <div className="toast-row">
-        <span className="label">{L.newVersion}</span>
-        <button className="btn btn-blue" onClick={onRefresh}>{L.refresh}</button>
-        <button className="btn btn-red"  onClick={onSkip}>{L.skip}</button>
+        <span>
+          New version available — refresh
+          {typeof __APP_VERSION__ !== "undefined" && __APP_VERSION__
+            ? ` (${__APP_VERSION__})`
+            : ""}
+        </span>
+        <button className="toast-btn" onClick={refresh}>Refresh</button>
+        <button className="toast-btn ghost" onClick={() => setShow(false)}>Later</button>
       </div>
     </div>
   );

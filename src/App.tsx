@@ -1,6 +1,6 @@
 // src/App.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import { t, Lang } from "./i18n";
+import { t, tr, Lang } from "./i18n";
 import Login from "./Login";
 import QR from "./QR";
 import AddLink from "./AddLink";
@@ -8,70 +8,60 @@ import ImportExport from "./ImportExport";
 import ExportPage from "./Export";
 import InstallPWA from "./InstallPWA";
 import UpdateToast from "./UpdateToast";
+import IOSInstallHint from "./IOSInstallHint";
 import Share from "./Share";
-import SharePWA from "./SharePWA";
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { collection, onSnapshot, orderBy, query, doc, deleteDoc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  orderBy,
+  query,
+  doc,
+  deleteDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { toHttpsOrNull as toHttps } from "./url";
-
-declare global {
-  interface Window { __REFRESH_SW__?: () => void }
-}
-
-// Build-time constants (from vite.config.ts)
-declare const __APP_VERSION__: string;
-declare const __BUILD_DATE__: string;
-declare const __BUILD_TIME__: string;
 
 type Row = { id: string; name: string; language: string; url: string };
 
-// ---------- Small/Big "A" icons for font slider ----------
-function SmallAIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M6 16l2-8h1.5l2 8h-1.5l-.35-1.5H7.85L7.5 16H6zm2.2-3h1.6l-.8-3.3L8.2 13z" fill="currentColor" />
-    </svg>
-  );
-}
-function BigAIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M10 18l3-12h2l3 12h-2l-.5-2H12.5l-.5 2h-2zm2.6-4h3l-1.5-6-1.5 6z" fill="currentColor" />
-    </svg>
-  );
-}
-
-// ---------- helper to trigger SW update (used by <UpdateToast/>) ----------
-function updateServiceWorker(reload: boolean) {
-  try {
-    if (typeof window.__REFRESH_SW__ === "function") window.__REFRESH_SW__();
-  } finally {
-    if (reload) location.reload();
-  }
+function formatPacific(iso?: string) {
+  const date = iso ? new Date(iso) : new Date();
+  const dateStr = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(date);
+  const timeStr = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles",
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+  return `${dateStr} — ${timeStr} PT`;
 }
 
 export default function App() {
-  // language + i18n
+  // i18n
   const [lang, setLang] = useState<Lang>("en");
   const i = t(lang);
 
   // auth
   const [user, setUser] = useState<any>(null);
 
-  // rows and filters
+  // data
   const [rows, setRows] = useState<Row[]>([]);
-  const [q, setQ] = useState("");
-  const [filterThai, setFilterThai] = useState(false);
 
   // UI state
+  const [q, setQ] = useState("");
+  const [filterThai, setFilterThai] = useState(false);
   const [textPx, setTextPx] = useState<number>(16);
   const [qrEnlargedId, setQrEnlargedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lastLogin, setLastLogin] = useState<string | null>(null);
-  const [showUpdate, setShowUpdate] = useState(false);
 
-  // Routing
+  // simple hash routing
   const [route, setRoute] = useState<string>(window.location.hash || "#/browse");
   const isBrowse = route.startsWith("#/browse");
   const isAdd = route.startsWith("#/add");
@@ -79,26 +69,19 @@ export default function App() {
   const isExport = route.startsWith("#/export");
   const isAbout = route.startsWith("#/about");
 
-  // PWA update event
-  useEffect(() => {
-    const onNeed = () => setShowUpdate(true);
-    window.addEventListener("pwa:need-refresh", onNeed);
-    return () => window.removeEventListener("pwa:need-refresh", onNeed);
-  }, []);
-
-  // Auth subscribe
+  // subscribe auth
   useEffect(() => {
     const off = onAuthStateChanged(auth, (u) => setUser(u));
     return () => off();
   }, []);
 
-  // Last login from localStorage (set in Login.tsx)
+  // last login stamp from Login.tsx
   useEffect(() => {
     const iso = localStorage.getItem("tgnLastLoginISO");
     if (iso) setLastLogin(iso);
   }, []);
 
-  // Data subscribe
+  // subscribe data
   useEffect(() => {
     if (!user) {
       setRows([]);
@@ -119,19 +102,26 @@ export default function App() {
     return () => off();
   }, [user]);
 
-  // Apply text size to CSS var
+  // apply base text size
   useEffect(() => {
     document.documentElement.style.setProperty("--base", `${textPx}px`);
   }, [textPx]);
 
-  // Hash routing listener
+  // router
   useEffect(() => {
     const onHash = () => setRoute(window.location.hash || "#/browse");
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
-  // Filter + search
+  useEffect(() => {
+  const saved = localStorage.getItem("lang") as Lang | null;
+  if (saved) setLang(saved);
+  else setLang(navigator.language.startsWith("th") ? "th" : "en");
+}, []);
+useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
+
+  // filtered list
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     let out = rows.filter((row) => {
@@ -156,14 +146,18 @@ export default function App() {
     return out;
   }, [rows, q, filterThai]);
 
-  // Selection derived values
+  // gate: login
+  if (!user) {
+    return <Login lang={lang} onLang={setLang} onSignedIn={() => {}} />;
+  }
+
+  // --- Selection helpers (declare BEFORE JSX uses them) ---
   const allVisibleIds = filtered.map((r) => r.id);
   const selectedRows = filtered.filter((r) => selectedIds.has(r.id));
   const firstSelected = selectedRows[0];
   const allSelected =
     allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
 
-  // Selection helpers
   const toggleSelect = (id: string) =>
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -183,6 +177,8 @@ export default function App() {
       return next;
     });
 
+  const clearSelection = () => setSelectedIds(new Set());
+
   const copySelectedLinks = async () => {
     const urls = selectedRows.map((r) => r.url).filter(Boolean);
     if (!urls.length) {
@@ -191,15 +187,16 @@ export default function App() {
     }
     try {
       await navigator.clipboard.writeText(urls.join("\n"));
-      alert("Copied link(s)");
+      alert("Copied links");
     } catch {
       alert("Copy failed");
     }
   };
 
+  // batch download QR cards (selected)
   const batchDownload = async () => {
     if (!selectedRows.length) {
-      alert("Select at least one item");
+      alert("Select at least one");
       return;
     }
     const mod = await import("./qrCard");
@@ -213,7 +210,7 @@ export default function App() {
     }
   };
 
-  // Edit/Delete per card
+  // per-card edit/delete (https only)
   const editRow = async (r: Row) => {
     const name = prompt("Name", r.name ?? "");
     if (name === null) return;
@@ -250,233 +247,265 @@ export default function App() {
     }
   };
 
-  // Gate: not signed in
-  if (!user) {
-    return <Login lang={lang} onLang={setLang} onSignedIn={() => {}} />;
-  }
+  // AAA icon
+  const AAA = (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+      <rect x="2" y="2" width="20" height="20" rx="4" fill="#0f2454" />
+      <path
+        d="M6 16l2.2-8h1.6L12 16h-1.6l-.4-1.6H8l-.4 1.6H6zm2.3-3h1.7l-.9-3.7L8.3 13zM13 16l2.2-8h1.6L19 16h-1.6l-.4-1.6h-2.1L14.6 16H13zm2.3-3h1.7l-.9-3.7-.8 3.7z"
+        fill="#fff"
+      />
+    </svg>
+  );
 
-  // ---- Render ----
-  return (
-    <div className="app-shell">
-      {/* ===== HEADER (top controls right-aligned) ===== */}
-      <header className="header">
-        <div className="topbar">
-          {/* Install + Share PWA */}
-          <span className="install-pwa"><InstallPWA /></span>
-          <span className="share-pwa"><SharePWA /></span>
+  // --------- page switcher (avoid nested crazy ternaries) ----------
+  let page: React.ReactNode;
 
-          {/* Font size A … A */}
-          <span className="font-size-ctrl" title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}>
-            <SmallAIcon />
-            <input
-              type="range"
-              min={14}
-              max={22}
-              step={1}
-              value={textPx}
-              onChange={(e) => setTextPx(parseInt(e.target.value, 10))}
-              aria-label={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
-              className="font-size-slider"
-            />
-            <BigAIcon />
-          </span>
+  if (isAdd) {
+    page = (
+      <section>
+        <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
+        <AddLink lang={lang} />
+      </section>
+    );
+  } else if (isImport) {
+    page = (
+      <section>
+        <h2 className="text-lg font-semibold mb-2">{i.importExport /* title without /Export */}</h2>
+        <ImportExport lang={lang} />
+      </section>
+    );
+  } else if (isExport) {
+    page = (
+      <section>
+        {/* Export page already says “Export” inside; not “Import/Export” */}
+        <ExportPage lang={lang} />
+      </section>
+    );
+  } else if (isAbout) {
+    page = (
+      <section className="prose max-w-2xl">
+        <h2>About</h2>
+        <p>Thai Good News — shareable links with QR codes for Thai &amp; English audiences.</p>
+        <p>
+          Need Thai strings polished? I can help translate / localize the labels
+          and messages—just send me your preferred wording.
+        </p>
+      </section>
+    );
+  } else {
+    // Browse
+    page = (
+      <section>
+        {/* Search + filter */}
+        <div className="flex flex-wrap gap-4 items-center mb-3">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={i.searchPlaceholder}
+            className="border rounded px-2 py-1 min-w-[260px]"
+          />
 
-          {/* Language a / ก */}
-          <div className="lang-toggle" aria-label="Language">
-            <button
-              className={lang === "en" ? "lgbtn active" : "lgbtn"}
-              onClick={() => setLang("en")}
-              title="English"
-              aria-label="English"
-            >
-              a
+          {/* bulk select helpers */}
+          <div className="text-sm">
+            <button className="linklike" onClick={toggleSelectAll}>
+              {allSelected ? "Clear all" : "Select all"}
             </button>
-            <button
-              className={lang === "th" ? "lgbtn active" : "lgbtn"}
-              onClick={() => setLang("th")}
-              title="ไทย"
-              aria-label="Thai"
-            >
-              ก
-            </button>
+            &nbsp;|&nbsp;
+            <button className="linklike" onClick={clearSelection}>Clear</button>
           </div>
 
-          {/* Logout */}
+          <div className="text-sm">
+            <button className="linklike" onClick={() => setFilterThai(false)}>
+              {i.filterAll}
+            </button>
+            &nbsp;|&nbsp;
+            <button className="linklike" onClick={() => setFilterThai(true)}>
+              {i.filterThai}
+            </button>
+          </div>
+        </div>
+
+        {/* Global toolbar (Share + Copy + Download) */}
+        <div className="flex flex-wrap items-center gap-8 mb-3">
+          {/* Share (first selected) */}
+          <div className="flex items-center gap-2">
+            <Share
+              url={firstSelected ? firstSelected.url : ""}
+              title={firstSelected ? firstSelected.name || "Link" : ""}
+              qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
+            />
+            {!firstSelected && (
+              <span className="hint-under">( Select at least one item )</span>
+            )}
+          </div>
+
+          {/* Copy links + hint */}
+          <div className="flex items-center gap-2">
+            <button className="linklike" onClick={copySelectedLinks}>Copy link</button>
+            {selectedRows.length === 0 && (
+              <div className="hint-under">( Select at least one item )</div>
+            )}
+          </div>
+
+          {/* Download QR cards */}
+          <button
+            className="btn-blue"
+            onClick={batchDownload}
+            disabled={!selectedRows.length}
+            title="Download QR card images for selected items"
+          >
+            Download QR cards ({selectedRows.length})
+          </button>
+        </div>
+
+        {!filtered.length && (
+          <div className="text-sm text-gray-600 mb-3">{i.empty}</div>
+        )}
+
+        {/* Cards */}
+        <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filtered.map((row) => {
+            const enlarged = qrEnlargedId === row.id;
+            const qrSize = enlarged ? 320 : 192;
+            const checked = selectedIds.has(row.id);
+            return (
+              <li key={row.id} className="card">
+                {/* Selection checkbox */}
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleSelect(row.id)}
+                      style={{ marginRight: 8 }}
+                    />
+                    Select
+                  </label>
+                </div>
+
+                <div className="text-base font-semibold text-center">{row.name}</div>
+                <div className="text-sm mb-2 text-center">{row.language}</div>
+
+                {/* Click-to-enlarge QR */}
+                <div
+                  role="button"
+                  onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") setQrEnlargedId(enlarged ? null : row.id);
+                  }}
+                  tabIndex={0}
+                  title={enlarged ? "Shrink QR" : "Enlarge QR"}
+                  style={{ cursor: "pointer" }}
+                >
+                  <QR url={row.url} size={qrSize} idForDownload={`qr-${row.id}`} />
+                </div>
+
+                <div className="mt-2 text-center">
+                  <a href={row.url} className="underline" target="_blank" rel="noreferrer">
+                    {row.url}
+                  </a>
+                </div>
+
+                {/* Per-card actions */}
+                <div className="mt-2 flex justify-center gap-6 text-sm">
+                  <button className="linklike" onClick={() => editRow(row)}>
+                    Edit
+                  </button>
+                  <button className="linklike" onClick={() => deleteRow(row)}>
+                    Delete
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    );
+  }
+
+  // header AAA icon
+  const AAAIcon = (
+    <span
+      title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
+      style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+    >
+      {(
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+          <rect x="2" y="2" width="20" height="20" rx="4" fill="#0f2454" />
+          <path
+            d="M6 16l2.2-8h1.6L12 16h-1.6l-.4-1.6H8l-.4 1.6H6zm2.3-3h1.7l-.9-3.7L8.3 13zM13 16l2.2-8h1.6L19 16h-1.6l-.4-1.6h-2.1L14.6 16H13zm2.3-3h1.7l-.9-3.7-.8 3.7z"
+            fill="#fff"
+          />
+        </svg>
+      )}
+      <input
+        type="range"
+        min={14}
+        max={22}
+        step={1}
+        value={textPx}
+        onChange={(e) => setTextPx(parseInt(e.target.value, 10))}
+        aria-label={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
+        style={{ width: 110 }}
+      />
+      <span style={{ fontSize: 12, color: "#6b7280" }}>{textPx}px</span>
+    </span>
+  );
+
+  return (
+    <div>
+      {/* Banner */}
+      <div className="banner-wrap">
+        <img className="banner" src="/banner-2400x600.png" alt="Thai Good News banner" />
+      </div>
+
+      {/* Header */}
+      <header className="header p-3 flex items-center justify-between">
+        <div />
+        <div className="flex items-center gap-4 text-sm">
+          {/* Red Install and Blue Share PWA buttons (styled via your CSS utility classes) */}
+          <button className="btn-red">
+            <InstallPWA />
+          </button>
+          <a className="btn-blue" href={location.origin} target="_blank" rel="noreferrer">
+            Share PWA
+          </a>
+
+          {AAAIcon}
+
+          {/* Language + Logout */}
+          <button className="linklike" onClick={() => setLang(lang === "en" ? "th" : "en")}>
+            {lang === "EN" || lang === "en" ? "ไทย" : "EN"}
+          </button>
           <button className="linklike" onClick={() => signOut(auth)}>
             {i.logout}
           </button>
         </div>
-
-        {/* Banner below the controls */}
-        <div className="banner-wrap">
-          <img className="banner" src="/banner-2400x600.png" alt="Thai Good News" />
-        </div>
       </header>
 
-      {/* ===== MAIN CONTENT ===== */}
-      <main className="p-3 max-w-5xl mx-auto app-main">
-        {isAdd ? (
-          <section>
-            <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
-            <AddLink lang={lang} />
-          </section>
-        ) : isImport ? (
-          <section>
-            <h2 className="text-lg font-semibold mb-2">Import</h2>
-            <ImportExport lang={lang} />
-          </section>
-        ) : isExport ? (
-          <section>
-            <h2 className="text-lg font-semibold mb-2">Export</h2>
-            <ExportPage lang={lang} rows={rows} />
-          </section>
-        ) : isAbout ? (
-          <section>
-            <h2 className="text-lg font-semibold mb-2">About</h2>
-            <p className="text-sm text-gray-700">
-              Thai Good News — a simple PWA for saving, sharing, and printing QR link cards.
-            </p>
-          </section>
-        ) : (
-          /* ----- BROWSE ----- */
-          <section>
-            {/* Search + filter */}
-            <div className="flex flex-wrap gap-4 items-center mb-3">
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder={i.searchPlaceholder}
-                className="border rounded px-2 py-1 min-w-[260px]"
-              />
-              <div className="text-sm">
-                <button className="linklike" onClick={() => setFilterThai(false)}>
-                  {i.filterAll}
-                </button>
-                &nbsp;|&nbsp;
-                <button className="linklike" onClick={() => setFilterThai(true)}>
-                  {i.filterThai}
-                </button>
-              </div>
-            </div>
+      {/* Nav */}
+      <nav className="p-3 flex flex-wrap gap-4 text-sm">
+        <a className="underline" href="#/browse">{i.browse}</a>
+        <a className="underline" href="#/add">{i.add}</a>
+        <a className="underline" href="#/import">{i.importExport}</a>
+        <a className="underline" href="#/export">Export</a>
+        <a className="underline" href="#/about">About</a>
+      </nav>
 
-            {/* Global toolbar */}
-            <div className="flex flex-wrap items-center gap-10 mb-3">
-              <label className="text-sm">
-                <input
-                  type="checkbox"
-                  className="card-check"
-                  checked={allSelected}
-                  onChange={toggleSelectAll}
-                />
-                Select all ({selectedRows.length}/{filtered.length})
-              </label>
+      {/* Main */}
+      <main className="p-3 max-w-5xl mx-auto">{page}</main>
 
-              <div className="flex items-center gap-8">
-                <div>
-                  <Share
-                    url={firstSelected ? firstSelected.url : ""}
-                    title={firstSelected ? firstSelected.name || "Link" : ""}
-                    qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
-                  />
-                  {!firstSelected && (
-                    <span className="text-xs" style={{ color: "#6b7280", marginLeft: 8 }}>
-                      ( Select at least one item )
-                    </span>
-                  )}
-                </div>
+      {/* Toasts + iOS hint */}
+      <UpdateToast />
+      <IOSInstallHint />
 
-                <button className="btn-blue" onClick={batchDownload} disabled={!selectedRows.length}>
-                  Download QR cards ({selectedRows.length})
-                </button>
-
-                <button className="linklike" onClick={copySelectedLinks}>
-                  Copy link
-                </button>
-              </div>
-            </div>
-
-            {!filtered.length && (
-              <div className="text-sm text-gray-600 mb-3">{i.empty}</div>
-            )}
-
-            {/* Cards */}
-            <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {filtered.map((row) => {
-                const enlarged = qrEnlargedId === row.id;
-                const qrSize = enlarged ? 320 : 192;
-                const checked = selectedIds.has(row.id);
-                return (
-                  <li key={row.id} className="card">
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleSelect(row.id)}
-                          style={{ marginRight: 8 }}
-                        />
-                        Select
-                      </label>
-                    </div>
-
-                    <div className="text-base font-semibold text-center">{row.name}</div>
-                    <div className="text-sm mb-2 text-center">{row.language}</div>
-
-                    <div
-                      role="button"
-                      onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") setQrEnlargedId(enlarged ? null : row.id);
-                      }}
-                      tabIndex={0}
-                      title={
-                        enlarged
-                          ? lang === "th" ? "ย่อ QR" : "Shrink QR"
-                          : lang === "th" ? "ขยาย QR" : "Enlarge QR"
-                      }
-                      style={{ cursor: "pointer" }}
-                      className="qr-center"
-                    >
-                      <QR url={row.url} size={qrSize} idForDownload={`qr-${row.id}`} />
-                    </div>
-
-                    <div className="mt-2 text-center">
-                      <a href={row.url} className="underline" target="_blank" rel="noreferrer">
-                        {row.url}
-                      </a>
-                    </div>
-
-                    <div className="mt-2 flex justify-center gap-6 text-sm">
-                      <button className="linklike" onClick={() => editRow(row)}>Edit</button>
-                      <button className="linklike" onClick={() => deleteRow(row)}>Delete</button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        )}
-      </main>
-
-      {/* ---------- FOOTER (sticks to bottom) ---------- */}
-      <footer className="site-footer">
-        {lastLogin && (
-          <div style={{ marginBottom: 6 }}>
-            Last login: {lastLogin}
-          </div>
-        )}
-        <div>
-          {__APP_VERSION__} — {__BUILD_DATE__} {__BUILD_TIME__}
+      {/* Footer */}
+      <footer className="footer">
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          {lastLogin ? `Last login: ${formatPacific(lastLogin)}` : `Last login: ${formatPacific()}`}
         </div>
       </footer>
-
-      {/* ---------- PWA UPDATE TOAST ---------- */}
-      <UpdateToast
-        lang={lang}
-        show={showUpdate}
-        onRefresh={() => updateServiceWorker(true)}
-        onSkip={() => setShowUpdate(false)}
-      />
     </div>
   );
 }

@@ -1,30 +1,35 @@
 import React from "react";
-import ReactDOM from "react-dom/client";
+import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./styles.css";
+import ErrorBoundary from "./ErrorBoundary";
 
-// Use the plain helper (not the /react one)
-import { registerSW } from "virtual:pwa-register";
+// inside src/main.tsx (top-level file)
+(function safePWA() {
+  if (!("serviceWorker" in navigator)) return;
+  import("virtual:pwa-register")
+    .then(({ registerSW }) => {
+      const updateSW = registerSW({
+        onNeedRefresh() { window.dispatchEvent(new CustomEvent("tgn-sw-update")); },
+        onOfflineReady() { /* optional */ },
+      });
+      // @ts-ignore
+      window.__tgnUpdateSW = updateSW;
+    })
+    .catch(() => {});
+})();
 
-// Dispatch small events so App can show the toast
-const updateSW = registerSW({
-  immediate: true,
-  onNeedRefresh() {
-    window.dispatchEvent(new CustomEvent("pwa:need-refresh"));
-  },
-  onOfflineReady() {
-    // optional: window.dispatchEvent(new CustomEvent("pwa:offline-ready"));
-  },
-});
+declare const __APP_VERSION__: string;
+declare const __BUILD_DATE__: string;
+declare const __BUILD_TIME__: string;
+console.log(`${__APP_VERSION__} — ${__BUILD_DATE__} ${__BUILD_TIME__}`);
 
-// Expose a refresher for the App's toast button
-// Calling this triggers the new service worker to take control
-// and reloads the page
-// (we read it in App via window.__REFRESH_SW__?.())
-(window as any).__REFRESH_SW__ = () => updateSW(true);
-
-ReactDOM.createRoot(document.getElementById("root")!).render(
+const container = document.getElementById("root");
+if (!container) throw new Error("#root not found");
+createRoot(container).render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </React.StrictMode>
 );
