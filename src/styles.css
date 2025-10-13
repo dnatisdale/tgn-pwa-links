@@ -367,6 +367,12 @@ a{ text-decoration: underline; }
   line-height: 1;           /* avoid tall lines */
 }
 
+/* in src/styles.css */
+button[data-ready="false"]:not(:disabled) {
+  outline: 1px dashed rgba(255,255,255,0.4); /* adjust to your theme */
+  outline-offset: 2px;
+}
+
 /* Make sure simple links match vertically when next to buttons */
 .linklike {
   line-height: 38px;        /* visually same height in rows */
