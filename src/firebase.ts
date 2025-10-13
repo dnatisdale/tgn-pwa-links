@@ -1,14 +1,23 @@
 // src/firebase.ts
-// Minimal Firebase v9 setup; replace with your own config
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
+// --- Helper to fail fast with a helpful message ---
+function need(name: string, value: string | undefined) {
+  if (!value) {
+    throw new Error(`Missing ${name}. Did you set it in your .env and on Netlify?`);
+  }
+  return value;
+}
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FB_API_KEY || "REPLACE_ME",
-  authDomain: import.meta.env.VITE_FB_AUTH_DOMAIN || "REPLACE_ME",
-  projectId: import.meta.env.VITE_FB_PROJECT_ID || "REPLACE_ME",
-  appId: import.meta.env.VITE_FB_APP_ID || "REPLACE_ME"
+  apiKey: need("VITE_FIREBASE_API_KEY", import.meta.env.VITE_FIREBASE_API_KEY),
+  authDomain: need("VITE_FIREBASE_AUTH_DOMAIN", import.meta.env.VITE_FIREBASE_AUTH_DOMAIN),
+  projectId: need("VITE_FIREBASE_PROJECT_ID", import.meta.env.VITE_FIREBASE_PROJECT_ID),
+  storageBucket: need("VITE_FIREBASE_STORAGE_BUCKET", import.meta.env.VITE_FIREBASE_STORAGE_BUCKET),
+  messagingSenderId: need("VITE_FIREBASE_MESSAGING_SENDER_ID", import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID),
+  appId: need("VITE_FIREBASE_APP_ID", import.meta.env.VITE_FIREBASE_APP_ID),
 };
 
 const app = initializeApp(firebaseConfig);
