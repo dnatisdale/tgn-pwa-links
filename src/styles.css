@@ -327,3 +327,51 @@ a{ text-decoration: underline; }
   font-weight:600;
   margin:0;
 }
+
+/* ===== TWEAKS (safe to append) ===== */
+
+/* Same height for all brand buttons */
+.btn,
+.btn-red,
+.btn-blue {
+  min-height: 38px;         /* consistent height */
+  padding: 8px 14px;        /* same padding */
+  border-radius: 10px;      /* consistent corners */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;           /* avoid tall lines */
+}
+
+/* Make sure simple links match vertically when next to buttons */
+.linklike {
+  line-height: 38px;        /* visually same height in rows */
+}
+
+/* Update toast: shorter, centered content */
+.toast {
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  padding: 8px 12px;        /* shorter */
+  border-radius: 10px;
+  text-align: center;       /* center text + buttons */
+}
+.toast-row {
+  justify-content: center;  /* center buttons */
+  gap: 8px;
+}
+
+/* Keep the topbar on the RIGHT */
+.topbar {
+  display: flex;
+  justify-content: flex-end;  /* push controls to the right */
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Ensure footer sticks to bottom (in case it was missing) */
+.app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+.app-main  { flex: 1; }
+.site-footer { text-align: center; }
