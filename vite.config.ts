@@ -66,9 +66,11 @@ export default defineConfig({
       },
     }),
   ],
+  
   define: {
-    __APP_VERSION__: JSON.stringify(APP_VERSION),
-    __BUILD_DATE__: JSON.stringify(BUILD_DATE),
-    __BUILD_TIME__: JSON.stringify(BUILD_TIME),
+  __APP_VERSION__: JSON.stringify(process.env.npm_package_version || "v0.0.0"),
+  __BUILD_DATE__: JSON.stringify(BUILD_DATE),
+  __BUILD_TIME__: JSON.stringify(BUILD_TIME),
+  __GIT_COMMIT__: JSON.stringify(gitCommitShort()),
   },
 });
