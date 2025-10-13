@@ -3,7 +3,6 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// --- Helper to fail fast with a helpful message ---
 function need(name: string, value: string | undefined) {
   if (!value) {
     throw new Error(`Missing ${name}. Did you set it in your .env and on Netlify?`);
