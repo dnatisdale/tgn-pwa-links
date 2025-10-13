@@ -16,6 +16,8 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { collection, onSnapshot, orderBy, query, doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { toHttpsOrNull as toHttps } from "./url";
 
+declare global { interface Window { __REFRESH_SW__?: () => void } }
+
 // Build-time constants (from vite.config.ts)
 declare const __APP_VERSION__: string;
 declare const __BUILD_DATE__: string;
@@ -485,11 +487,9 @@ const renderPage = () => {
       <div className="topbar">
         {/* Install - red */}
         <div className="install-pwa">
-          <InstallPWA className="btn-red" />
-        </div>
-
-        {/* Share PWA - blue */}
-        <SharePWA className="btn-blue" />
+       
+<span className="install-pwa"><InstallPWA /></span>
+<span className="share-pwa"><SharePWA /></span>
 
         {/* Font size: small A — slider — big A */}
         <span className="font-size-ctrl" title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}>
@@ -565,7 +565,13 @@ const renderPage = () => {
 </main>
 
       {/* Toasts + iOS hint */}
-      <UpdateToast />
+      <UpdateToast
+  lang={lang}
+  show={showUpdate}
+  onRefresh={() => window.__REFRESH_SW__?.()}
+  onSkip={() => setShowUpdate(false)}
+/>
+
       <IOSInstallHint />
 
       {/* ===== FOOTER (sticky at bottom, centered) ===== */}
