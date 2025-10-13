@@ -1,6 +1,6 @@
 // src/App.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import { t, tr, Lang } from "./i18n";
+import { t, Lang } from "./i18n";
 import Login from "./Login";
 import QR from "./QR";
 import AddLink from "./AddLink";
@@ -43,7 +43,7 @@ function formatPacific(iso?: string) {
 }
 
 export default function App() {
-  // i18n
+  // language + strings
   const [lang, setLang] = useState<Lang>("en");
   const i = t(lang);
 
@@ -53,15 +53,17 @@ export default function App() {
   // data
   const [rows, setRows] = useState<Row[]>([]);
 
-  // UI state
+  // search/filter
   const [q, setQ] = useState("");
   const [filterThai, setFilterThai] = useState(false);
+
+  // UI
   const [textPx, setTextPx] = useState<number>(16);
   const [qrEnlargedId, setQrEnlargedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lastLogin, setLastLogin] = useState<string | null>(null);
 
-  // simple hash routing
+  // routing
   const [route, setRoute] = useState<string>(window.location.hash || "#/browse");
   const isBrowse = route.startsWith("#/browse");
   const isAdd = route.startsWith("#/add");
@@ -69,19 +71,19 @@ export default function App() {
   const isExport = route.startsWith("#/export");
   const isAbout = route.startsWith("#/about");
 
-  // subscribe auth
+  // auth subscribe
   useEffect(() => {
     const off = onAuthStateChanged(auth, (u) => setUser(u));
     return () => off();
   }, []);
 
-  // last login stamp from Login.tsx
+  // last login stamp
   useEffect(() => {
     const iso = localStorage.getItem("tgnLastLoginISO");
     if (iso) setLastLogin(iso);
   }, []);
 
-  // subscribe data
+  // data subscribe
   useEffect(() => {
     if (!user) {
       setRows([]);
@@ -102,24 +104,17 @@ export default function App() {
     return () => off();
   }, [user]);
 
-  // apply base text size
+  // apply text size
   useEffect(() => {
     document.documentElement.style.setProperty("--base", `${textPx}px`);
   }, [textPx]);
 
-  // router
+  // hash change
   useEffect(() => {
     const onHash = () => setRoute(window.location.hash || "#/browse");
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
-
-  useEffect(() => {
-  const saved = localStorage.getItem("lang") as Lang | null;
-  if (saved) setLang(saved);
-  else setLang(navigator.language.startsWith("th") ? "th" : "en");
-}, []);
-useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
 
   // filtered list
   const filtered = useMemo(() => {
@@ -146,11 +141,7 @@ useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
     return out;
   }, [rows, q, filterThai]);
 
-  // gate: login
-if (!user) return <Login lang={lang} onLang={setLang} onSignedIn={() => {}} />;
-  }
-
-  // --- Selection helpers (declare BEFORE JSX uses them) ---
+  // selection helpers (defined AFTER state)
   const allVisibleIds = filtered.map((r) => r.id);
   const selectedRows = filtered.filter((r) => selectedIds.has(r.id));
   const firstSelected = selectedRows[0];
@@ -176,26 +167,13 @@ if (!user) return <Login lang={lang} onLang={setLang} onSignedIn={() => {}} />;
       return next;
     });
 
+  const selectAllVisible = () => setSelectedIds(new Set(allVisibleIds));
   const clearSelection = () => setSelectedIds(new Set());
 
-  const copySelectedLinks = async () => {
-    const urls = selectedRows.map((r) => r.url).filter(Boolean);
-    if (!urls.length) {
-      alert("Select at least one item");
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(urls.join("\n"));
-      alert("Copied links");
-    } catch {
-      alert("Copy failed");
-    }
-  };
-
-  // batch download QR cards (selected)
+  // actions
   const batchDownload = async () => {
     if (!selectedRows.length) {
-      alert("Select at least one");
+      alert(i.selectAtLeastOnePlain);
       return;
     }
     const mod = await import("./qrCard");
@@ -209,18 +187,32 @@ if (!user) return <Login lang={lang} onLang={setLang} onSignedIn={() => {}} />;
     }
   };
 
-  // per-card edit/delete (https only)
+  const copySelectedLinks = async () => {
+    const urls = filtered
+      .filter((r) => selectedIds.has(r.id))
+      .map((r) => r.url)
+      .filter(Boolean);
+    if (!urls.length) {
+      try {
+        await navigator.clipboard.writeText("");
+      } catch {}
+      alert(i.selectAtLeastOnePlain);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(urls.join("\n"));
+    } catch {
+      alert("Could not copy to clipboard");
+    }
+  };
+
   const editRow = async (r: Row) => {
     const name = prompt("Name", r.name ?? "");
     if (name === null) return;
     const language = prompt("Language", r.language ?? "") ?? "";
-    const url = prompt("URL (https only)", r.url ?? "");
+    const url = prompt("URL", r.url ?? "");
     if (url === null) return;
-    const https = toHttps(url);
-    if (!https) {
-      alert("Please enter a valid https:// URL");
-      return;
-    }
+    const https = toHttps(url) ?? url; // allow both with/without https
     try {
       await updateDoc(doc(db, "users", user.uid, "links", r.id), {
         name: name.trim(),
@@ -246,263 +238,296 @@ if (!user) return <Login lang={lang} onLang={setLang} onSignedIn={() => {}} />;
     }
   };
 
-  // AAA icon
-  const AAA = (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
-      <rect x="2" y="2" width="20" height="20" rx="4" fill="#0f2454" />
-      <path
-        d="M6 16l2.2-8h1.6L12 16h-1.6l-.4-1.6H8l-.4 1.6H6zm2.3-3h1.7l-.9-3.7L8.3 13zM13 16l2.2-8h1.6L19 16h-1.6l-.4-1.6h-2.1L14.6 16H13zm2.3-3h1.7l-.9-3.7-.8 3.7z"
-        fill="#fff"
-      />
-    </svg>
-  );
-
-  // --------- page switcher (avoid nested crazy ternaries) ----------
-  let page: React.ReactNode;
-
-  if (isAdd) {
-    page = (
-      <section>
-        <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
-        <AddLink lang={lang} />
-      </section>
-    );
-  } else if (isImport) {
-    page = (
-      <section>
-        <h2 className="text-lg font-semibold mb-2">{i.importExport /* title without /Export */}</h2>
-        <ImportExport lang={lang} />
-      </section>
-    );
-  } else if (isExport) {
-    page = (
-      <section>
-        {/* Export page already says “Export” inside; not “Import/Export” */}
-        <ExportPage lang={lang} />
-      </section>
-    );
-  } else if (isAbout) {
-    page = (
-      <section className="prose max-w-2xl">
-        <h2>About</h2>
-        <p>Thai Good News — shareable links with QR codes for Thai &amp; English audiences.</p>
-        <p>
-          Need Thai strings polished? I can help translate / localize the labels
-          and messages—just send me your preferred wording.
-        </p>
-      </section>
-    );
-  } else {
-    // Browse
-    page = (
-      <section>
-        {/* Search + filter */}
-        <div className="flex flex-wrap gap-4 items-center mb-3">
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={i.searchPlaceholder}
-            className="border rounded px-2 py-1 min-w-[260px]"
-          />
-
-          {/* bulk select helpers */}
-          <div className="text-sm">
-            <button className="linklike" onClick={toggleSelectAll}>
-              {allSelected ? "Clear all" : "Select all"}
-            </button>
-            &nbsp;|&nbsp;
-            <button className="linklike" onClick={clearSelection}>Clear</button>
-          </div>
-
-          <div className="text-sm">
-            <button className="linklike" onClick={() => setFilterThai(false)}>
-              {i.filterAll}
-            </button>
-            &nbsp;|&nbsp;
-            <button className="linklike" onClick={() => setFilterThai(true)}>
-              {i.filterThai}
-            </button>
-          </div>
-        </div>
-
-        {/* Global toolbar (Share + Copy + Download) */}
-        <div className="flex flex-wrap items-center gap-8 mb-3">
-          {/* Share (first selected) */}
-          <div className="flex items-center gap-2">
-            <Share
-              url={firstSelected ? firstSelected.url : ""}
-              title={firstSelected ? firstSelected.name || "Link" : ""}
-              qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
-            />
-            {!firstSelected && (
-              <span className="hint-under">( Select at least one item )</span>
-            )}
-          </div>
-
-          {/* Copy links + hint */}
-          <div className="flex items-center gap-2">
-            <button className="linklike" onClick={copySelectedLinks}>Copy link</button>
-            {selectedRows.length === 0 && (
-              <div className="hint-under">( Select at least one item )</div>
-            )}
-          </div>
-
-          {/* Download QR cards */}
-          <button
-            className="btn-blue"
-            onClick={batchDownload}
-            disabled={!selectedRows.length}
-            title="Download QR card images for selected items"
-          >
-            Download QR cards ({selectedRows.length})
-          </button>
-        </div>
-
-        {!filtered.length && (
-          <div className="text-sm text-gray-600 mb-3">{i.empty}</div>
-        )}
-
-        {/* Cards */}
-        <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filtered.map((row) => {
-            const enlarged = qrEnlargedId === row.id;
-            const qrSize = enlarged ? 320 : 192;
-            const checked = selectedIds.has(row.id);
-            return (
-              <li key={row.id} className="card">
-                {/* Selection checkbox */}
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm">
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleSelect(row.id)}
-                      style={{ marginRight: 8 }}
-                    />
-                    Select
-                  </label>
-                </div>
-
-                <div className="text-base font-semibold text-center">{row.name}</div>
-                <div className="text-sm mb-2 text-center">{row.language}</div>
-
-                {/* Click-to-enlarge QR */}
-                <div
-                  role="button"
-                  onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") setQrEnlargedId(enlarged ? null : row.id);
-                  }}
-                  tabIndex={0}
-                  title={enlarged ? "Shrink QR" : "Enlarge QR"}
-                  style={{ cursor: "pointer" }}
-                >
-                  <QR url={row.url} size={qrSize} idForDownload={`qr-${row.id}`} />
-                </div>
-
-                <div className="mt-2 text-center">
-                  <a href={row.url} className="underline" target="_blank" rel="noreferrer">
-                    {row.url}
-                  </a>
-                </div>
-
-                {/* Per-card actions */}
-                <div className="mt-2 flex justify-center gap-6 text-sm">
-                  <button className="linklike" onClick={() => editRow(row)}>
-                    Edit
-                  </button>
-                  <button className="linklike" onClick={() => deleteRow(row)}>
-                    Delete
-                  </button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
-    );
+  // auth gate
+  if (!user) {
+    return <Login lang={lang} onLang={setLang} onSignedIn={() => {}} />;
   }
 
-  // header AAA icon
-  const AAAIcon = (
-    <span
-      title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
-      style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-    >
-      {(
-        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
-          <rect x="2" y="2" width="20" height="20" rx="4" fill="#0f2454" />
-          <path
-            d="M6 16l2.2-8h1.6L12 16h-1.6l-.4-1.6H8l-.4 1.6H6zm2.3-3h1.7l-.9-3.7L8.3 13zM13 16l2.2-8h1.6L19 16h-1.6l-.4-1.6h-2.1L14.6 16H13zm2.3-3h1.7l-.9-3.7-.8 3.7z"
-            fill="#fff"
-          />
-        </svg>
-      )}
-      <input
-        type="range"
-        min={14}
-        max={22}
-        step={1}
-        value={textPx}
-        onChange={(e) => setTextPx(parseInt(e.target.value, 10))}
-        aria-label={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
-        style={{ width: 110 }}
-      />
-      <span style={{ fontSize: 12, color: "#6b7280" }}>{textPx}px</span>
-    </span>
-  );
-
   return (
-    <div>
+    <div className="app-shell">
+      {/* top-right utility bar */}
+      <div className="topbar">
+        {/* Install (red), Share PWA (blue), font size, language toggle, logout */}
+        <div className="flex items-center gap-2">
+          <InstallPWA />
+          {/* Share PWA button could be in your Share component or a simple navigator.share */}
+          <button
+            className="btn-blue"
+            onClick={async () => {
+              try {
+                if ((navigator as any).share) {
+                  await (navigator as any).share({
+                    title: "Thai Good News",
+                    text: "Check out Thai Good News",
+                    url: window.location.origin,
+                  });
+                } else {
+                  await navigator.clipboard.writeText(window.location.origin);
+                  alert("PWA link copied");
+                }
+              } catch {}
+            }}
+          >
+            Share PWA
+          </button>
+
+          {/* font size control: small A — slider — big A */}
+          <span className="font-size-ctrl">
+            <span aria-hidden>A</span>
+            <input
+              className="font-size-slider"
+              type="range"
+              min={14}
+              max={22}
+              step={1}
+              value={textPx}
+              onChange={(e) => setTextPx(parseInt(e.target.value, 10))}
+              aria-label={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
+            />
+            <span style={{ fontSize: 18 }} aria-hidden>
+              A
+            </span>
+          </span>
+
+          {/* language toggle “a / ก” */}
+          <div className="lang-toggle" role="group" aria-label="Language">
+            <button
+              className={`lgbtn ${lang === "en" ? "active" : ""}`}
+              onClick={() => setLang("en")}
+              type="button"
+            >
+              a
+            </button>
+            <button
+              className={`lgbtn ${lang === "th" ? "active" : ""}`}
+              onClick={() => setLang("th")}
+              type="button"
+            >
+              ก
+            </button>
+          </div>
+
+          <button className="linklike" onClick={() => signOut(auth)}>
+            {i.logout}
+          </button>
+        </div>
+      </div>
+
       {/* Banner */}
       <div className="banner-wrap">
         <img className="banner" src="/banner-2400x600.png" alt="Thai Good News banner" />
       </div>
 
-      {/* Header */}
-      <header className="header p-3 flex items-center justify-between">
-        <div />
-        <div className="flex items-center gap-4 text-sm">
-          {/* Red Install and Blue Share PWA buttons (styled via your CSS utility classes) */}
-          <button className="btn-red">
-            <InstallPWA />
-          </button>
-          <a className="btn-blue" href={location.origin} target="_blank" rel="noreferrer">
-            Share PWA
-          </a>
-
-          {AAAIcon}
-
-          {/* Language + Logout */}
-          <button className="linklike" onClick={() => setLang(lang === "en" ? "th" : "en")}>
-            {lang === "EN" || lang === "en" ? "ไทย" : "EN"}
-          </button>
-          <button className="linklike" onClick={() => signOut(auth)}>
-            {i.logout}
-          </button>
-        </div>
-      </header>
-
       {/* Nav */}
       <nav className="p-3 flex flex-wrap gap-4 text-sm">
-        <a className="underline" href="#/browse">{i.browse}</a>
-        <a className="underline" href="#/add">{i.add}</a>
-        <a className="underline" href="#/import">{i.importExport}</a>
-        <a className="underline" href="#/export">Export</a>
-        <a className="underline" href="#/about">About</a>
+        <a className="underline" href="#/browse">
+          {i.browse}
+        </a>
+        <a className="underline" href="#/add">
+          {i.add}
+        </a>
+        <a className="underline" href="#/import">
+          {i.importLabel}
+        </a>
+        <a className="underline" href="#/export">
+          {i.exportLabel}
+        </a>
+        <a className="underline" href="#/about">
+          About
+        </a>
       </nav>
 
       {/* Main */}
-      <main className="p-3 max-w-5xl mx-auto">{page}</main>
+      <main className="app-main p-3 max-w-5xl mx-auto">
+        {isAdd ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
+            <AddLink lang={lang} />
+          </section>
+        ) : isImport ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">{i.importLabel}</h2>
+            <ImportExport lang={lang} />
+          </section>
+        ) : isExport ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">{i.exportLabel}</h2>
+            <ExportPage lang={lang} rows={rows} />
+          </section>
+        ) : isAbout ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">About</h2>
+            <p>Thai Good News — simple PWA for sharing links and QR.</p>
+          </section>
+        ) : (
+          /* Browse */
+          <section>
+            {/* Search + filter */}
+            <div className="flex flex-wrap gap-4 items-center mb-3">
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder={i.searchPlaceholder}
+                className="border rounded px-2 py-1 min-w-[260px]"
+              />
+
+              {/* Filter */}
+              <div className="text-sm">
+                <button className="linklike" onClick={() => setFilterThai(false)}>
+                  {i.filterAll}
+                </button>
+                &nbsp;|&nbsp;
+                <button className="linklike" onClick={() => setFilterThai(true)}>
+                  {i.filterThai}
+                </button>
+              </div>
+
+              {/* Bulk selection row */}
+              <div className="flex flex-wrap items-center gap-8">
+                <div className="text-sm">
+                  <button className="linklike" onClick={selectAllVisible}>
+                    Select all
+                  </button>
+                  &nbsp;|&nbsp;
+                  <button className="linklike" onClick={clearSelection}>
+                    Clear
+                  </button>
+                </div>
+
+                <div className="toolbar-row">
+                  <button className="linklike" onClick={copySelectedLinks}>
+                    {i.copyLink}
+                  </button>
+
+                  <button
+                    className={`btn-blue ${!selectedRows.length ? "btn-disabled" : ""}`}
+                    onClick={batchDownload}
+                    disabled={!selectedRows.length}
+                  >
+                    Download QR cards ({selectedRows.length})
+                  </button>
+
+                  {!selectedRows.length && (
+                    <span className="inline-hint">{i.selectAtLeastOneInline}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Global toolbar (checkbox + Share for first selected) */}
+            <div className="flex flex-wrap items-center gap-10 mb-3">
+              <label className="text-sm">
+                <input
+                  type="checkbox"
+                  className="card-check"
+                  checked={allSelected}
+                  onChange={toggleSelectAll}
+                />
+                Select all ({selectedRows.length}/{filtered.length})
+              </label>
+
+              <div className="flex items-center gap-8">
+                <div>
+                  <Share
+                    url={firstSelected ? firstSelected.url : ""}
+                    title={firstSelected ? firstSelected.name || "Link" : ""}
+                    qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
+                  />
+                  {!firstSelected && (
+                    <span className="text-xs" style={{ color: "#6b7280", marginLeft: 8 }}>
+                      {i.selectAtLeastOneInline}
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  className={`btn-blue ${!selectedRows.length ? "btn-disabled" : ""}`}
+                  onClick={batchDownload}
+                  disabled={!selectedRows.length}
+                >
+                  Download QR cards ({selectedRows.length})
+                </button>
+
+                <button className="linklike" onClick={copySelectedLinks}>
+                  {i.copyLink}
+                </button>
+              </div>
+            </div>
+
+            {!filtered.length && (
+              <div className="text-sm text-gray-600 mb-3">{i.empty}</div>
+            )}
+
+            {/* Cards */}
+            <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filtered.map((row) => {
+                const enlarged = qrEnlargedId === row.id;
+                const qrSize = enlarged ? 320 : 192;
+                const checked = selectedIds.has(row.id);
+                return (
+                  <li key={row.id} className="card">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleSelect(row.id)}
+                          style={{ marginRight: 8 }}
+                        />
+                        Select
+                      </label>
+                    </div>
+
+                    <div className="text-base font-semibold text-center">{row.name}</div>
+
+                    {/* Click-to-enlarge QR */}
+                    <div
+                      role="button"
+                      onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") setQrEnlargedId(enlarged ? null : row.id);
+                      }}
+                      tabIndex={0}
+                      title={enlarged ? "Shrink QR" : "Enlarge QR"}
+                      style={{ cursor: "pointer" }}
+                      className="qr-center"
+                    >
+                      <QR url={row.url} size={qrSize} idForDownload={`qr-${row.id}`} />
+                    </div>
+
+                    <div className="mt-2 text-center">
+                      <a href={row.url} className="underline" target="_blank" rel="noreferrer">
+                        {row.url}
+                      </a>
+                    </div>
+
+                    {/* Per-card actions */}
+                    <div className="mt-2 flex justify-center gap-6 text-sm">
+                      <button className="linklike" onClick={() => editRow(row)}>
+                        Edit
+                      </button>
+                      <button className="linklike" onClick={() => deleteRow(row)}>
+                        Delete
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+      </main>
 
       {/* Toasts + iOS hint */}
       <UpdateToast />
       <IOSInstallHint />
 
-      {/* Footer */}
-      <footer className="footer">
+      {/* Footer (pinned) */}
+      <footer className="site-footer">
         <div style={{ display: "flex", justifyContent: "center" }}>
-          {lastLogin ? `Last login: ${formatPacific(lastLogin)}` : `Last login: ${formatPacific()}`}
+          {lastLogin
+            ? `Last login: ${formatPacific(lastLogin)}`
+            : `Last login: ${formatPacific()}`}
         </div>
       </footer>
     </div>
