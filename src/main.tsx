@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./styles.css";
 import ErrorBoundary from "./ErrorBoundary";
+import { registerSW } from 'virtual:pwa-register';
 
 // inside src/main.tsx (top-level file)
 (function safePWA() {
