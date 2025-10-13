@@ -2,37 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ===== Thai flag theme (source of truth) ===== */
-:root {
-  --thai-red:  #A51931;
-  --thai-white:#F4F5F8;
-  --thai-blue: #2D2A4A;   /* navy */
-  --thai-black:#000000;
-}
-
-/* ===== Unified buttons (same height everywhere) ===== */
+/* Base button style for consistent height */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-height: 40px;           /* <- same height */
-  padding: 0 14px;            /* equal pill look */
+  min-height: 38px;
+  padding: 8px 14px;
+  border: none;
   border-radius: 10px;
-  border: 0;
   font-weight: 600;
   cursor: pointer;
-  line-height: 1;             /* tighter text */
+  line-height: 1;
 }
-.btn:disabled { opacity: .5; cursor: not-allowed; }
 
+/* Thai theme colors */
+:root {
+  --thai-red:  #A51931;
+  --thai-blue: #2D2A4A;
+  --thai-white:#F4F5F8;
+  --thai-black:#000000;
+}
+
+/* Variants */
 .btn-red  { background: var(--thai-red);  color: #fff; }
 .btn-blue { background: var(--thai-blue); color: #fff; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
 .btn-ghost{ background: transparent; border: 1px solid #e5e7eb; color: #111; }
 
-/* Keep old helpers working by mapping them onto .btn */
-.btn-red    { /* already red above */ }
-.btn-blue   { /* already blue above */ }
+/* Link-look button: match height with .btn */
 .linklike   { color: var(--thai-blue); text-decoration: underline; background: none; border: 0; padding: 0; cursor: pointer; }
 
 /* ===== Update toast: shorter + centered ===== */
