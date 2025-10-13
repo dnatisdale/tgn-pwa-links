@@ -48,9 +48,6 @@ export default function App() {
   // i18n
   const [lang, setLang] = useState<Lang>("en");
   const i = t(lang);
-  const isEN = lang === "en";
-const isTH = lang === "th";
-
 
   // auth
   const [user, setUser] = useState<any>(null);
@@ -464,7 +461,7 @@ useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
     <div>
       {/* Banner */}
       <div className="banner-wrap">
-        <img className="banner" src="/banner-2400x600.png" alt="Thai Good News banner" />
+        <img className="banner" src="/banner-2400x600.jpeg" alt="Thai Good News banner" />
       </div>
 
 {/* Topbar */}
@@ -488,28 +485,86 @@ useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
 </div>
 
       {/* Header */}
-      <header className="header p-3 flex items-center justify-between">
-        <div />
-        <div className="flex items-center gap-4 text-sm">
-          {/* Red Install and Blue Share PWA buttons (styled via your CSS utility classes) */}
-          <button className="btn-red">
-            <InstallPWA />
-          </button>
-          <a className="btn-blue" href={location.origin} target="_blank" rel="noreferrer">
-            Share PWA
-          </a>
+     {/* ===== HEADER ===== */}
+<header className="header p-3 flex items-center justify-between">
+  <div /> {/* keeps content pushed to the right */}
 
-          {AAAIcon}
+  <div className="flex items-center gap-4 text-sm">
+    {/* Install (Thai-red) — works whether InstallPWA uses a render prop or self-renders */}
+    <InstallPWA>
+      {(install?: () => void) => (
+        <button className="btn-red" onClick={install ?? (() => {})}>
+          {lang === "th" ? "ติดตั้ง" : "Install"}
+        </button>
+      )}
+    </InstallPWA>
 
-          {/* Language + Logout */}
-          <button className="linklike" onClick={() => setLang(lang === "en" ? "th" : "en")}>
-            {lang === "en" || lang === "en" ? "ไทย" : "en"}
-          </button>
-          <button className="linklike" onClick={() => signOut(auth)}>
-            {i.logout}
-          </button>
-        </div>
-      </header>
+    {/* Share PWA (Thai-blue) — uses Web Share API, falls back to copy */}
+    <button
+      className="btn-blue"
+      onClick={async () => {
+        const shareData = {
+          title: "Thai Good News",
+          text: lang === "th" ? "ลองใช้ PWA นี้สิ!" : "Try this PWA!",
+          url: location.href,
+        };
+        try {
+          if (navigator.share) {
+            await navigator.share(shareData);
+          } else {
+            await navigator.clipboard.writeText(location.href);
+            alert(lang === "th" ? "คัดลอกลิงก์แล้ว" : "Link copied");
+          }
+        } catch {
+          /* user cancelled or share not available — ignore */
+        }
+      }}
+    >
+      {lang === "th" ? "แชร์ PWA" : "Share PWA"}
+    </button>
+
+    {/* Font size control: small A — slider — big A */}
+    <span className="font-size-ctrl" title={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}>
+      <span aria-hidden="true" style={{ fontWeight: 700 }}>A</span>
+      <input
+        type="range"
+        className="font-size-slider"
+        min={14}
+        max={22}
+        step={1}
+        value={textPx}
+        onChange={(e) => setTextPx(parseInt(e.target.value, 10))}
+        aria-label={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
+      />
+      <span aria-hidden="true" style={{ fontSize: 18, fontWeight: 700 }}>A</span>
+    </span>
+
+    {/* Language toggle: a / ก */}
+    <div className="lang-toggle" role="group" aria-label="Language">
+      <button
+        className={lang === "en" ? "lgbtn active" : "lgbtn"}
+        onClick={() => setLang("en")}
+        title="English"
+        aria-label="English"
+      >
+        a
+      </button>
+      <button
+        className={lang === "th" ? "lgbtn active" : "lgbtn"}
+        onClick={() => setLang("th")}
+        title="ไทย"
+        aria-label="Thai"
+      >
+        ก
+      </button>
+    </div>
+
+    {/* Logout */}
+    <button className="linklike" onClick={() => signOut(auth)}>
+      {i.logout}
+    </button>
+  </div>
+</header>
 
       {/* Nav */}
       <nav className="p-3 flex flex-wrap gap-4 text-sm">
