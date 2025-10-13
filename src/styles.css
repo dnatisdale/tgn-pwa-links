@@ -22,19 +22,6 @@
 .btn-red  { background: var(--thai-red);  color: #fff; }
 .btn-blue { background: var(--thai-blue); color: #fff; }
 
-/* Hover: brighten a bit (but do NOT reduce opacity) */
-.btn-red:hover  { filter: brightness(1.05); }
-.btn-blue:hover { filter: brightness(1.05); }
-
-/* Only dim when **actually disabled** */
-.btn:disabled,
-.btn-red:disabled,
-.btn-blue:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  filter: none;
-}
-
 /* Thai theme colors */
 :root {
   --thai-red:  #A51931;
