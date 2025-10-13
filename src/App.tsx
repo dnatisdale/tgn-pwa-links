@@ -517,7 +517,36 @@ useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
       </nav>
 
       {/* Main */}
-      <main className="p-3 max-w-5xl mx-auto">{page}</main>
+      <main className="p-3 max-w-5xl mx-auto app-main">
+  {isAdd ? (
+    <section>
+      <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
+      <AddLink lang={lang} />
+    </section>
+  ) : isImport ? (
+    <section>
+      <h2 className="text-lg font-semibold mb-2">{lang === "th" ? "นำเข้า" : "Import"}</h2>
+      <ImportExport lang={lang} />
+    </section>
+  ) : isExport ? (
+    <section>
+      <h2 className="text-lg font-semibold mb-2">Export</h2>
+      <ExportPage lang={lang} rows={rows} />
+    </section>
+  ) : isAbout ? (
+    <section>
+      <h2 className="text-lg font-semibold mb-2">About</h2>
+      <p className="text-sm text-gray-700">
+        Thai Good News — a simple PWA for saving, sharing, and printing QR link cards.
+      </p>
+    </section>
+  ) : (
+    /* Browse (default) */
+    <section>
+      {/* your Browse page content stays here unchanged */}
+    </section>
+  )}
+</main>
 
       {/* Toasts + iOS hint */}
       <UpdateToast />
