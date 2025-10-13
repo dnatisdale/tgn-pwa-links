@@ -1,5 +1,6 @@
 // src/i18n.ts
 export type Lang = "en" | "th";
+export const t = (l: Lang) => ({ /* includes loginTitle, email, password, signIn, signUp, … */ });
 
 export const strings = {
   en: {
