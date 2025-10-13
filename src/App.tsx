@@ -542,50 +542,171 @@ useEffect(() => {
       </div>
 
       {/* ===== MAIN CONTENT ===== */}
-      <main className="p-3 max-w-5xl mx-auto">
-  {isAdd ? (
-    <section>
-      <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
-      <AddLink lang={lang} />
-    </section>
-  ) : isImport ? (
-    <section>
-      <h2 className="text-lg font-semibold mb-2">Import</h2>
-      <ImportExport lang={lang} />
-    </section>
-  ) : isExport ? (
-    <section>
-      <h2 className="text-lg font-semibold mb-2">Export</h2>
-      {/* ExportPage usually needs rows; pass them if your component expects it */}
-      <ExportPage lang={lang} rows={rows} />
-    </section>
-  ) : isAbout ? (
-    <section>
-      <h2 className="text-lg font-semibold mb-2">About</h2>
-      <p>Thai Good News PWA</p>
-    </section>
-  ) : (
-    /* Browse (default) */
-    <section>
-      {/* ...your Browse UI goes here (search, filters, cards, etc.) ... */}
-    </section>
-  )}
-</main>
+           {/* Main */}
+      <main className="p-3 max-w-5xl mx-auto app-main">
+        {isAdd ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
+            <AddLink lang={lang} />
+          </section>
+        ) : isImport ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">Import</h2>
+            <ImportExport lang={lang} />
+          </section>
+        ) : isExport ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">Export</h2>
+            <ExportPage lang={lang} rows={rows} />
+          </section>
+        ) : isAbout ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">About</h2>
+            <p className="text-sm text-gray-700">
+              Thai Good News — a simple PWA for saving, sharing, and printing QR link cards.
+            </p>
+          </section>
+        ) : (
+          /* Browse (default) */
+          <section>
+            {/* Search + filter */}
+            <div className="flex flex-wrap gap-4 items-center mb-3">
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder={i.searchPlaceholder}
+                className="border rounded px-2 py-1 min-w-[260px]"
+              />
+              <div className="text-sm">
+                <button className="linklike" onClick={() => setFilterThai(false)}>
+                  {i.filterAll}
+                </button>
+                &nbsp;|&nbsp;
+                <button className="linklike" onClick={() => setFilterThai(true)}>
+                  {i.filterThai}
+                </button>
+              </div>
+            </div>
+
+            {/* Global toolbar */}
+            <div className="flex flex-wrap items-center gap-10 mb-3">
+              <label className="text-sm">
+                <input
+                  type="checkbox"
+                  className="card-check"
+                  checked={allSelected}
+                  onChange={toggleSelectAll}
+                />
+                Select all ({selectedRows.length}/{filtered.length})
+              </label>
+
+              <div className="flex items-center gap-8">
+                <div>
+                  <Share
+                    url={firstSelected ? firstSelected.url : ""}
+                    title={firstSelected ? firstSelected.name || "Link" : ""}
+                    qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
+                  />
+                  {!firstSelected && (
+                    <span className="text-xs" style={{ color: "#6b7280", marginLeft: 8 }}>
+                      ( Select at least one item )
+                    </span>
+                  )}
+                </div>
+
+                <button className="btn-blue" onClick={batchDownload} disabled={!selectedRows.length}>
+                  Download QR cards ({selectedRows.length})
+                </button>
+
+                <button className="linklike" onClick={copySelectedLinks}>
+                  Copy link
+                </button>
+              </div>
+            </div>
+
+            {!filtered.length && (
+              <div className="text-sm text-gray-600 mb-3">{i.empty}</div>
+            )}
+
+            {/* Cards */}
+            <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filtered.map((row) => {
+                const enlarged = qrEnlargedId === row.id;
+                const qrSize = enlarged ? 320 : 192;
+                const checked = selectedIds.has(row.id);
+                return (
+                  <li key={row.id} className="card">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleSelect(row.id)}
+                          style={{ marginRight: 8 }}
+                        />
+                        Select
+                      </label>
+                    </div>
+
+                    <div className="text-base font-semibold text-center">{row.name}</div>
+
+                    <div
+                      role="button"
+                      onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") setQrEnlargedId(enlarged ? null : row.id);
+                      }}
+                      tabIndex={0}
+                      title={
+                        enlarged
+                          ? lang === "th"
+                            ? "ย่อ QR"
+                            : "Shrink QR"
+                          : lang === "th"
+                          ? "ขยาย QR"
+                          : "Enlarge QR"
+                      }
+                      style={{ cursor: "pointer" }}
+                      className="qr-center"
+                    >
+                      <QR url={row.url} size={qrSize} idForDownload={`qr-${row.id}`} />
+                    </div>
+
+                    <div className="mt-2 text-center">
+                      <a href={row.url} className="underline" target="_blank" rel="noreferrer">
+                        {row.url}
+                      </a>
+                    </div>
+
+                    <div className="mt-2 flex justify-center gap-6 text-sm">
+                      <button className="linklike" onClick={() => editRow(row)}>
+                        Edit
+                      </button>
+                      <button className="linklike" onClick={() => deleteRow(row)}>
+                        Delete
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+      </main>
 
       {/* Toasts + iOS hint */}
-      <UpdateToast
-  lang={lang}
-  show={showUpdate}
-  onRefresh={() => window.__REFRESH_SW__?.()}
-  onSkip={() => setShowUpdate(false)}
-/>
-
+      <UpdateToast />
       <IOSInstallHint />
 
-      {/* ===== FOOTER (sticky at bottom, centered) ===== */}
+      {/* Footer — pinned to bottom by .app-shell/.app-main */}
       <footer className="site-footer">
+        {lastLogin
+          ? `Last login: ${formatPacific(lastLogin)}`
+          : `Last login: ${formatPacific()}`}
+        <br />
         {__APP_VERSION__} — {__BUILD_DATE__} {__BUILD_TIME__}
       </footer>
     </div>
   );
 }
+
