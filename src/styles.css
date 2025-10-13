@@ -39,3 +39,16 @@ body{ background:var(--thai-white); color:var(--thai-black); font-family:system-
 
 /* print button */
 .print-red{ background:var(--thai-red)!important; color:#fff!important; border-color:var(--thai-red)!important; }
+
+.install-pwa button { 
+  background: var(--thai-red) !important; 
+  color: #fff !important; 
+  border-radius: 10px !important; 
+  height: 36px; 
+}
+.share-pwa button { 
+  background: var(--thai-blue) !important; 
+  color: #fff !important; 
+  border-radius: 10px !important; 
+  height: 36px; 
+}
