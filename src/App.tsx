@@ -765,15 +765,13 @@ useEffect(() => {
             {/* ---------- MAIN CONTENT ENDS ABOVE ---------- */}
 
       {/* ---------- FOOTER (sticks to bottom) ---------- */}
+            {/* ---------- FOOTER (sticks to bottom) ---------- */}
       <footer className="site-footer">
-        {/* If you render last-login, keep it here */}
         {lastLogin && (
           <div style={{ marginBottom: 6 }}>
             Last login: {lastLogin}
           </div>
         )}
-
-        {/* Always-on version line */}
         <div>
           {__APP_VERSION__} — {__BUILD_DATE__} {__BUILD_TIME__}
         </div>
@@ -786,7 +784,7 @@ useEffect(() => {
         onRefresh={() => updateServiceWorker(true)}
         onSkip={() => setShowUpdate(false)}
       />
-    </div>
+    </div> {/* end .app-shell */}
   );
 }
 
