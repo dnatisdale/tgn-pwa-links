@@ -361,9 +361,11 @@ export default function App() {
 
       {/* FOOTER */}
       <footer className="site-footer">
-        {lastLogin && <div style={{ marginBottom: 6 }}>Last login: {lastLogin}</div>}
-        <div>{__APP_VERSION__} — {__BUILD_DATE__} {__BUILD_TIME__}</div>
-      </footer>
+  {lastLogin && <div style={{ marginBottom: 6 }}>Last login: {lastLogin}</div>}
+  <div>
+    build {__GIT_COMMIT__} — {__BUILD_DATE__} {__BUILD_TIME__}
+  </div>
+</footer>
 
       {/* UPDATE TOAST */}
       <UpdateToast
