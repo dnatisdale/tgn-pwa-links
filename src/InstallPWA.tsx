@@ -1,47 +1,57 @@
 // src/InstallPWA.tsx
 import React, { useEffect, useState } from "react";
-import { t, tr, Lang } from "./i18n";
 
-declare global {
-  interface Window {
-    __tgnUpdateSW?: (reload?: boolean) => void;
-  }
-}
+type Props = {
+  className?: string;
+  label?: string;
+  disabledLabel?: string;
+};
 
-export default function InstallPWA() {
-  const [promptEvent, setPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
-  const [canInstall, setCanInstall] = useState(false);
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+};
+
+export default function InstallPWA({
+  className = "btn btn-red",
+  label = "Install",
+  disabledLabel = "Install",
+}: Props) {
+  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
+  const [supported, setSupported] = useState(false);
 
   useEffect(() => {
-    const onBeforeInstall = (e: any) => {
+    const onBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setPromptEvent(e);
-      setCanInstall(true);
+      setDeferred(e as BeforeInstallPromptEvent);
+      setSupported(true);
     };
-    window.addEventListener("beforeinstallprompt", onBeforeInstall as any);
-    return () => window.removeEventListener("beforeinstallprompt", onBeforeInstall as any);
+
+    // Some browsers won’t fire the event until criteria are met.
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    return () => window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
   }, []);
 
-  async function doInstall() {
+  const onClick = async () => {
+    if (!deferred) return;
     try {
-      if (promptEvent) {
-        await promptEvent.prompt();
-        await promptEvent.userChoice;
-        setPromptEvent(null);
-        setCanInstall(false);
-      } else if ((navigator as any).standalone === false) {
-        alert("On iPhone/iPad: Share → Add to Home Screen");
-      } else {
-        alert("If your browser supports it, an install prompt will show here.");
-      }
-    } catch (e: any) {
-      alert(e?.message || String(e));
+      await deferred.prompt();
+      await deferred.userChoice;
+      // After the choice is made, most browsers invalidate the event
+      setDeferred(null);
+    } catch {
+      // user cancelled — ignore
     }
-  }
+  };
 
   return (
-    <button className="btn-red" onClick={doInstall} aria-label="Install app">
-      Install
+    <button
+      className={className}
+      onClick={onClick}
+      disabled={!deferred}
+      title={!deferred && supported ? "Not ready yet" : undefined}
+    >
+      {deferred ? label : disabledLabel}
     </button>
   );
 }
