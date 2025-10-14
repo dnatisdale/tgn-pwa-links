@@ -1,21 +1,28 @@
+// firebase.ts
+
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 
+// Firebase configuration
 const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.REACT_APP_FIREBASE_MSG_SENDER_ID,
-  appId: process.env.REACT_APP_FIREBASE_APP_ID
+  apiKey: "AIzaSyCNQYXYpTocoU7XWnPKEz7OUkmf6fHTgPY",
+  authDomain: "thai-good-news-app.firebaseapp.com",
+  databaseURL: "https://thai-good-news-app-default-rtdb.firebaseio.com",
+  projectId: "thai-good-news-app",
+  storageBucket: "thai-good-news-app.firebasestorage.app",
+  messagingSenderId: "536885866848",
+  appId: "1:536885866848:web:f8250a6f1bb4ca7cea2e05"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
+// Export Firebase services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// enable offline persistence; catch multi-tab errors
+// Enable offline persistence for Firestore
 enableIndexedDbPersistence(db).catch((err) => {
-  console.warn('IndexedDB persistence failed', err);
+  console.warn('IndexedDB persistence failed:', err);
 });
