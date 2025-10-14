@@ -33,7 +33,7 @@ export default function UpdateToast({ lang, show, onRefresh, onSkip }: Props) {
 
   if (!visible) return null;
 
-  const label = lang === "th" ? "มีเวอร์ชันใหม่" : "New Version Available";
+  const label = lang === "th" ? "มีเวอร์ชันใหม่" : "New Version";
   const refreshLabel = lang === "th" ? "รีเฟรช" : "Refresh";
   const skipLabel = lang === "th" ? "ข้าม" : "Skip";
 
