@@ -11,10 +11,10 @@ import {
 type Props = {
   lang: Lang;
   onLang: (l: Lang) => void;
-  onSignedIn?: () => void; // ← add this line
+  onSignedIn?: () => void; // <- add this
 };
 
-export default function Login({ lang, onLang }: Props) {
+export default function Login({ lang, onLang, onSignedIn }: Props) {
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [busy, setBusy] = useState(false);
