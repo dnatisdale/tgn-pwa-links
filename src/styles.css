@@ -335,25 +335,44 @@ a{ text-decoration: underline; }
 /* ===== TWEAKS (safe to append) ===== */
 
 /* Same height for all brand buttons */
-/* Base button sizing */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 40px;            /* consistent height */
-  padding: 0 14px;         /* horizontal padding */
+  min-height: 40px;
+  padding: 10px 14px;
   border-radius: 10px;
   font-weight: 600;
   border: none;
   cursor: pointer;
 }
 
-/* Reuse your theme colors */
-.btn-blue { background: var(--thai-blue); color: #fff; }
-.btn-blue:hover { filter: brightness(1.05); }
-
+/* theme variants */
 .btn-red  { background: var(--thai-red);  color: #fff; }
-.btn-red:hover  { filter: brightness(0.95); }
+.btn-blue { background: var(--thai-blue); color: #fff; }
+
+/* Reuse your theme colors */
+.btn-blue,
+.btn-red {
+  transition: filter 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
+}
+
+.btn-blue:hover { filter: brightness(1.00); }
+.btn-red:hover  { filter: brightness(1.00); }
+
+.btn-blue:disabled,
+.btn-red:disabled {
+  opacity: 0.6;
+  pointer-events: none;
+  filter: none;
+}
+
+/* keyboard focus (accessible) */
+.btn-blue:focus-visible,
+.btn-red:focus-visible {
+  outline: 2px solid #2D2A4A; /* Thai blue */
+  outline-offset: 2px;
+}
 
 .btn,
 .btn-red,
