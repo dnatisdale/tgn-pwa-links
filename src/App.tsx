@@ -214,7 +214,11 @@ export default function App() {
         <div className="flex items-center gap-4 text-sm">
           {/* Install (red) */}
           <InstallPWA className="btn btn-red" label="Install" disabledLabel="Install" />
-          <InstallPWA className="btn btn-red" label={lang === "th" ? "ติดตั้ง" : "Install"} disabledLabel={lang === "th" ? "ติดตั้ง" : "Install"} />
+         <InstallPWA
+  className="btn btn-red"
+  label={lang === "th" ? "ติดตั้ง" : "Install"}
+  disabledLabel={lang === "th" ? "ติดตั้ง" : "Install"}
+/>disabledLabel={lang === "th" ? "ติดตั้ง" : "Install"} />
           {/* Share PWA (blue) */}
           <button
             className="btn btn-blue"
