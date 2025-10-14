@@ -2,103 +2,117 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 type Props = {
-  /** Your theme classes; defaults to Thai-red button */
-  className?: string;
-  /** Label when install is available */
-  labelReady?: string;
-  /** Label while waiting (event not fired yet) */
-  labelWaiting?: string;
-  /** If true, actually disables the button while waiting; default: false (keeps it clickable so it doesn’t look faded) */
-  disableWhenNotReady?: boolean;
-  /** Optional: called after the user accepts/dismisses the prompt */
-  onChoice?: (outcome: "accepted" | "dismissed") => void;
+  className?: string;          // e.g. "btn btn-red"
+  label?: string;              // when prompt is available
+  disabledLabel?: string;      // shown when prompt not yet available
+  showIOSHelp?: boolean;       // show iOS instruction dialog if prompt not supported
 };
 
-/** Chrome’s non-standard event shape */
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
 };
 
-function isStandaloneNow() {
-  // iOS Safari
-  if ((window.navigator as any).standalone) return true;
-  // PWA installed on other platforms
-  if (window.matchMedia?.("(display-mode: standalone)").matches) return true;
-  return false;
+// Simple platform checks
+function isStandalone(): boolean {
+  // PWA already installed?
+  // iOS: navigator.standalone; others: matchMedia
+  // (cast to any to silence TS for iOS)
+  const navAny = navigator as any;
+  return !!(navAny.standalone) || window.matchMedia("(display-mode: standalone)").matches;
+}
+
+function isIOS(): boolean {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
 }
 
 export default function InstallPWA({
   className = "btn btn-red",
-  labelReady = "Install",
-  labelWaiting = "Install",
-  disableWhenNotReady = false,
-  onChoice,
+  label = "Install",
+  disabledLabel = "Install",
+  showIOSHelp = true,
 }: Props) {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
-  const [installed, setInstalled] = useState<boolean>(isStandaloneNow());
+  const [ready, setReady] = useState(false);         // whether we’ve seen beforeinstallprompt
+  const [installed, setInstalled] = useState(isStandalone());
 
-  // Listen for the prompt event once and keep it for later
+  // If app is already installed, hide button
   useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault(); // prevent auto-banner
-      setDeferred(e as BeforeInstallPromptEvent);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
+    // Listen for install completion in Chromium
+    const onInstalled = () => setInstalled(true);
+    window.addEventListener("appinstalled", onInstalled);
 
-    // If app becomes installed while we’re open (Chrome on desktop/mobile)
-    const onAppInstalled = () => setInstalled(true);
-    window.addEventListener("appinstalled", onAppInstalled);
+    // Also re-evaluate on visibility changes (some browsers update matchMedia late)
+    const onVis = () => setInstalled(isStandalone());
+    document.addEventListener("visibilitychange", onVis);
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handler);
-      window.removeEventListener("appinstalled", onAppInstalled);
+      window.removeEventListener("appinstalled", onInstalled);
+      document.removeEventListener("visibilitychange", onVis);
     };
   }, []);
 
-  // Also re-check standalone status when the tab becomes visible (some browsers update late)
+  // Capture the install prompt so we can trigger it from our button
   useEffect(() => {
-    const onVis = () => setInstalled(isStandaloneNow());
-    document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
+    const onBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault(); // stop the native mini-infobar
+      setDeferred(e as BeforeInstallPromptEvent);
+      setReady(true);
+    };
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    return () => window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
   }, []);
 
-  const ready = useMemo(() => !!deferred, [deferred]);
-
-  if (installed) return null; // already installed — hide button
+  const iosHelp = useMemo(
+    () =>
+      "On iPhone/iPad: tap the Share icon, then 'Add to Home Screen'.",
+    []
+  );
 
   const onClick = async () => {
-    if (!ready) {
-      // Keep button enabled so it’s not visually dim; give a friendly nudge
-      alert(
-        "Install isn’t available yet.\n\nTip: Open this site from your browser (not inside another app), " +
-          "use HTTPS, and interact with the page a bit. The install prompt will appear when ready."
-      );
+    // If we already run as installed, do nothing
+    if (installed) return;
+
+    // Chromium path: have a deferred prompt
+    if (deferred) {
+      try {
+        await deferred.prompt();
+        await deferred.userChoice;     // "accepted" | "dismissed"
+        // The event becomes unusable after the choice
+        setDeferred(null);
+      } catch {
+        // user dismissed — ignore
+      }
       return;
     }
-    try {
-      await deferred!.prompt();
-      const { outcome } = await deferred!.userChoice;
-      onChoice?.(outcome);
-      // After prompting, many browsers invalidate the event
-      setDeferred(null);
-    } catch {
-      // user dismissed; ignore
+
+    // No deferred prompt (Safari/iOS or not yet eligible)
+    if (showIOSHelp && isIOS()) {
+      alert(iosHelp);
+      return;
     }
+
+    // Generic hint for other platforms
+    alert(
+      "Install prompt isn’t ready yet.\n\n• Android/Chrome: try again after browsing a bit.\n• iPhone/iPad: tap Share → Add to Home Screen."
+    );
   };
 
-  const actuallyDisabled = disableWhenNotReady && !ready;
+  // Hide the button completely if we’re already installed
+  if (installed) return null;
+
+  // Keep the button **enabled** so it never looks faded; show helpful text if not ready
+  const text = deferred ? label : disabledLabel;
 
   return (
     <button
       className={className}
       onClick={onClick}
-      disabled={actuallyDisabled}
-      aria-disabled={actuallyDisabled}
-      data-ready={ready ? "true" : "false"}
-      title={!ready && !actuallyDisabled ? "Install not ready yet" : undefined}
+      // no disabled attribute -> keeps consistent height/color
+      aria-label="Install this app"
+      title={deferred ? "Install PWA" : undefined}
     >
-      {ready ? labelReady : labelWaiting}
+      {text}
     </button>
   );
 }

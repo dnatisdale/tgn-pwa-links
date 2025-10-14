@@ -29,6 +29,28 @@ function SmallAIcon() {
 function BigAIcon() {
   return <span style={{ fontWeight: 700, fontSize: 18 }}>A</span>;
 }
+// Put this ABOVE your App component in src/App.tsx
+function formatLastLoginPacific(iso?: string) {
+  if (!iso) return "";
+  const d = new Date(iso);
+
+  // Example: 13 October 2025 — 12:49 PT
+  const dateStr = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "America/Los_Angeles",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(d);
+
+  const timeStr = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles",
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d);
+
+  return `${dateStr} — ${timeStr} PT`;
+}
 
 export default function App() {
   // ===== STATE (hooks must be inside the component!) =====
@@ -191,6 +213,7 @@ export default function App() {
         <div />
         <div className="flex items-center gap-4 text-sm">
           {/* Install (red) */}
+          <InstallPWA className="btn btn-red" labelReady="Install" labelWaiting="Install" />
           <InstallPWA className="btn btn-red" label={lang === "th" ? "ติดตั้ง" : "Install"} disabledLabel={lang === "th" ? "ติดตั้ง" : "Install"} />
           {/* Share PWA (blue) */}
           <button
