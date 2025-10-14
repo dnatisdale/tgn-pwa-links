@@ -40,6 +40,21 @@
   --thai-black:#000000;
 }
 
+.btn { height: 36px; padding: 0 14px; border-radius: 8px; font-weight: 600; }
+
+.btn-blue { background:#2d325a; color:#fff; border:none; }
+.btn-blue:hover { filter: brightness(1.05); }
+.btn-blue:disabled { opacity: .45; cursor: not-allowed; }
+
+.btn-red { background:#a51931; color:#fff; border:none; }
+.btn-red:hover { filter: brightness(0.95); }
+.btn-red:disabled { opacity: .45; cursor: not-allowed; }
+
+/* Link-like small text */
+.linklike { color:#2d325a; text-decoration: underline; background:none; border:none; padding:0; }
+
+
+
 /* Variants */
 .btn-red  { background: var(--thai-red);  color: #fff; }
 .btn-blue { background: var(--thai-blue); color: #fff; }
