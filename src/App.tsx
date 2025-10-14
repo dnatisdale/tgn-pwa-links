@@ -419,17 +419,10 @@ const lastLoginText = lastLoginDt
       </main>
 
       {/* FOOTER */}
-    <footer className="site-footer">
+<footer className="site-footer">
   <div>
-    {lastLogin ? (
-      <>
-        Last login: {formatLastLoginPacific(lastLogin)} — {__APP_VERSION__} — {__BUILD_DATE__} {__BUILD_TIME__}
-      </>
-    ) : (
-      <>
-        {__APP_VERSION__} — {__BUILD_DATE__} {__BUILD_TIME__}
-      </>
-    )}
+    {lastLoginText ? `Last login: ${lastLoginText} — ` : ""}
+    Build: {__APP_VERSION__} — {buildDateText}
   </div>
 </footer>
 
