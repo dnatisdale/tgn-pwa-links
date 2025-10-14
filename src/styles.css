@@ -3,24 +3,34 @@
 @tailwind utilities;
 
 /* --- Uniform brand buttons --- */
-.btn,
-.btn-red,
-.btn-blue {
+/* Keep buttons same height + stay blue/red even when disabled */
+.btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 40px;          /* same height for all */
-  padding: 0 14px;       /* looks balanced at 40px height */
+  height: 40px;              /* consistent height */
+  padding: 0 14px;
   border: none;
   border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
-  text-decoration: none; /* so <a class="btn-blue"> looks like a button */
 }
 
-/* Colors (Thai flag) */
-.btn-red  { background: var(--thai-red);  color: #fff; }
 .btn-blue { background: var(--thai-blue); color: #fff; }
+.btn-red  { background: var(--thai-red);  color: #fff; }
+
+.btn-blue:hover { filter: brightness(1.00); }
+.btn-red:hover  { filter: brightness(1.00); }
+
+/* IMPORTANT: do not gray out disabled — keep brand color */
+.btn-blue:disabled,
+.btn-red:disabled {
+  background: inherit; /* stays same blue/red */
+  color: #fff;
+  opacity: 0.6;        /* just a subtle fade */
+  pointer-events: none;
+  filter: none;
+}
 
 /* Thai theme colors */
 :root {
