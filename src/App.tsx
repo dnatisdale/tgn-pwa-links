@@ -337,6 +337,47 @@ const lastLoginText = lastLoginDt
               </div>
             </div>
 
+{/* Global toolbar */}
+<div className="flex flex-wrap items-center gap-10 mb-3">
+  <label className="text-sm">
+    <input
+      type="checkbox"
+      className="card-check"
+      checked={allSelected}
+      onChange={toggleSelectAll}
+    />
+    Select all ({selectedRows.length}/{filtered.length})
+  </label>
+
+  <div className="flex items-center gap-8">
+    <div>
+      <Share
+        url={firstSelected ? firstSelected.url : ""}
+        title={firstSelected ? firstSelected.name || "Link" : ""}
+        qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
+      />
+      {!firstSelected && (
+        <span className="text-xs" style={{ color: "#6b7280", marginLeft: 8 }}>
+          ( Select at least one item )
+        </span>
+      )}
+    </div>
+
+    {/* 👇 Download QR cards */}
+    <button
+      className="btn-blue"
+      onClick={batchDownload}
+      disabled={!selectedRows.length}
+    >
+      Download QR cards ({selectedRows.length})
+    </button>
+
+    <button className="linklike" onClick={copySelectedLinks}>
+      Copy link
+    </button>
+  </div>
+</div>
+
             {/* Toolbar */}
             <div className="flex flex-wrap items-center gap-8 mb-3">
               <label className="text-sm">
