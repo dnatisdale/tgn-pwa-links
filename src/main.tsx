@@ -6,11 +6,18 @@ import "./styles.css";
 import ErrorBoundary from "./ErrorBoundary";
 import { registerSW } from "virtual:pwa-register";
 
+// Make TS happy if other files reference this
+declare global {
+  interface Window {
+    __REFRESH_SW__?: (reloadImmediately?: boolean) => void;
+  }
+}
+
 // --- Service Worker registration (single place) ---
 const updateSW = registerSW({
   immediate: true,
   onNeedRefresh() {
-    // Tell App to show the "New Version Available" toast
+    // Tell the app/toast to show the "New Version" bar
     window.dispatchEvent(new Event("pwa:need-refresh"));
   },
   onOfflineReady() {
@@ -18,11 +25,10 @@ const updateSW = registerSW({
   },
 });
 
-// Expose a refresh function for your UpdateToast "Refresh" button
-// (App calls window.__REFRESH_SW__?.() )
-window.__REFRESH_SW__ = () => updateSW(true);
+// App / UpdateToast will call this to refresh + reload
+window.__REFRESH_SW__ = (reload = true) => updateSW(reload);
 
-// (Optional) build info in console (these are defined in vite.config.ts)
+// (Optional) build info in console (defined in vite.config.ts via `define`)
 declare const __APP_VERSION__: string;
 declare const __BUILD_DATE__: string;
 declare const __BUILD_TIME__: string;
