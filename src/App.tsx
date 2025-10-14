@@ -34,7 +34,6 @@ function pacificShortTime(date: Date) {
   }).format(date); // e.g. "12:49"
 }
 
-
 declare const __GIT_COMMIT__: string;
 declare const __APP_VERSION__: string;
 declare const __BUILD_DATE__: string;
@@ -279,13 +278,21 @@ const lastLoginText = lastLoginDt
             <input
               type="range"
               className="font-size-slider"
-              min={14} max={22} step={1}
+              min={10} max={30} step={1}
               value={textPx}
               onChange={(e) => setTextPx(parseInt(e.target.value, 10))}
               aria-label={lang === "th" ? "ขนาดตัวอักษร" : "Text size"}
             />
             <BigAIcon />
           </span>
+
+<nav className="tabs">
+  <a href="#/browse">{lang === "th" ? "เรียกดู" : "Browse"}</a>
+  <a href="#/add">{lang === "th" ? "เพิ่ม" : "Add"}</a>
+  <a href="#/import">{lang === "th" ? "นำเข้า" : "Import"}</a>
+  <a href="#/export">{lang === "th" ? "ส่งออก" : "Export"}</a>
+  <a href="#/about">{lang === "th" ? "เกี่ยวกับ" : "About"}</a>
+</nav>
 
           {/* Language */}
           <div className="lang-toggle" role="group" aria-label="Language">
@@ -323,21 +330,26 @@ const lastLoginText = lastLoginDt
         ) : (
           <section>
             {/* Search + filter */}
-            <div className="flex flex-wrap gap-4 items-center mb-3">
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder={i.searchPlaceholder}
-                className="border rounded px-2 py-1 min-w-[260px]"
-              />
-              <div className="text-sm">
-                <button className="linklike" onClick={() => setFilterThai(false)}>{i.filterAll}</button>
-                &nbsp;|&nbsp;
-                <button className="linklike" onClick={() => setFilterThai(true)}>{i.filterThai}</button>
-              </div>
-            </div>
+{/* Search + language filter */}
+<div className="flex flex-wrap gap-4 items-center mb-3">
+  <input
+    value={q}
+    onChange={(e) => setQ(e.target.value)}
+    placeholder={lang === "th" ? "ค้นหาทุกภาษา..." : "Search all languages..."}
+    className="border rounded px-2 py-1 min-w-[260px]"
+  />
+  <div className="text-sm">
+    <button className="linklike" onClick={() => setFilterThai(false)}>
+      {lang === "th" ? "ทั้งหมด" : "All"}
+    </button>
+    &nbsp;|&nbsp;
+    <button className="linklike" onClick={() => setFilterThai(true)}>
+      {lang === "th" ? "เฉพาะภาษาไทย" : "Thai only"}
+    </button>
+  </div>
+</div>
 
-{/* Global toolbar */}
+{/* Toolbar: select all / Share / Download / Copy */}
 <div className="flex flex-wrap items-center gap-10 mb-3">
   <label className="text-sm">
     <input
@@ -346,7 +358,7 @@ const lastLoginText = lastLoginDt
       checked={allSelected}
       onChange={toggleSelectAll}
     />
-    Select all ({selectedRows.length}/{filtered.length})
+    {lang === "th" ? "เลือกทั้งหมด" : "Select all"} ({selectedRows.length}/{filtered.length})
   </label>
 
   <div className="flex items-center gap-8">
@@ -358,25 +370,28 @@ const lastLoginText = lastLoginDt
       />
       {!firstSelected && (
         <span className="text-xs" style={{ color: "#6b7280", marginLeft: 8 }}>
-          ( Select at least one item )
+          ( {lang === "th" ? "เลือกอย่างน้อยหนึ่งรายการ" : "Select at least one item"} )
         </span>
       )}
     </div>
 
-    {/* 👇 Download QR cards */}
     <button
-      className="btn-blue"
+      className="btn btn-blue"
       onClick={batchDownload}
       disabled={!selectedRows.length}
+      title={selectedRows.length ? undefined : (lang === "th" ? "ยังไม่มีรายการที่เลือก" : "No items selected")}
     >
-      Download QR cards ({selectedRows.length})
+      {lang === "th"
+        ? `ดาวน์โหลดการ์ด QR (${selectedRows.length})`
+        : `Download QR cards (${selectedRows.length})`}
     </button>
 
     <button className="linklike" onClick={copySelectedLinks}>
-      Copy link
+      {lang === "th" ? "คัดลอกลิงก์" : "Copy link"}
     </button>
   </div>
 </div>
+
 
             {/* Toolbar */}
             <div className="flex flex-wrap items-center gap-8 mb-3">

@@ -1,7 +1,7 @@
 // src/Login.tsx
 import React, { useState } from "react";
 import { t, Lang } from "./i18n";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously } from "firebase/auth";
 import { auth } from "./firebase";
 
 type Props = {
@@ -49,6 +49,23 @@ export default function Login({ lang, onLang, onSignedIn }: Props) {
     <div className="auth-wrap">
       <div className="auth-card">
         {/* header with a/ก language toggle */}
+        <div style={{ position: "absolute", top: 8, right: 8, display: "flex", gap: 6 }}>
+  <button
+    className={lang === "en" ? "lgbtn active" : "lgbtn"}
+    onClick={() => onLang("en")}
+    aria-label="English"
+  >
+    a
+  </button>
+  <button
+    className={lang === "th" ? "lgbtn active" : "lgbtn"}
+    onClick={() => onLang("th")}
+    aria-label="Thai"
+  >
+    ก
+  </button>
+</div>
+
         <div className="auth-header">
           <h1 className="auth-title">{i.loginTitle}</h1>
           <div className="lang-toggle" aria-label="Language">
@@ -90,15 +107,27 @@ export default function Login({ lang, onLang, onSignedIn }: Props) {
             autoComplete="current-password"
           />
 
-          {err && <div style={{ color: "#A51931", fontSize: 12 }}>{err}</div>}
-
-          <div className="flex gap-3 flex-wrap justify-center">
-            <button className="btn btn-blue" onClick={onSignIn} disabled={busy}>
-              {i.signIn}
-            </button>
-            <button className="btn btn-red" onClick={onSignUp} disabled={busy}>
-              {i.signUp}
-            </button>
+         <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 10 }}>
+  <button className="btn btn-blue" type="button" onClick={onSignIn}>
+    {lang === "th" ? "เข้าสู่ระบบ" : "Sign in"}
+  </button>
+  <button className="btn btn-red" type="button" onClick={onSignUp}>
+    {lang === "th" ? "สมัคร" : "Sign up"}
+  </button>
+  <button
+    className="btn btn-blue ghost"
+    type="button"
+    onClick={async () => {
+      try {
+        await signInAnonymously(auth);
+      } catch (e: any) {
+        alert(e?.message || String(e));
+      }
+    }}
+  >
+    {lang === "th" ? "เข้าแบบผู้เยี่ยมชม" : "Continue as guest"}
+  </button>
+</div>
           </div>
         </div>
       </div>
