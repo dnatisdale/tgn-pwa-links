@@ -222,7 +222,7 @@ export default function App() {
   };
 
   // ===== LOGIN GATE =====
-  if (!user) return <Login lang={lang} onLang={setLang} onSignedIn={() => {}} />;
+  if (!user) return <Login lang={lang} onLang={setLang} onSignedIn={() => void 0} />;
 
 // Build info → compose build datetime in PT
 const buildDateISO = `${__BUILD_DATE__}T${__BUILD_TIME__}:00`;

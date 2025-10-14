@@ -11,6 +11,7 @@ import {
 type Props = {
   lang: Lang;
   onLang: (l: Lang) => void;
+  onSignedIn?: () => void; // ← add this line
 };
 
 export default function Login({ lang, onLang }: Props) {
@@ -28,40 +29,43 @@ export default function Login({ lang, onLang }: Props) {
   };
 
   async function onSignIn() {
-    setBusy(true);
-    try {
-      await signInWithEmailAndPassword(auth, email.trim(), pass);
-      localStorage.setItem("tgnLastLoginISO", new Date().toISOString());
-    } catch (e: any) {
-      alert(e?.message || String(e));
-    } finally {
-      setBusy(false);
-    }
+  setBusy(true);
+  try {
+    await signInWithEmailAndPassword(auth, email.trim(), pass);
+    localStorage.setItem("tgnLastLoginISO", new Date().toISOString());
+    onSignedIn?.(); // ← added
+  } catch (e: any) {
+    alert(e?.message || String(e));
+  } finally {
+    setBusy(false);
   }
+}
 
-  async function onSignUp() {
-    setBusy(true);
-    try {
-      await createUserWithEmailAndPassword(auth, email.trim(), pass);
-      localStorage.setItem("tgnLastLoginISO", new Date().toISOString());
-    } catch (e: any) {
-      alert(e?.message || String(e));
-    } finally {
-      setBusy(false);
-    }
+async function onSignUp() {
+  setBusy(true);
+  try {
+    await createUserWithEmailAndPassword(auth, email.trim(), pass);
+    localStorage.setItem("tgnLastLoginISO", new Date().toISOString());
+    onSignedIn?.(); // ← added
+  } catch (e: any) {
+    alert(e?.message || String(e));
+  } finally {
+    setBusy(false);
   }
+}
 
-  async function onGuest() {
-    setBusy(true);
-    try {
-      await signInAnonymously(auth);
-      localStorage.setItem("tgnLastLoginISO", new Date().toISOString());
-    } catch (e: any) {
-      alert(e?.message || String(e));
-    } finally {
-      setBusy(false);
-    }
+async function onGuest() {
+  setBusy(true);
+  try {
+    await signInAnonymously(auth);
+    localStorage.setItem("tgnLastLoginISO", new Date().toISOString());
+    onSignedIn?.(); // ← added
+  } catch (e: any) {
+    alert(e?.message || String(e));
+  } finally {
+    setBusy(false);
   }
+}
 
   return (
     <div
