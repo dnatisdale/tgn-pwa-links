@@ -92,7 +92,7 @@ export default function Login({ lang, onLang, onSignedIn }: Props) {
 
           {err && <div style={{ color: "#A51931", fontSize: 12 }}>{err}</div>}
 
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex gap-3 flex-wrap justify-center">
             <button className="btn btn-blue" onClick={onSignIn} disabled={busy}>
               {i.signIn}
             </button>
