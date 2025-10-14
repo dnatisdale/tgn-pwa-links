@@ -15,6 +15,26 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { collection, onSnapshot, orderBy, query, doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { toHttpsOrNull as toHttps } from "./url";
 
+// ---- Date helpers (Pacific) ----
+function pacificLongDate(date: Date) {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "America/Los_Angeles",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(date); // e.g. "13 October 2025"
+}
+
+function pacificShortTime(date: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles",
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date); // e.g. "12:49"
+}
+
+
 declare const __GIT_COMMIT__: string;
 declare const __APP_VERSION__: string;
 declare const __BUILD_DATE__: string;
@@ -204,6 +224,18 @@ export default function App() {
 
   // ===== LOGIN GATE =====
   if (!user) return <Login lang={lang} onLang={setLang} onSignedIn={() => {}} />;
+
+// Build info → compose build datetime in PT
+const buildDateISO = `${__BUILD_DATE__}T${__BUILD_TIME__}:00`;
+const buildDt = new Date(buildDateISO);
+const buildDateText = pacificLongDate(buildDt);     // "13 October 2025"
+const buildTimeText = pacificShortTime(buildDt);    // "12:49"
+
+// Last login (if you stored ISO in localStorage as before)
+const lastLoginDt = lastLogin ? new Date(lastLogin) : null;
+const lastLoginText = lastLoginDt
+  ? `${pacificLongDate(lastLoginDt)} — ${pacificShortTime(lastLoginDt)} PT`
+  : null;
 
   // ===== RENDER =====
   return (
