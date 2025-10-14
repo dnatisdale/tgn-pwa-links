@@ -1,24 +1,21 @@
-// src/firebase.ts
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-
-function need(name: string, value: string | undefined) {
-  if (!value) {
-    throw new Error(`Missing ${name}. Did you set it in your .env and on Netlify?`);
-  }
-  return value;
-}
+import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: need("VITE_FIREBASE_API_KEY", import.meta.env.VITE_FIREBASE_API_KEY),
-  authDomain: need("VITE_FIREBASE_AUTH_DOMAIN", import.meta.env.VITE_FIREBASE_AUTH_DOMAIN),
-  projectId: need("VITE_FIREBASE_PROJECT_ID", import.meta.env.VITE_FIREBASE_PROJECT_ID),
-  storageBucket: need("VITE_FIREBASE_STORAGE_BUCKET", import.meta.env.VITE_FIREBASE_STORAGE_BUCKET),
-  messagingSenderId: need("VITE_FIREBASE_MESSAGING_SENDER_ID", import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID),
-  appId: need("VITE_FIREBASE_APP_ID", import.meta.env.VITE_FIREBASE_APP_ID),
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MSG_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// enable offline persistence; catch multi-tab errors
+enableIndexedDbPersistence(db).catch((err) => {
+  console.warn('IndexedDB persistence failed', err);
+});
