@@ -19,7 +19,7 @@ function isStandalone(): boolean {
   // iOS: navigator.standalone; others: matchMedia
   // (cast to any to silence TS for iOS)
   const navAny = navigator as any;
-  return !!(navAny.standalone) || window.matchMedia("(display-mode: standalone)").matches;
+  return !!navAny.standalone || window.matchMedia("(display-mode: standalone)").matches;
 }
 
 function isIOS(): boolean {
@@ -59,15 +59,14 @@ export default function InstallPWA({
       setDeferred(e as BeforeInstallPromptEvent);
       setReady(true);
     };
-    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
-    return () => window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt as EventListener);
+    return () => window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt as EventListener);
   }, []);
 
   const iosHelp = useMemo(
-    () =>
-      "On iPhone/iPad: tap the Share icon, then 'Add to Home Screen'.",
+    () => "On iPhone/iPad: tap the Share icon, then 'Add to Home Screen'.",
     []
-  );
+  ); // <-- fixed missing parenthesis
 
   const onClick = async () => {
     // If we already run as installed, do nothing

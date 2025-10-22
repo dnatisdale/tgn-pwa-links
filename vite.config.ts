@@ -1,76 +1,100 @@
-// vite.config.ts (root)
+// vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
-import { execSync } from "node:child_process";
-function gitCommitShort() {
+import pkg from "./package.json" with { type: "json" };
+import crypto from "node:crypto";
+
+/* ============== Helpers (LA time + short build id) ============== */
+function laPrettyNow(): string {
+  const tz = "America/Los_Angeles";
+  const d = new Date();
+  const mdy = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, month: "long", day: "numeric", year: "numeric",
+  }).format(d);
+  const hm = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true,
+  }).format(d).replace(" AM", "AM").replace(" PM", "PM");
+  return `${mdy} | ${hm}`;
+}
+function laDate(): string {
+  const tz = "America/Los_Angeles";
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, month: "long", day: "numeric", year: "numeric",
+  }).format(new Date());
+}
+function laTime(): string {
+  const tz = "America/Los_Angeles";
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true,
+  }).format(new Date()).replace(" AM", "AM").replace(" PM", "PM");
+}
+function buildId7(): string {
   try {
-    return execSync("git rev-parse --short HEAD").toString().trim();
-  } catch {
-    return "unknown";
-  }
+    const { execSync } = require("node:child_process");
+    const g = execSync("git rev-parse --short=7 HEAD").toString().trim();
+    if (g) return g;
+  } catch {}
+  const seed = `${Date.now()}-${Math.random()}`;
+  return crypto.createHash("sha1").update(seed).digest("hex").slice(0, 7);
 }
 
-function formatPacific() {
-  const fmt = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Los_Angeles",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-  const str = fmt.format(new Date());           // "YYYY-MM-DD, HH:MM"
-  const [date, time] = str.split(", ");
-  return { date, time };
-}
-const { date: BUILD_DATE, time: BUILD_TIME } = formatPacific();
-const APP_VERSION = `v${process.env.npm_package_version || "0.0.0"}`;
-
+/* =========================== Config ============================= */
 export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "prompt",
-      strategies: "generateSW",
-      devOptions: { enabled: false }, // keep SW off in dev for fewer warnings
-      includeAssets: [
-        "favicon.svg",
-        "favicon.ico",
-        "robots.txt",
-        "apple-touch-icon.png",
-      ],
+      registerType: "autoUpdate",
+      workbox: {
+        // allow bigger files if they slip in (but we ignore heavy folders below)
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024, // 8 MiB
+        globPatterns: ["**/*.{js,css,html,ico,svg,webp,png}"],
+        // do NOT precache banners or screenshots (they'll still load normally)
+        globIgnores: ["**/banners/**", "**/screenshots/**"],
+      },
+      includeAssets: ["/favicon.ico"],
       manifest: {
         name: "Thai Good News",
         short_name: "TGN",
-        description: "Thai Good News - simple PWA for sharing URL links and QR codes",
         start_url: "/",
+        scope: "/",
         display: "standalone",
-        background_color: "#F4F5F8", // Thai white
-        theme_color: "#A51931",      // Thai red
+        background_color: "#F4F5F8",
+        theme_color: "#2D2A4A",
+
+        // ICONS — keep as PNG; fix warning by using "maskable" (not "any maskable")
         icons: [
           { src: "/icons/pwa-192.png", sizes: "192x192", type: "image/png" },
           { src: "/icons/pwa-512.png", sizes: "512x512", type: "image/png" },
+          { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" }
         ],
-      },
-      workbox: {
-        // what to include in the precache:
-        globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
 
-        // 1) Raise the file-size cap (optional but future-proof)
-        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // 6 MiB
-
-        // 2) And/or ignore your giant banner so it’s not precached
-        globIgnores: ["**/banner-2400x600.jpeg"],
+        // SCREENSHOTS — your new WebP files (put them in public/screenshots/)
+        screenshots: [
+          {
+            src: "/screenshots/home-wide-1200x630.webp",
+            sizes: "1200x630",
+            type: "image/webp",
+            form_factor: "wide",
+            label: "Home (wide)"
+          },
+          {
+            src: "/screenshots/home-tall-720x1280.webp",
+            sizes: "720x1280",
+            type: "image/webp",
+            form_factor: "narrow",
+            label: "Home (mobile)"
+          }
+        ],
       },
     }),
   ],
-  
   define: {
-  __APP_VERSION__: JSON.stringify(process.env.npm_package_version || "v0.0.0"),
-  __BUILD_DATE__: JSON.stringify(BUILD_DATE),
-  __BUILD_TIME__: JSON.stringify(BUILD_TIME),
-  __GIT_COMMIT__: JSON.stringify(gitCommitShort()),
+    __APP_VERSION__:  JSON.stringify(pkg.version),
+    __BUILD_PRETTY__: JSON.stringify(laPrettyNow()),
+    __BUILD_ID__:     JSON.stringify(buildId7()),
+    // Back-compat fields some components use:
+    __BUILD_DATE__:   JSON.stringify(laDate()),
+    __BUILD_TIME__:   JSON.stringify(laTime()),
   },
 });

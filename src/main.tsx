@@ -1,46 +1,49 @@
-// src/main.tsx
+// src/main.tsx — React + PWA without top-level await
 import React from "react";
-import { createRoot } from "react-dom/client";
+import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./styles.css";
-import ErrorBoundary from "./ErrorBoundary";
-import { registerSW } from "virtual:pwa-register";
 
-// Make TS happy if other files reference this
+// (1) Optional: help TS know about the helper we put on window
 declare global {
   interface Window {
-    __REFRESH_SW__?: (reloadImmediately?: boolean) => void;
+    __REFRESH_SW__?: (reload?: boolean) => void;
   }
 }
 
-// --- Service Worker registration (single place) ---
-const updateSW = registerSW({
-  immediate: true,
-  onNeedRefresh() {
-    // Tell the app/toast to show the "New Version" bar
-    window.dispatchEvent(new Event("pwa:need-refresh"));
-  },
-  onOfflineReady() {
-    // Optional: show "Ready to work offline"
-  },
-});
+// (2) PWA register (dynamic, guarded, no top-level await)
+(function loadPWA() {
+  // vite provides this virtual module
+  // @ts-ignore
+  import("virtual:pwa-register")
+    .then(({ registerSW }) => {
+      const updateSW = registerSW({
+        immediate: true, // <— important: register right away in preview/production
+        onNeedRefresh() {
+          // tell the UI to show the blue “New version” card
+          window.dispatchEvent(new Event("pwa:need-refresh"));
+        },
+        onOfflineReady() {
+          // optional: toast “Ready to work offline”
+        },
+      });
 
-// App / UpdateToast will call this to refresh + reload
-window.__REFRESH_SW__ = (reload = true) => updateSW(reload);
+      // “Open” button calls this to activate the waiting SW and reload
+      window.__REFRESH_SW__ = () => updateSW(true);
 
-// (Optional) build info in console (defined in vite.config.ts via `define`)
-declare const __APP_VERSION__: string;
-declare const __BUILD_DATE__: string;
-declare const __BUILD_TIME__: string;
-console.log(`${__APP_VERSION__} — ${__BUILD_DATE__} ${__BUILD_TIME__}`);
+      // When the new SW takes control, reload to fresh assets
+      navigator.serviceWorker?.addEventListener("controllerchange", () => {
+        window.location.reload();
+      });
+    })
+    .catch((e) => {
+      console.warn("PWA register skipped:", e);
+    });
+})();
 
-const container = document.getElementById("root");
-if (!container) throw new Error("#root not found");
-
-createRoot(container).render(
+// (3) Mount React
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
+    <App />
   </React.StrictMode>
 );

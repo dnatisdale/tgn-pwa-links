@@ -1,7 +1,7 @@
 // src/QR.tsx
 import React, { useEffect, useRef } from "react";
 import QRCode from "qrcode";
-import { normalizeHttps } from "./utils";
+import { normalizeHttps } from "./url";
 
 type Props = {
   url: string;
@@ -13,7 +13,7 @@ export default function QR({ url, size = 192, idForDownload }: Props) {
   const ref = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
-    const safeUrl = normalizeHttps(url);
+    const safeUrl = normalizeHttps(url) ?? "";
     const canvas = ref.current;
     if (!canvas || !safeUrl) return;
 

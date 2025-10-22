@@ -10,7 +10,7 @@ type PreviewItem = {
   language: string;
   urlRaw: string;
   urlHttps: string | null; // null if invalid/non-https
-  reason?: string;         // why skipped
+  reason?: string; // why skipped
 };
 
 // ---------------- helpers ----------------
@@ -34,7 +34,8 @@ function splitCSVorTSV(text: string): string[][] {
     .map((l) => l.trim())
     .filter((l) => l.length > 0);
   if (!lines.length) return [];
-  const looksTSV = (lines[0].match(/\t/g) || []).length >= (lines[0].match(/,/g) || []).length;
+  const looksTSV =
+    (lines[0].match(/\t/g) || []).length >= (lines[0].match(/,/g) || []).length;
   const sep = looksTSV ? "\t" : ",";
   return lines.map((l) => l.split(sep).map((x) => x.trim()));
 }
@@ -58,7 +59,7 @@ export default function ImportExport({ lang }: Props) {
     if (!preview) return { valid: 0, invalid: 0 };
     let valid = 0;
     let invalid = 0;
-    for (const p of preview) (p.urlHttps ? valid++ : invalid++);
+    for (const p of preview) p.urlHttps ? valid++ : invalid++;
     return { valid, invalid };
   }, [preview]);
 
@@ -88,7 +89,9 @@ export default function ImportExport({ lang }: Props) {
             language,
             urlRaw,
             urlHttps,
-            reason: urlHttps ? undefined : "URL must be https (or leave off scheme to auto-https)",
+            reason: urlHttps
+              ? undefined
+              : "URL must be https (or leave off scheme to auto-https)",
           };
         });
       } else {
@@ -99,16 +102,22 @@ export default function ImportExport({ lang }: Props) {
           return;
         }
         const header = grid[0].map((h) => h.toLowerCase());
-        const hasHeader = ["name", "language", "url"].some((h) => header.includes(h));
+        const hasHeader = ["name", "language", "url"].some((h) =>
+          header.includes(h)
+        );
         const body = hasHeader ? grid.slice(1) : grid;
 
-        let nameIdx = -1, langIdx = -1, urlIdx = -1;
+        let nameIdx = -1,
+          langIdx = -1,
+          urlIdx = -1;
         if (hasHeader) {
           nameIdx = header.indexOf("name");
           langIdx = header.indexOf("language");
           urlIdx = header.indexOf("url");
         } else {
-          nameIdx = 0; langIdx = 1; urlIdx = 2;
+          nameIdx = 0;
+          langIdx = 1;
+          urlIdx = 2;
         }
 
         rows = body.map((cols) => {
@@ -121,7 +130,9 @@ export default function ImportExport({ lang }: Props) {
             language,
             urlRaw,
             urlHttps,
-            reason: urlHttps ? undefined : "URL must be https (or leave off scheme to auto-https)",
+            reason: urlHttps
+              ? undefined
+              : "URL must be https (or leave off scheme to auto-https)",
           };
         });
       }
@@ -147,7 +158,9 @@ export default function ImportExport({ lang }: Props) {
     }
     const valid = preview.filter((p) => p.urlHttps);
     if (!valid.length) {
-      alert(lang === "th" ? "ไม่มี URL ที่ถูกต้อง (https)" : "No valid https URLs.");
+      alert(
+        lang === "th" ? "ไม่มี URL ที่ถูกต้อง (https)" : "No valid https URLs."
+      );
       return;
     }
 
@@ -180,7 +193,11 @@ export default function ImportExport({ lang }: Props) {
       {/* Top row */}
       <div className="file-row" style={{ marginBottom: 12 }}>
         {/* Choose file (Thai red) */}
-        <label htmlFor="tgn-import-file" className="btn btn-red" style={{ cursor: "pointer" }}>
+        <label
+          htmlFor="tgn-import-file"
+          className="btn btn-red"
+          style={{ cursor: "pointer" }}
+        >
           {lang === "th" ? "เลือกไฟล์" : "Choose file"}
         </label>
         <input
@@ -196,7 +213,11 @@ export default function ImportExport({ lang }: Props) {
 
         {/* Add (only after preview) */}
         {preview && (
-          <button className="btn btn-blue" onClick={doImport} disabled={!stats.valid || parsing}>
+          <button
+            className="btn btn-blue"
+            onClick={doImport}
+            disabled={!stats.valid || parsing}
+          >
             {lang === "th" ? "เพิ่ม" : "Add"}
           </button>
         )}
@@ -219,9 +240,24 @@ export default function ImportExport({ lang }: Props) {
               : `Preview: ${stats.valid} valid · ${stats.invalid} skipped`}
           </div>
 
-          <div style={{ maxHeight: 320, overflow: "auto", border: "1px solid #e5e7eb", borderRadius: 8 }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-              <thead style={{ position: "sticky", top: 0, background: "#f9fafb" }}>
+          <div
+            style={{
+              maxHeight: 320,
+              overflow: "auto",
+              border: "1px solid #e5e7eb",
+              borderRadius: 8,
+            }}
+          >
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: 13,
+              }}
+            >
+              <thead
+                style={{ position: "sticky", top: 0, background: "#f9fafb" }}
+              >
                 <tr>
                   <th style={th}>Name</th>
                   <th style={th}>Language</th>
@@ -232,9 +268,15 @@ export default function ImportExport({ lang }: Props) {
               <tbody>
                 {preview.map((p, idx) => (
                   <tr key={idx}>
-                    <td style={td}>{p.name || <em style={{ color: "#6b7280" }}>—</em>}</td>
-                    <td style={td}>{p.language || <em style={{ color: "#6b7280" }}>—</em>}</td>
-                    <td style={td} title={p.urlRaw}>{p.urlRaw}</td>
+                    <td style={td}>
+                      {p.name || <em style={{ color: "#6b7280" }}>—</em>}
+                    </td>
+                    <td style={td}>
+                      {p.language || <em style={{ color: "#6b7280" }}>—</em>}
+                    </td>
+                    <td style={td} title={p.urlRaw}>
+                      {p.urlRaw}
+                    </td>
                     <td style={td}>
                       {p.urlHttps ? (
                         <span style={{ color: "#16a34a", fontWeight: 600 }}>
@@ -242,7 +284,8 @@ export default function ImportExport({ lang }: Props) {
                         </span>
                       ) : (
                         <span style={{ color: "#a51931" }}>
-                          {p.reason || (lang === "th" ? "ไม่ถูกต้อง" : "Invalid")}
+                          {p.reason ||
+                            (lang === "th" ? "ไม่ถูกต้อง" : "Invalid")}
                         </span>
                       )}
                     </td>

@@ -1,6 +1,7 @@
 // src/AddLink.tsx
 import React, { useState } from "react";
 import { t, tr, Lang } from "./i18n";
+import { toHttpsOrNull as toHttps } from "./url";
 import { auth, db } from "./firebase";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 
@@ -40,6 +41,18 @@ export default function AddLink({ lang }: Props) {
       alert("Please sign in first.");
       return;
     }
+
+    // inside your add handler
+    const https = toHttps(inputUrl);
+    if (!https) {
+      alert(
+        lang === "th"
+          ? "โปรดใส่ลิงก์ https:// ที่ถูกต้อง"
+          : "Please enter a valid https:// URL"
+      );
+      return;
+    }
+    // save https (not the original)
 
     const nameTrim = name.trim();
     const languageTrim = language.trim();
@@ -84,7 +97,7 @@ export default function AddLink({ lang }: Props) {
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder={i.name}               // label inside the field
+        placeholder={i.name} // label inside the field
         aria-label={i.name}
         className="w-full border rounded px-3 py-2 mb-3"
       />
@@ -93,7 +106,7 @@ export default function AddLink({ lang }: Props) {
       <input
         value={language}
         onChange={(e) => setLanguage(e.target.value)}
-        placeholder={i.language}           // label inside the field
+        placeholder={i.language} // label inside the field
         aria-label={i.language}
         className="w-full border rounded px-3 py-2 mb-3"
       />
@@ -102,7 +115,7 @@ export default function AddLink({ lang }: Props) {
       <input
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        placeholder={i.url}                // uses your new “https optional” text
+        placeholder={i.url} // uses your new “https optional” text
         aria-label={i.url}
         className="w-full border rounded px-3 py-2 mb-1"
         inputMode="url"
@@ -122,7 +135,7 @@ export default function AddLink({ lang }: Props) {
         disabled={saving}
         className="btn-red"
         style={{
-          background: "#a51931",   // Thai red
+          background: "#a51931", // Thai red
           color: "#fff",
           borderRadius: 8,
           padding: "10px 16px",

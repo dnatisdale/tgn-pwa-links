@@ -11,7 +11,7 @@ const RED = "#a51931"; // Thai flag red
 
 export default function NiftyShare({ url, title = "Check this out!", buttonLabel = "Share" }: Props) {
   const [open, setOpen] = useState(false);
-  const safeUrl = normalizeHttps(url);
+  const safeUrl = normalizeHttps(url) ?? "";
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
@@ -20,14 +20,14 @@ export default function NiftyShare({ url, title = "Check this out!", buttonLabel
   }, [open]);
 
   const copy = async () => {
-    try { await navigator.clipboard.writeText(safeUrl); alert("URL copied to clipboard!"); }
+    try { await navigator.clipboard.writeText(safeUrl ?? ""); alert("URL copied to clipboard!"); }
     catch (err) { console.error("Copy failed", err); }
   };
 
-  const emailHref = `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(safeUrl)}`;
-  const fbHref    = `https://facebook.com/sharer.php?u=${encodeURIComponent(safeUrl)}`;
-  const xHref     = `https://twitter.com/share?url=${encodeURIComponent(safeUrl)}&text=${encodeURIComponent(title)}`;
-  const waHref    = `https://wa.me/?text=${encodeURIComponent(`${title} ${safeUrl}`)}`;
+  const emailHref = `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(safeUrl ?? "")}`;
+  const fbHref    = `https://facebook.com/sharer.php?u=${encodeURIComponent(safeUrl ?? "")}`;
+  const xHref     = `https://twitter.com/share?url=${encodeURIComponent(safeUrl ?? "")}&text=${encodeURIComponent(title)}`;
+  const waHref    = `https://wa.me/?text=${encodeURIComponent(`${title} ${safeUrl ?? ""}`)}`;
 
   return (
     <>

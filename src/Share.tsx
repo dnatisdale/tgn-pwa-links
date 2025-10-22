@@ -1,6 +1,5 @@
 // src/Share.tsx
 import React, { useState } from "react";
-import { t, tr, Lang } from "./i18n";
 
 /**
  * Props:

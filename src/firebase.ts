@@ -1,28 +1,23 @@
-// firebase.ts
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { initializeFirestore, persistentLocalCache } from "firebase/firestore";
 
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
-
-// Firebase configuration
+// 🔹 Firebase configuration using environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyCNQYXYpTocoU7XWnPKEz7OUkmf6fHTgPY",
-  authDomain: "thai-good-news-app.firebaseapp.com",
-  databaseURL: "https://thai-good-news-app-default-rtdb.firebaseio.com",
-  projectId: "thai-good-news-app",
-  storageBucket: "thai-good-news-app.firebasestorage.app",
-  messagingSenderId: "536885866848",
-  appId: "1:536885866848:web:f8250a6f1bb4ca7cea2e05"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
+// 🔹 Initialize Firebase (this was missing!)
 const app = initializeApp(firebaseConfig);
 
-// Export Firebase services
+// 🔹 Export Firebase services
 export const auth = getAuth(app);
-export const db = getFirestore(app);
-
-// Enable offline persistence for Firestore
-enableIndexedDbPersistence(db).catch((err) => {
-  console.warn('IndexedDB persistence failed:', err);
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache(),
 });

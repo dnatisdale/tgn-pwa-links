@@ -1,33 +1,36 @@
+// src/ErrorBoundary.tsx
 import React from "react";
 
-type State = { hasError: boolean; message?: string; stack?: string };
+type Props = { children: React.ReactNode };
+type State = { hasError: boolean; msg?: string };
 
-export default class ErrorBoundary extends React.Component<React.PropsWithChildren, State> {
+export default class ErrorBoundary extends React.Component<Props, State> {
   state: State = { hasError: false };
 
-  static getDerivedStateFromError(err: any): State {
-    return { hasError: true, message: String(err?.message || err), stack: String(err?.stack || "") };
+  static getDerivedStateFromError(err: unknown): State {
+    const msg =
+      err instanceof Error
+        ? err.message
+        : typeof err === "string"
+        ? err
+        : "Unknown error";
+    return { hasError: true, msg: String(msg) };
   }
 
-  componentDidCatch(err: any, info: any) {
-    console.error("App crash:", err, info);
+  componentDidCatch(error: any, info: any) {
+    console.error("💥 React error boundary caught:", error, info);
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: 16, fontFamily: "system-ui" }}>
-          <h2>Something went wrong</h2>
-          <pre style={{ whiteSpace: "pre-wrap" }}>{this.state.message}</pre>
-          <details>
-            <summary>Stack</summary>
-            <pre style={{ whiteSpace: "pre-wrap" }}>{this.state.stack}</pre>
-          </details>
-          <button onClick={() => location.reload()}>Reload</button>
+        <div style={{ padding: 16 }}>
+          <h2>😬 Something crashed while rendering.</h2>
+          <pre style={{ whiteSpace: "pre-wrap" }}>{this.state.msg}</pre>
+          <p>Open DevTools → Console for the exact file/line.</p>
         </div>
       );
     }
     return this.props.children;
   }
 }
-

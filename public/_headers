@@ -1,2 +1,8 @@
 /sw.js
   Cache-Control: no-cache, no-store, must-revalidate
+
+/ icons/*
+  Cache-Control: public, max-age=604800, immutable
+
+/ banners/*
+  Cache-Control: public, max-age=604800, immutable

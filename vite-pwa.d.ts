@@ -1,4 +1,4 @@
-declare module "virtual:pwa-register" {
+declare module 'virtual:pwa-register' {
   export function registerSW(opts?: {
     immediate?: boolean;
     onNeedRefresh?: () => void;

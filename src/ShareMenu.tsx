@@ -143,7 +143,6 @@ export default function ShareMenu({ urls, title = "Thai Good News", label = "Sha
           <button onClick={doTelegram} className="drop-item">Telegram</button>
           <div className="drop-sep" />
           <button onClick={doCopy} className="drop-item">Copy links</button>
-        </div>
       )}
 
       {disabled && (

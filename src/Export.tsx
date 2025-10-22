@@ -4,7 +4,13 @@ import { t, Lang } from "./i18n";
 
 type Row = { id: string; name: string; language: string; url: string };
 
-export default function ExportPage({ lang, rows }: { lang: Lang; rows: Row[] }) {
+export default function ExportPage({
+  lang,
+  rows,
+}: {
+  lang: Lang;
+  rows: Row[];
+}) {
   const i = t(lang);
 
   const download = (filename: string, text: string, mime = "text/plain") => {
@@ -29,7 +35,11 @@ export default function ExportPage({ lang, rows }: { lang: Lang; rows: Row[] }) 
   };
 
   const toJSON = () => {
-    download("tgn-links.json", JSON.stringify(rows, null, 2), "application/json");
+    download(
+      "tgn-links.json",
+      JSON.stringify(rows, null, 2),
+      "application/json"
+    );
   };
 
   const doPrint = () => window.print();
@@ -37,7 +47,9 @@ export default function ExportPage({ lang, rows }: { lang: Lang; rows: Row[] }) 
   return (
     <div className="max-w-3xl">
       {/* ✅ Export only (no “Import / Export”) */}
-      <h2 className="text-lg font-semibold mb-3">{lang === "th" ? "ส่งออก" : "Export"}</h2>
+      <h2 className="text-lg font-semibold mb-3">
+        {lang === "th" ? "ส่งออก" : "Export"}
+      </h2>
 
       <div className="flex items-center gap-3 mb-4">
         <button className="btn btn-blue" onClick={toCSV}>
