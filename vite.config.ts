@@ -72,8 +72,8 @@ export default defineConfig({
         // SCREENSHOTS — your new WebP files (put them in public/screenshots/)
         screenshots: [
           {
-            src: "/screenshots/home-wide-1200x630.webp",
-            sizes: "1200x630",
+            src: "/screenshots/home-wide-1280x720.webp",
+            sizes: "1280x720",
             type: "image/webp",
             form_factor: "wide",
             label: "Home (wide)"
