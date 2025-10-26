@@ -1,8 +1,8 @@
 {
   "brand": "Thai Good News",
   "banners": [
-    { "src": "/banners/tgn-banner-2400x600.png", "width": 2400, "height": 600 },
-    { "src": "/banners/tgn-banner-1200x300.png", "width": 1200, "height": 300 },
-    { "src": "/banners/tgn-banner-600x150.png", "width": 600, "height": 150 }
+    { "public": "/banners/tgn-banner-2400x600.png", "width": 2400, "height": 600 },
+    { "public": "/banners/tgn-banner-1200x300.png", "width": 1200, "height": 300 },
+    { "public": "/banners/tgn-banner-600x150.png", "width": 600, "height": 150 }
   ]
 }

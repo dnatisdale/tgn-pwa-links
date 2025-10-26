@@ -3,8 +3,8 @@
  *   <Banner className="w-full rounded-2xl shadow" alt="Thai Good News" />
  */
 export default function Banner({
-  className = "",
-  alt = "Thai Good News",
+  className = '',
+  alt = 'Thai Good News',
 }: {
   className?: string;
   alt?: string;

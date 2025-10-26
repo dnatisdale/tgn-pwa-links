@@ -1,13 +1,13 @@
 // 01 src/Login.tsx — clean, pill matches sign-in, no stray text
-import React, { useState } from "react"; // 02
-import { Lang } from "./i18n"; // 03
-import { auth } from "./firebase"; // 04
-import LangPill from "./LangPill"; // 05
+import React, { useState } from 'react'; // 02
+import { Lang } from './i18n'; // 03
+import { auth } from './firebase'; // 04
+import LangPill from './LangPill'; // 05
 import {
   signInWithEmailAndPassword, // 06
   createUserWithEmailAndPassword, // 07
   signInAnonymously, // 08
-} from "firebase/auth"; // 09
+} from 'firebase/auth'; // 09
 
 type Props = {
   // 10
@@ -18,18 +18,18 @@ type Props = {
 
 export default function Login({ lang, onLang, onSignedIn }: Props) {
   // 15
-  const [email, setEmail] = useState(""); // 16
-  const [pass, setPass] = useState(""); // 17
+  const [email, setEmail] = useState(''); // 16
+  const [pass, setPass] = useState(''); // 17
   const [busy, setBusy] = useState(false); // 18
 
   const L = {
     // 19
-    title: lang === "th" ? "เข้าสู่ระบบด้วยอีเมล" : "Sign in with Email", // 20
-    emailPh: lang === "th" ? "อีเมล" : "Email", // 21
-    passPh: lang === "th" ? "รหัสผ่าน" : "Password", // 22
-    signIn: lang === "th" ? "เข้าสู่ระบบ" : "Sign in", // 23
-    signUp: lang === "th" ? "สมัคร" : "Sign up", // 24
-    guest: lang === "th" ? "เข้าแบบผู้เยี่ยมชม" : "Continue as guest", // 25
+    title: lang === 'th' ? 'เข้าสู่ระบบด้วยอีเมล' : 'Sign in with Email', // 20
+    emailPh: lang === 'th' ? 'อีเมล' : 'Email', // 21
+    passPh: lang === 'th' ? 'รหัสผ่าน' : 'Password', // 22
+    signIn: lang === 'th' ? 'เข้าสู่ระบบ' : 'Sign In', // 23
+    signUp: lang === 'th' ? 'สมัคร' : 'Sign Up', // 24
+    guest: lang === 'th' ? 'เข้าแบบผู้เยี่ยมชม' : 'Continue as Guest', // 25
   }; // 26
 
   async function onSignIn() {
@@ -38,7 +38,7 @@ export default function Login({ lang, onLang, onSignedIn }: Props) {
     try {
       // 29
       await signInWithEmailAndPassword(auth, email.trim(), pass); // 30
-      localStorage.setItem("tgnLastLoginISO", new Date().toISOString()); // 31
+      localStorage.setItem('tgnLastLoginISO', new Date().toISOString()); // 31
       onSignedIn?.(); // 32
     } catch (e: any) {
       // 33
@@ -55,7 +55,7 @@ export default function Login({ lang, onLang, onSignedIn }: Props) {
     try {
       // 41
       await createUserWithEmailAndPassword(auth, email.trim(), pass); // 42
-      localStorage.setItem("tgnLastLoginISO", new Date().toISOString()); // 43
+      localStorage.setItem('tgnLastLoginISO', new Date().toISOString()); // 43
       onSignedIn?.(); // 44
     } catch (e: any) {
       // 45
@@ -72,7 +72,7 @@ export default function Login({ lang, onLang, onSignedIn }: Props) {
     try {
       // 53
       await signInAnonymously(auth); // 54
-      localStorage.setItem("tgnLastLoginISO", new Date().toISOString()); // 55
+      localStorage.setItem('tgnLastLoginISO', new Date().toISOString()); // 55
       onSignedIn?.(); // 56
     } catch (e: any) {
       // 57
@@ -87,23 +87,23 @@ export default function Login({ lang, onLang, onSignedIn }: Props) {
     // 63
     <div
       style={{
-        minHeight: "70vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        minHeight: '70vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         padding: 16,
       }}
     >
       <div
         style={{
-          position: "relative",
+          position: 'relative',
           width: 420,
-          maxWidth: "90vw",
-          border: "1px solid #e5e7eb",
+          maxWidth: '90vw',
+          border: '1px solid #e5e7eb',
           borderRadius: 12,
           padding: 20,
-          background: "#fff",
-          boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+          background: '#fff',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
         }}
       >
         {/* 2) TITLE */}
@@ -112,7 +112,7 @@ export default function Login({ lang, onLang, onSignedIn }: Props) {
         </h2>
 
         {/* 3) INPUTS */}
-        <div style={{ display: "grid", gap: 10 }}>
+        <div style={{ display: 'grid', gap: 10 }}>
           <input
             type="email"
             value={email}
@@ -134,9 +134,9 @@ export default function Login({ lang, onLang, onSignedIn }: Props) {
         {/* 4) BUTTONS */}
         <div
           style={{
-            display: "flex",
+            display: 'flex',
             gap: 12,
-            justifyContent: "center",
+            justifyContent: 'center',
             marginTop: 12,
           }}
         >
@@ -146,11 +146,7 @@ export default function Login({ lang, onLang, onSignedIn }: Props) {
           <button className="btn btn-red" onClick={onSignUp} disabled={busy}>
             {L.signUp}
           </button>
-          <button
-            className="btn btn-blue ghost"
-            onClick={onGuest}
-            disabled={busy}
-          >
+          <button className="btn btn-blue ghost" onClick={onGuest} disabled={busy}>
             {L.guest}
           </button>
         </div>
