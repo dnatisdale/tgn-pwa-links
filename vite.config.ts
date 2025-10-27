@@ -4,8 +4,9 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 import { execSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 
-// --- Build metadata (safe even on Netlify without git) ---
+// ---- Build metadata (safe even if not on git) ----
 function gitShort() {
   try {
     return execSync('git rev-parse --short HEAD').toString().trim();
@@ -14,10 +15,12 @@ function gitShort() {
   }
 }
 const now = new Date();
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8'));
+const APP_VERSION = pkg.version ?? '0.0.0';
 const BUILD_ID = process.env.NETLIFY_COMMIT_REF || process.env.VERCEL_GIT_COMMIT_SHA || gitShort();
 const BUILD_DATE = now.toISOString().slice(0, 10); // YYYY-MM-DD
 const BUILD_TIME = now.toTimeString().slice(0, 8); // HH:MM:SS
-const BUILD_PRETTY = true; // your toggle
+const BUILD_PRETTY = true;
 
 export default defineConfig({
   plugins: [
@@ -46,18 +49,19 @@ export default defineConfig({
     }),
   ],
 
-  // 👇 make @ point to /src
+  // 👇 alias lives at top level (NOT inside manifest)
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
     },
   },
 
-  // 👇 inject constants for use in app code
+  // 👇 THIS is the correct place to define globals (property, not function)
   define: {
-    __BUILD_PRETTY__: JSON.stringify(BUILD_PRETTY),
-    __BUILD_ID__: JSON.stringify(BUILD_ID),
-    __BUILD_DATE__: JSON.stringify(BUILD_DATE),
-    __BUILD_TIME__: JSON.stringify(BUILD_TIME),
+    __APP_VERSION__: JSON.stringify(String(APP_VERSION ?? '')),
+    __BUILD_PRETTY__: JSON.stringify(String(BUILD_PRETTY ?? '')),
+    __BUILD_ID__: JSON.stringify(String(BUILD_ID ?? '')),
+    __BUILD_DATE__: JSON.stringify(String(BUILD_DATE ?? '')),
+    __BUILD_TIME__: JSON.stringify(String(BUILD_TIME ?? '')),
   },
 });

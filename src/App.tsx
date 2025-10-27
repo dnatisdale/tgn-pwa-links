@@ -1,30 +1,31 @@
 // src/App.tsx — Clean App (tabs, login gate, header/footer, PWA toast)
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from 'react';
+import HeaderBanner from '@/components/HeaderBanner';
 
 // i18n
-import { t, Lang } from "./i18n";
-import AppMain from "./components/AppMain";
+import { t, Lang } from './i18n';
+import AppMain from './components/AppMain';
 
 // Tabs + pages
-import TopTabs from "./TopTabs";
-import Contact from "./Contact";
+import TopTabs from './TopTabs';
+import Contact from './Contact';
 
 // Layout parts
-import Header from "./Header";
-import Footer from "./Footer";
+import Header from './Header';
+import Footer from './Footer';
 
 // Pages/parts
-import Login from "./Login";
-import AddLink from "./AddLink";
-import ImportExport from "./ImportExport";
-import ExportPage from "./Export";
-import UpdateToast from "./UpdateToast";
-import Share from "./Share";
-import QR from "./QR";
+import Login from './Login';
+import AddLink from './AddLink';
+import ImportExport from './ImportExport';
+import ExportPage from './Export';
+import UpdateToast from './UpdateToast';
+import Share from './Share';
+import QR from './QR';
 
 // Firebase
-import { auth, db } from "./firebase";
-import { onAuthStateChanged } from "firebase/auth";
+import { auth, db } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import {
   collection,
   onSnapshot,
@@ -33,10 +34,10 @@ import {
   doc,
   deleteDoc,
   updateDoc,
-} from "firebase/firestore";
+} from 'firebase/firestore';
 
 // URL helper
-import { toHttpsOrNull as toHttps } from "./url";
+import { toHttpsOrNull as toHttps } from './url';
 
 // Build constants (from vite.config.ts -> define)
 declare const __APP_VERSION__: string | undefined;
@@ -45,28 +46,35 @@ declare const __BUILD_PRETTY__: string | undefined; // one declaration only!
 type Row = { id: string; name: string; language: string; url: string };
 
 export default function App() {
+  return (
+    <>
+      <HeaderBanner />
+      {/* rest of app */}
+    </>
+  );
+}
+
+export default function App() {
   // STATE
-  const [lang, setLang] = useState<Lang>("en");
+  const [lang, setLang] = useState<Lang>('en');
   const i = t(lang);
 
   const [user, setUser] = useState<any>(null);
   const [rows, setRows] = useState<Row[]>([]);
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState('');
   const [filterThai, setFilterThai] = useState(false);
 
   const [textPx, setTextPx] = useState<number>(16);
   const [qrEnlargedId, setQrEnlargedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const [route, setRoute] = useState<string>(
-    window.location.hash || "#/browse"
-  );
-  const isBrowse = route.startsWith("#/browse");
-  const isAdd = route.startsWith("#/add");
-  const isImport = route.startsWith("#/import");
-  const isExport = route.startsWith("#/export");
-  const isAbout = route.startsWith("#/about");
-  const isContact = route.startsWith("#/contact");
+  const [route, setRoute] = useState<string>(window.location.hash || '#/browse');
+  const isBrowse = route.startsWith('#/browse');
+  const isAdd = route.startsWith('#/add');
+  const isImport = route.startsWith('#/import');
+  const isExport = route.startsWith('#/export');
+  const isAbout = route.startsWith('#/about');
+  const isContact = route.startsWith('#/contact');
 
   const [showUpdate, setShowUpdate] = useState(false);
 
@@ -74,20 +82,20 @@ export default function App() {
   useEffect(() => onAuthStateChanged(auth, (u) => setUser(u)), []);
 
   useEffect(() => {
-    const onHash = () => setRoute(window.location.hash || "#/browse");
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
+    const onHash = () => setRoute(window.location.hash || '#/browse');
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
   useEffect(() => {
-    document.documentElement.style.setProperty("--base", `${textPx}px`);
+    document.documentElement.style.setProperty('--base', `${textPx}px`);
   }, [textPx]);
 
   // PWA “New version” signal comes from main.tsx (registerSW)
   useEffect(() => {
     const onNeed = () => setShowUpdate(true);
-    window.addEventListener("pwa:need-refresh", onNeed);
-    return () => window.removeEventListener("pwa:need-refresh", onNeed);
+    window.addEventListener('pwa:need-refresh', onNeed);
+    return () => window.removeEventListener('pwa:need-refresh', onNeed);
   }, []);
 
   // Firestore subscribe (only when logged in)
@@ -96,8 +104,8 @@ export default function App() {
       setRows([]);
       return;
     }
-    const col = collection(db, "users", user.uid, "links");
-    const qry = query(col, orderBy("name"));
+    const col = collection(db, 'users', user.uid, 'links');
+    const qry = query(col, orderBy('name'));
     const off = onSnapshot(qry, (snap) => {
       const list: Row[] = snap.docs.map((d) => ({
         id: d.id,
@@ -119,21 +127,21 @@ export default function App() {
     let out = rows.filter((row) => {
       if (
         filterThai &&
-        row.language?.toLowerCase() !== "thai" &&
-        row.language?.toLowerCase() !== "ไทย"
+        row.language?.toLowerCase() !== 'thai' &&
+        row.language?.toLowerCase() !== 'ไทย'
       )
         return false;
       if (!needle) return true;
       return (
-        (row.name || "").toLowerCase().includes(needle) ||
-        (row.language || "").toLowerCase().includes(needle) ||
-        (row.url || "").toLowerCase().includes(needle)
+        (row.name || '').toLowerCase().includes(needle) ||
+        (row.language || '').toLowerCase().includes(needle) ||
+        (row.url || '').toLowerCase().includes(needle)
       );
     });
     out.sort(
       (a, b) =>
-        (a.language || "").localeCompare(b.language || "") ||
-        (a.name || "").localeCompare(b.name || "")
+        (a.language || '').localeCompare(b.language || '') ||
+        (a.name || '').localeCompare(b.name || '')
     );
     return out;
   }, [rows, q, filterThai]);
@@ -141,8 +149,7 @@ export default function App() {
   const allVisibleIds = filtered.map((r) => r.id);
   const selectedRows = filtered.filter((r) => selectedIds.has(r.id));
   const firstSelected = selectedRows[0];
-  const allSelected =
-    filtered.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
+  const allSelected = filtered.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
 
   // HELPERS
   const toggleSelect = (id: string) =>
@@ -163,44 +170,44 @@ export default function App() {
   const copySelectedLinks = async () => {
     const urls = selectedRows.map((r) => r.url).filter(Boolean);
     if (!urls.length) {
-      alert("Select at least one item");
+      alert('Select at least one item');
       return;
     }
     try {
-      await navigator.clipboard.writeText(urls.join("\n"));
+      await navigator.clipboard.writeText(urls.join('\n'));
     } catch {
-      alert("Copy failed");
+      alert('Copy failed');
     }
   };
 
   const batchDownload = async () => {
     if (!selectedRows.length) {
-      alert("Select at least one item");
+      alert('Select at least one item');
       return;
     }
-    const mod = await import("./qrCard");
+    const mod = await import('./qrCard');
     for (const r of selectedRows) {
       await mod.downloadQrCard({
         qrCanvasId: `qr-${r.id}`,
         url: r.url,
         name: r.name,
-        title: "Thai Good News",
+        title: 'Thai Good News',
       });
     }
   };
 
   const editRow = async (r: Row) => {
-    const name = prompt("Name", r.name ?? "");
+    const name = prompt('Name', r.name ?? '');
     if (name === null) return;
-    const language = prompt("Language", r.language ?? "") ?? "";
-    const url = prompt("URL (https only)", r.url ?? "");
+    const language = prompt('Language', r.language ?? '') ?? '';
+    const url = prompt('URL (https only)', r.url ?? '');
     if (url === null) return;
     const https = toHttps(url);
     if (!https) {
-      alert("Please enter a valid https:// URL");
+      alert('Please enter a valid https:// URL');
       return;
     }
-    await updateDoc(doc(db, "users", user.uid, "links", r.id), {
+    await updateDoc(doc(db, 'users', user.uid, 'links', r.id), {
       name: name.trim(),
       language: language.trim(),
       url: https,
@@ -209,7 +216,7 @@ export default function App() {
 
   const deleteRow = async (r: Row) => {
     if (!confirm(`Delete "${r.name || r.url}"?`)) return;
-    await deleteDoc(doc(db, "users", user.uid, "links", r.id));
+    await deleteDoc(doc(db, 'users', user.uid, 'links', r.id));
     setSelectedIds((prev) => {
       const n = new Set(prev);
       n.delete(r.id);
@@ -227,7 +234,7 @@ export default function App() {
             lang={lang}
             onLang={setLang}
             onSignedIn={() => {
-              window.location.hash = "#/browse";
+              window.location.hash = '#/browse';
             }}
           />
         </main>
@@ -284,8 +291,7 @@ export default function App() {
           <section>
             <h2 className="text-lg font-semibold mb-2">About</h2>
             <p className="text-sm text-gray-700">
-              Thai Good News — a simple PWA for saving, sharing, and printing QR
-              link cards.
+              Thai Good News — a simple PWA for saving, sharing, and printing QR link cards.
             </p>
           </section>
         ) : (
@@ -300,29 +306,20 @@ export default function App() {
                   checked={allSelected}
                   onChange={toggleSelectAll}
                 />
-                {lang === "th" ? "เลือกทั้งหมด" : "Select all"} (
-                {selectedRows.length}/{filtered.length})
+                {lang === 'th' ? 'เลือกทั้งหมด' : 'Select all'} ({selectedRows.length}/
+                {filtered.length})
               </label>
 
               <div className="flex items-center gap-8">
                 <div>
                   <Share
-                    url={firstSelected ? firstSelected.url : ""}
-                    title={firstSelected ? firstSelected.name || "Link" : ""}
-                    qrCanvasId={
-                      firstSelected ? `qr-${firstSelected.id}` : undefined
-                    }
+                    url={firstSelected ? firstSelected.url : ''}
+                    title={firstSelected ? firstSelected.name || 'Link' : ''}
+                    qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
                   />
                   {!firstSelected && (
-                    <span
-                      className="text-xs"
-                      style={{ color: "#6b7280", marginLeft: 8 }}
-                    >
-                      (
-                      {lang === "th"
-                        ? "เลือกอย่างน้อยหนึ่งรายการ"
-                        : "Select at least one item"}
-                      )
+                    <span className="text-xs" style={{ color: '#6b7280', marginLeft: 8 }}>
+                      ({lang === 'th' ? 'เลือกอย่างน้อยหนึ่งรายการ' : 'Select at least one item'})
                     </span>
                   )}
                 </div>
@@ -332,13 +329,13 @@ export default function App() {
                   onClick={batchDownload}
                   disabled={!selectedRows.length}
                 >
-                  {lang === "th"
+                  {lang === 'th'
                     ? `ดาวน์โหลดการ์ด QR (${selectedRows.length})`
                     : `Download QR cards (${selectedRows.length})`}
                 </button>
 
                 <button className="linklike" onClick={copySelectedLinks}>
-                  {lang === "th" ? "คัดลอกลิงก์" : "Copy link"}
+                  {lang === 'th' ? 'คัดลอกลิงก์' : 'Copy link'}
                 </button>
               </div>
             </div>
@@ -369,44 +366,32 @@ export default function App() {
                       </label>
                     </div>
 
-                    <div className="text-base font-semibold text-center">
-                      {row.name}
-                    </div>
+                    <div className="text-base font-semibold text-center">{row.name}</div>
 
                     <div
                       role="button"
                       onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter")
-                          setQrEnlargedId(enlarged ? null : row.id);
+                        if (e.key === 'Enter') setQrEnlargedId(enlarged ? null : row.id);
                       }}
                       tabIndex={0}
                       title={
                         enlarged
-                          ? lang === "th"
-                            ? "ย่อ QR"
-                            : "Shrink QR"
-                          : lang === "th"
-                          ? "ขยาย QR"
-                          : "Enlarge QR"
+                          ? lang === 'th'
+                            ? 'ย่อ QR'
+                            : 'Shrink QR'
+                          : lang === 'th'
+                          ? 'ขยาย QR'
+                          : 'Enlarge QR'
                       }
-                      style={{ cursor: "pointer" }}
+                      style={{ cursor: 'pointer' }}
                       className="qr-center"
                     >
-                      <QR
-                        url={row.url}
-                        size={qrSize}
-                        idForDownload={`qr-${row.id}`}
-                      />
+                      <QR url={row.url} size={qrSize} idForDownload={`qr-${row.id}`} />
                     </div>
 
                     <div className="mt-2 text-center">
-                      <a
-                        href={row.url}
-                        className="underline"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
+                      <a href={row.url} className="underline" target="_blank" rel="noreferrer">
                         {row.url}
                       </a>
                     </div>
@@ -415,10 +400,7 @@ export default function App() {
                       <button className="linklike" onClick={() => editRow(row)}>
                         Edit
                       </button>
-                      <button
-                        className="linklike"
-                        onClick={() => deleteRow(row)}
-                      >
+                      <button className="linklike" onClick={() => deleteRow(row)}>
                         Delete
                       </button>
                     </div>
