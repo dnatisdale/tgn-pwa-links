@@ -1,6 +1,6 @@
 // src/App.tsx — Clean App (tabs, login gate, header/footer, PWA toast)
 import React, { useEffect, useMemo, useState } from 'react';
-import Banner from '@/components/Banner';
+import Banner from './Banner';
 
 // i18n
 import { t, Lang } from './i18n';
