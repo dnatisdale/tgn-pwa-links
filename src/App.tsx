@@ -41,21 +41,12 @@ import { toHttpsOrNull as toHttps } from './url';
 
 // Build constants (from vite.config.ts -> define)
 declare const __APP_VERSION__: string | undefined;
-declare const __BUILD_PRETTY__: string | undefined; // one declaration only!
+declare const __BUILD_PRETTY__: string | undefined;
 
 type Row = { id: string; name: string; language: string; url: string };
 
 export default function App() {
-  return (
-    <>
-      <HeaderBanner />
-      {/* rest of app */}
-    </>
-  );
-}
-
-export default function App() {
-  // STATE
+  // ===== STATE =====
   const [lang, setLang] = useState<Lang>('en');
   const i = t(lang);
 
@@ -78,7 +69,7 @@ export default function App() {
 
   const [showUpdate, setShowUpdate] = useState(false);
 
-  // EFFECTS
+  // ===== EFFECTS =====
   useEffect(() => onAuthStateChanged(auth, (u) => setUser(u)), []);
 
   useEffect(() => {
@@ -121,7 +112,7 @@ export default function App() {
     return () => off();
   }, [user]);
 
-  // DERIVED
+  // ===== DERIVED =====
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     let out = rows.filter((row) => {
@@ -151,7 +142,7 @@ export default function App() {
   const firstSelected = selectedRows[0];
   const allSelected = filtered.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
 
-  // HELPERS
+  // ===== HELPERS =====
   const toggleSelect = (id: string) =>
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -227,192 +218,197 @@ export default function App() {
   // ===== LOGIN GATE =====
   if (!user) {
     return (
-      <div className="app-shell" style={{ fontSize: textPx }}>
-        <Header lang={lang} onLang={setLang} signedIn={false} />
-        <main className="app-main">
-          <Login
-            lang={lang}
-            onLang={setLang}
-            onSignedIn={() => {
-              window.location.hash = '#/browse';
-            }}
-          />
-        </main>
+      <>
+        <HeaderBanner />
+        <div className="app-shell" style={{ fontSize: textPx }}>
+          <Header lang={lang} onLang={setLang} signedIn={false} />
+          <main className="app-main">
+            <Login
+              lang={lang}
+              onLang={setLang}
+              onSignedIn={() => {
+                window.location.hash = '#/browse';
+              }}
+            />
+          </main>
 
-        <UpdateToast
-          lang={lang}
-          show={showUpdate}
-          onRefresh={() => {
-            (window as any).__REFRESH_SW__?.();
-            setShowUpdate(false);
-          }}
-          onSkip={() => setShowUpdate(false)}
-        />
-        <Footer />
-      </div>
+          <UpdateToast
+            lang={lang}
+            show={showUpdate}
+            onRefresh={() => {
+              (window as any).__REFRESH_SW__?.();
+              setShowUpdate(false);
+            }}
+            onSkip={() => setShowUpdate(false)}
+          />
+          <Footer />
+        </div>
+      </>
     );
   }
 
   // ===== SIGNED-IN VIEW =====
   return (
-    <div className="app-shell" style={{ fontSize: textPx }}>
-      <Header lang={lang} onLang={setLang} signedIn={true} />
+    <>
+      <HeaderBanner />
+      <div className="app-shell" style={{ fontSize: textPx }}>
+        <Header lang={lang} onLang={setLang} signedIn={true} />
 
-      {/* Tabs directly under banner on ALL signed-in pages */}
-      <TopTabs
-        lang={lang}
-        route={route}
-        setRoute={setRoute}
-        q={q}
-        setQ={setQ}
-        filterThai={filterThai}
-        setFilterThai={setFilterThai}
-      />
+        {/* Tabs directly under banner on ALL signed-in pages */}
+        <TopTabs
+          lang={lang}
+          route={route}
+          setRoute={setRoute}
+          q={q}
+          setQ={setQ}
+          filterThai={filterThai}
+          setFilterThai={setFilterThai}
+        />
 
-      <main className="p-3 max-w-5xl mx-auto app-main">
-        {isAdd ? (
-          <section>
-            <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
-            <AddLink lang={lang} />
-          </section>
-        ) : isImport ? (
-          <section>
-            <h2 className="text-lg font-semibold mb-2">Import</h2>
-            <ImportExport lang={lang} />
-          </section>
-        ) : isExport ? (
-          <section>
-            <h2 className="text-lg font-semibold mb-2">Export</h2>
-            <ExportPage lang={lang} rows={rows} />
-          </section>
-        ) : isContact ? (
-          <Contact />
-        ) : isAbout ? (
-          <section>
-            <h2 className="text-lg font-semibold mb-2">About</h2>
-            <p className="text-sm text-gray-700">
-              Thai Good News — a simple PWA for saving, sharing, and printing QR link cards.
-            </p>
-          </section>
-        ) : (
-          // BROWSE
-          <section>
-            {/* Toolbar */}
-            <div className="flex flex-wrap items-center gap-8 mb-3">
-              <label className="text-sm">
-                <input
-                  type="checkbox"
-                  className="card-check"
-                  checked={allSelected}
-                  onChange={toggleSelectAll}
-                />
-                {lang === 'th' ? 'เลือกทั้งหมด' : 'Select all'} ({selectedRows.length}/
-                {filtered.length})
-              </label>
-
-              <div className="flex items-center gap-8">
-                <div>
-                  <Share
-                    url={firstSelected ? firstSelected.url : ''}
-                    title={firstSelected ? firstSelected.name || 'Link' : ''}
-                    qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
+        <main className="p-3 max-w-5xl mx-auto app-main">
+          {isAdd ? (
+            <section>
+              <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
+              <AddLink lang={lang} />
+            </section>
+          ) : isImport ? (
+            <section>
+              <h2 className="text-lg font-semibold mb-2">Import</h2>
+              <ImportExport lang={lang} />
+            </section>
+          ) : isExport ? (
+            <section>
+              <h2 className="text-lg font-semibold mb-2">Export</h2>
+              <ExportPage lang={lang} rows={rows} />
+            </section>
+          ) : isContact ? (
+            <Contact />
+          ) : isAbout ? (
+            <section>
+              <h2 className="text-lg font-semibold mb-2">About</h2>
+              <p className="text-sm text-gray-700">
+                Thai Good News — a simple PWA for saving, sharing, and printing QR link cards.
+              </p>
+            </section>
+          ) : (
+            // BROWSE
+            <section>
+              {/* Toolbar */}
+              <div className="flex flex-wrap items-center gap-8 mb-3">
+                <label className="text-sm">
+                  <input
+                    type="checkbox"
+                    className="card-check"
+                    checked={allSelected}
+                    onChange={toggleSelectAll}
                   />
-                  {!firstSelected && (
-                    <span className="text-xs" style={{ color: '#6b7280', marginLeft: 8 }}>
-                      ({lang === 'th' ? 'เลือกอย่างน้อยหนึ่งรายการ' : 'Select at least one item'})
-                    </span>
-                  )}
+                  {lang === 'th' ? 'เลือกทั้งหมด' : 'Select all'} ({selectedRows.length}/
+                  {filtered.length})
+                </label>
+
+                <div className="flex items-center gap-8">
+                  <div>
+                    <Share
+                      url={firstSelected ? firstSelected.url : ''}
+                      title={firstSelected ? firstSelected.name || 'Link' : ''}
+                      qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
+                    />
+                    {!firstSelected && (
+                      <span className="text-xs" style={{ color: '#6b7280', marginLeft: 8 }}>
+                        ({lang === 'th' ? 'เลือกอย่างน้อยหนึ่งรายการ' : 'Select at least one item'})
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    className="btn btn-blue"
+                    onClick={batchDownload}
+                    disabled={!selectedRows.length}
+                  >
+                    {lang === 'th'
+                      ? `ดาวน์โหลดการ์ด QR (${selectedRows.length})`
+                      : `Download QR cards (${selectedRows.length})`}
+                  </button>
+
+                  <button className="linklike" onClick={copySelectedLinks}>
+                    {lang === 'th' ? 'คัดลอกลิงก์' : 'Copy link'}
+                  </button>
                 </div>
-
-                <button
-                  className="btn btn-blue"
-                  onClick={batchDownload}
-                  disabled={!selectedRows.length}
-                >
-                  {lang === 'th'
-                    ? `ดาวน์โหลดการ์ด QR (${selectedRows.length})`
-                    : `Download QR cards (${selectedRows.length})`}
-                </button>
-
-                <button className="linklike" onClick={copySelectedLinks}>
-                  {lang === 'th' ? 'คัดลอกลิงก์' : 'Copy link'}
-                </button>
               </div>
-            </div>
 
-            {/* Cards */}
-            <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {filtered.map((row) => {
-                const enlarged = qrEnlargedId === row.id;
-                const qrSize = enlarged ? 320 : 192;
-                const checked = selectedIds.has(row.id);
-                return (
-                  <li key={row.id} className="card">
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() =>
-                            setSelectedIds((prev) => {
-                              const next = new Set(prev);
-                              checked ? next.delete(row.id) : next.add(row.id);
-                              return next;
-                            })
-                          }
-                          style={{ marginRight: 8 }}
-                        />
-                        Select
-                      </label>
-                    </div>
+              {/* Cards */}
+              <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {filtered.map((row) => {
+                  const enlarged = qrEnlargedId === row.id;
+                  const qrSize = enlarged ? 320 : 192;
+                  const checked = selectedIds.has(row.id);
+                  return (
+                    <li key={row.id} className="card">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() =>
+                              setSelectedIds((prev) => {
+                                const next = new Set(prev);
+                                checked ? next.delete(row.id) : next.add(row.id);
+                                return next;
+                              })
+                            }
+                            style={{ marginRight: 8 }}
+                          />
+                          Select
+                        </label>
+                      </div>
 
-                    <div className="text-base font-semibold text-center">{row.name}</div>
+                      <div className="text-base font-semibold text-center">{row.name}</div>
 
-                    <div
-                      role="button"
-                      onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') setQrEnlargedId(enlarged ? null : row.id);
-                      }}
-                      tabIndex={0}
-                      title={
-                        enlarged
-                          ? lang === 'th'
-                            ? 'ย่อ QR'
-                            : 'Shrink QR'
-                          : lang === 'th'
-                          ? 'ขยาย QR'
-                          : 'Enlarge QR'
-                      }
-                      style={{ cursor: 'pointer' }}
-                      className="qr-center"
-                    >
-                      <QR url={row.url} size={qrSize} idForDownload={`qr-${row.id}`} />
-                    </div>
+                      <div
+                        role="button"
+                        onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') setQrEnlargedId(enlarged ? null : row.id);
+                        }}
+                        tabIndex={0}
+                        title={
+                          enlarged
+                            ? lang === 'th'
+                              ? 'ย่อ QR'
+                              : 'Shrink QR'
+                            : lang === 'th'
+                            ? 'ขยาย QR'
+                            : 'Enlarge QR'
+                        }
+                        style={{ cursor: 'pointer' }}
+                        className="qr-center"
+                      >
+                        <QR url={row.url} size={qrSize} idForDownload={`qr-${row.id}`} />
+                      </div>
 
-                    <div className="mt-2 text-center">
-                      <a href={row.url} className="underline" target="_blank" rel="noreferrer">
-                        {row.url}
-                      </a>
-                    </div>
+                      <div className="mt-2 text-center">
+                        <a href={row.url} className="underline" target="_blank" rel="noreferrer">
+                          {row.url}
+                        </a>
+                      </div>
 
-                    <div className="mt-2 flex justify-center gap-6 text-sm">
-                      <button className="linklike" onClick={() => editRow(row)}>
-                        Edit
-                      </button>
-                      <button className="linklike" onClick={() => deleteRow(row)}>
-                        Delete
-                      </button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        )}
-      </main>
-
-      <Footer />
-    </div>
+                      <div className="mt-2 flex justify-center gap-6 text-sm">
+                        <button className="linklike" onClick={() => editRow(row)}>
+                          Edit
+                        </button>
+                        <button className="linklike" onClick={() => deleteRow(row)}>
+                          Delete
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+        </main>
+        <Footer />
+      </div>
+    </>
   );
 }

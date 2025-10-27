@@ -1,8 +1,8 @@
 // src/main.tsx — React + PWA without top-level await
-import React from "react";
-import ReactDOM from "react-dom/client";
-import App from "./App";
-import "./styles.css";
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App.tsx';
+import './styles.css';
 
 // (1) Optional: help TS know about the helper we put on window
 declare global {
@@ -15,13 +15,13 @@ declare global {
 (function loadPWA() {
   // vite provides this virtual module
   // @ts-ignore
-  import("virtual:pwa-register")
+  import('virtual:pwa-register')
     .then(({ registerSW }) => {
       const updateSW = registerSW({
         immediate: true, // <— important: register right away in preview/production
         onNeedRefresh() {
           // tell the UI to show the blue “New version” card
-          window.dispatchEvent(new Event("pwa:need-refresh"));
+          window.dispatchEvent(new Event('pwa:need-refresh'));
         },
         onOfflineReady() {
           // optional: toast “Ready to work offline”
@@ -32,17 +32,17 @@ declare global {
       window.__REFRESH_SW__ = () => updateSW(true);
 
       // When the new SW takes control, reload to fresh assets
-      navigator.serviceWorker?.addEventListener("controllerchange", () => {
+      navigator.serviceWorker?.addEventListener('controllerchange', () => {
         window.location.reload();
       });
     })
     .catch((e) => {
-      console.warn("PWA register skipped:", e);
+      console.warn('PWA register skipped:', e);
     });
 })();
 
 // (3) Mount React
-ReactDOM.createRoot(document.getElementById("root")!).render(
+ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
