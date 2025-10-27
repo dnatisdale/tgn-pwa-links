@@ -10,7 +10,7 @@ import { signOut } from 'firebase/auth';
 type Props = {
   lang: Lang;
   onLang: (l: Lang) => void;
-  signedIn: boolean; // NEW: controls whether "Log out" appears
+  signedIn: boolean; // NEW: controls whether "Log Out" appears
 };
 
 export default function Header({ lang, onLang, signedIn }: Props) {
