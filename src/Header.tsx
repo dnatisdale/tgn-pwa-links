@@ -28,16 +28,16 @@ export default function Header({ lang, onLang, signedIn }: Props) {
       <div className="site-header__inner">
         {/* LEFT: responsive banner */}
         {/* Banner with WebP + PNG fallback */}
-        <picture>
-          <source srcSet="/banners/Banner" type="image/webp" />
-          <img
-            src="/banners/banner-1280x720.png"
-            alt="Thai Good News"
-            style={{ maxWidth: 680, width: '100%', height: 'auto' }}
-            loading="eager"
-            decoding="async"
-          />
-        </picture>
+        {/*  <picture>*/}
+        {/* <source srcSet="/banners/Banner" type="image/webp" />*/}
+        {/* <img*/}
+        {/*  src="/banners/banner-1280x720.png"*/}
+        {/*  alt="Thai Good News"*/}
+        {/*  style={{ maxWidth: 680, width: '100%', height: 'auto' }}*/}
+        {/*  loading="eager"*/}
+        {/*  decoding="async"*/}
+        {/*  />*/}
+        {/* </picture>*/}
 
         <div className="site-header__actions">
           <LangPill lang={lang} onChange={onLang} />
@@ -48,7 +48,7 @@ export default function Header({ lang, onLang, signedIn }: Props) {
           />
           {signedIn && (
             <button className="btn btn-blue ghost" onClick={onLogout}>
-              {lang === 'th' ? 'ออกจากระบบ' : 'Log out'}
+              {lang === 'th' ? 'ออกจากระบบ' : 'Log Out'}
             </button>
           )}
         </div>
