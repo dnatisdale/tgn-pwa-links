@@ -1,6 +1,6 @@
 // src/App.tsx — Clean App (tabs, login gate, header/footer, PWA toast)
 import React, { useEffect, useMemo, useState } from 'react';
-import HeaderBanner from '@/components/HeaderBanner';
+import Banner from '@/components/Banner';
 
 // i18n
 import { t, Lang } from './i18n';
@@ -219,7 +219,7 @@ export default function App() {
   if (!user) {
     return (
       <>
-        <HeaderBanner />
+        <Banner />
         <div className="app-shell" style={{ fontSize: textPx }}>
           <Header lang={lang} onLang={setLang} signedIn={false} />
           <main className="app-main">
@@ -250,7 +250,7 @@ export default function App() {
   // ===== SIGNED-IN VIEW =====
   return (
     <>
-      <HeaderBanner />
+      <Banner />
       <div className="app-shell" style={{ fontSize: textPx }}>
         <Header lang={lang} onLang={setLang} signedIn={true} />
 
