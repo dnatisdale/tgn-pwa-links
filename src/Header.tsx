@@ -29,7 +29,7 @@ export default function Header({ lang, onLang, signedIn }: Props) {
         {/* LEFT: responsive banner */}
         {/* Banner with WebP + PNG fallback */}
         <picture>
-          <source srcSet="/banners/banner-1280x720.webp" type="image/webp" />
+          <source srcSet="/banners/Banner" type="image/webp" />
           <img
             src="/banners/banner-1280x720.png"
             alt="Thai Good News"
