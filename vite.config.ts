@@ -1,67 +1,27 @@
 // vite.config.ts
+// Clean build meta injection (no package.json import needed)
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { VitePWA } from 'vite-plugin-pwa';
-import path from 'path';
-import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
 
-// ---- Build metadata (safe even if not on git) ----
-function gitShort() {
-  try {
-    return execSync('git rev-parse --short HEAD').toString().trim();
-  } catch {
-    return 'dev';
-  }
-}
-const now = new Date();
-const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8'));
-const APP_VERSION = pkg.version ?? '0.0.0';
-const BUILD_ID = process.env.NETLIFY_COMMIT_REF || process.env.VERCEL_GIT_COMMIT_SHA || gitShort();
-const BUILD_DATE = now.toISOString().slice(0, 10); // YYYY-MM-DD
-const BUILD_TIME = now.toTimeString().slice(0, 8); // HH:MM:SS
-const BUILD_PRETTY = true;
+// Version source of truth: CI override -> npm package version -> fallback
+const APP_VERSION = process.env.APP_VERSION || process.env.npm_package_version || '0.0.0';
 
+// Pacific build timestamp string
+const BUILD_TIME_PST = new Date().toLocaleString('en-US', {
+  timeZone: 'America/Los_Angeles',
+});
+
+// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    react(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico'],
-      manifest: {
-        name: 'Thai Good News',
-        short_name: 'TGN',
-        start_url: '/',
-        display: 'standalone',
-        background_color: '#F4F5F8',
-        theme_color: '#2D2A4A',
-        icons: [
-          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-          {
-            src: '/icons/icon-512-maskable.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable',
-          },
-        ],
-      },
-    }),
-  ],
-
-  // 👇 alias lives at top level (NOT inside manifest)
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, 'src'),
-    },
-  },
-
-  // 👇 THIS is the correct place to define globals (property, not function)
+  plugins: [react()],
   define: {
-    __APP_VERSION__: JSON.stringify(String(APP_VERSION ?? '')),
-    __BUILD_PRETTY__: JSON.stringify(String(BUILD_PRETTY ?? '')),
-    __BUILD_ID__: JSON.stringify(String(BUILD_ID ?? '')),
-    __BUILD_DATE__: JSON.stringify(String(BUILD_DATE ?? '')),
-    __BUILD_TIME__: JSON.stringify(String(BUILD_TIME ?? '')),
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
+    __BUILD_TIME_PST__: JSON.stringify(BUILD_TIME_PST),
+
+    // Optional extras (safe defaults if you later use them)
+    __BUILD_ID__: JSON.stringify(process.env.BUILD_ID ?? ''),
+    __BUILD_DATE__: JSON.stringify(process.env.BUILD_DATE ?? ''),
+    __BUILD_TIME__: JSON.stringify(process.env.BUILD_TIME ?? ''),
+    __BUILD_PRETTY__: JSON.stringify(process.env.BUILD_PRETTY ?? ''),
   },
 });
