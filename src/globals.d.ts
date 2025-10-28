@@ -1,26 +1,9 @@
-declare module '*.png' {
-  const src: string;
-  export default src;
-}
-declare module '*.jpg' {
-  const src: string;
-  export default src;
-}
-declare module '*.jpeg' {
-  const src: string;
-  export default src;
-}
-declare module '*.webp' {
-  const src: string;
-  export default src;
-}
-declare module '*.svg' {
-  const src: string;
-  export default src;
-}
-/// <reference types="vite/client" />
+// global.d.ts — single source for build-time constants injected by Vite
 declare const __APP_VERSION__: string;
-declare const __BUILD_PRETTY__: string;
+declare const __BUILD_TIME_PST__: string;
+
+// Optional extras (declared so TS won't complain if you reference them)
 declare const __BUILD_ID__: string;
 declare const __BUILD_DATE__: string;
 declare const __BUILD_TIME__: string;
+declare const __BUILD_PRETTY__: string;

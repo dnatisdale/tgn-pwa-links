@@ -541,7 +541,7 @@ a {
 }
 
 /* in src/styles.css */
-button[data-ready="false"]:not(:disabled) {
+button[data-ready='false']:not(:disabled) {
   outline: 1px dashed rgba(255, 255, 255, 0.4); /* adjust to your theme */
   outline-offset: 2px;
 }
@@ -856,4 +856,66 @@ button[data-ready="false"]:not(:disabled) {
 }
 .btn-gray:hover {
   filter: brightness(1.1);
+}
+.tgn-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+}
+
+.tgn-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* === HEADER LAYOUT (push actions to upper-right) === */
+.tgn-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-bottom: 1px solid #eee;
+  background: #fff;
+}
+.tgn-header-left {
+  min-width: 0;
+}
+.tgn-banner-img {
+  display: block;
+  height: 48px;
+  max-width: 100%;
+  object-fit: contain;
+}
+.tgn-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+:root {
+  --thai-red: #a51931;
+  --thai-white: #f4f5f8;
+  --thai-blue: #2d2a4a;
+  --thai-black: #000000;
+}
+.langpill {
+  background: var(--thai-blue);
+  color: #fff;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (max-width: 480px) {
+  .tgn-header {
+    padding: 4px 8px;
+  }
+  .tgn-banner-img {
+    height: 40px;
+  }
 }

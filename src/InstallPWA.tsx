@@ -1,16 +1,12 @@
 // src/InstallPWA.tsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from 'react';
+import type { BeforeInstallPromptEvent } from './types-pwa';
 
 type Props = {
-  className?: string;          // e.g. "btn btn-red"
-  label?: string;              // when prompt is available
-  disabledLabel?: string;      // shown when prompt not yet available
-  showIOSHelp?: boolean;       // show iOS instruction dialog if prompt not supported
-};
-
-type BeforeInstallPromptEvent = Event & {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+  className?: string; // e.g. "btn btn-red"
+  label?: string; // when prompt is available
+  disabledLabel?: string; // shown when prompt not yet available
+  showIOSHelp?: boolean; // show iOS instruction dialog if prompt not supported
 };
 
 // Simple platform checks
@@ -19,7 +15,7 @@ function isStandalone(): boolean {
   // iOS: navigator.standalone; others: matchMedia
   // (cast to any to silence TS for iOS)
   const navAny = navigator as any;
-  return !!navAny.standalone || window.matchMedia("(display-mode: standalone)").matches;
+  return !!navAny.standalone || window.matchMedia('(display-mode: standalone)').matches;
 }
 
 function isIOS(): boolean {
@@ -27,28 +23,28 @@ function isIOS(): boolean {
 }
 
 export default function InstallPWA({
-  className = "btn btn-red",
-  label = "Install",
-  disabledLabel = "Install",
+  className = 'btn btn-red',
+  label = 'Install',
+  disabledLabel = 'Install',
   showIOSHelp = true,
 }: Props) {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
-  const [ready, setReady] = useState(false);         // whether we’ve seen beforeinstallprompt
+  const [ready, setReady] = useState(false); // whether we’ve seen beforeinstallprompt
   const [installed, setInstalled] = useState(isStandalone());
 
   // If app is already installed, hide button
   useEffect(() => {
     // Listen for install completion in Chromium
     const onInstalled = () => setInstalled(true);
-    window.addEventListener("appinstalled", onInstalled);
+    window.addEventListener('appinstalled', onInstalled);
 
     // Also re-evaluate on visibility changes (some browsers update matchMedia late)
     const onVis = () => setInstalled(isStandalone());
-    document.addEventListener("visibilitychange", onVis);
+    document.addEventListener('visibilitychange', onVis);
 
     return () => {
-      window.removeEventListener("appinstalled", onInstalled);
-      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener('appinstalled', onInstalled);
+      document.removeEventListener('visibilitychange', onVis);
     };
   }, []);
 
@@ -59,8 +55,9 @@ export default function InstallPWA({
       setDeferred(e as BeforeInstallPromptEvent);
       setReady(true);
     };
-    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt as EventListener);
-    return () => window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt as EventListener);
+    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt as EventListener);
+    return () =>
+      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt as EventListener);
   }, []);
 
   const iosHelp = useMemo(
@@ -76,7 +73,7 @@ export default function InstallPWA({
     if (deferred) {
       try {
         await deferred.prompt();
-        await deferred.userChoice;     // "accepted" | "dismissed"
+        await deferred.userChoice; // "accepted" | "dismissed"
         // The event becomes unusable after the choice
         setDeferred(null);
       } catch {
@@ -93,7 +90,7 @@ export default function InstallPWA({
 
     // Generic hint for other platforms
     alert(
-      "Install prompt isn’t ready yet.\n\n• Android/Chrome: try again after browsing a bit.\n• iPhone/iPad: tap Share → Add to Home Screen."
+      'Install prompt isn’t ready yet.\n\n• Android/Chrome: try again after browsing a bit.\n• iPhone/iPad: tap Share → Add to Home Screen.'
     );
   };
 
@@ -109,7 +106,7 @@ export default function InstallPWA({
       onClick={onClick}
       // no disabled attribute -> keeps consistent height/color
       aria-label="Install this app"
-      title={deferred ? "Install PWA" : undefined}
+      title={deferred ? 'Install PWA' : undefined}
     >
       {text}
     </button>

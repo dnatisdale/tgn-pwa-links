@@ -3,6 +3,7 @@
 import React from 'react';
 import InstallPWA from './InstallPWA';
 import LangPill from './LangPill';
+import LogoutButton from './LogoutButton';
 import { Lang } from './i18n';
 import { auth } from './firebase';
 import { signOut } from 'firebase/auth';
@@ -39,6 +40,17 @@ export default function Header({ lang, onLang, signedIn }: Props) {
         {/*  />*/}
         {/* </picture>*/}
 
+        {/* ...inside the header right cluster... */}
+        <div className="tgn-header-right">
+          <LangPill
+            lang={'en'}
+            onChange={function (l: Lang): void {
+              throw new Error('Function not implemented.');
+            }}
+          />
+          <InstallPWA className="langpill" label="Install" disabledLabel="Install" />
+          <LogoutButton className="langpill" />
+        </div>
         <div className="site-header__actions">
           <LangPill lang={lang} onChange={onLang} />
           <InstallPWA

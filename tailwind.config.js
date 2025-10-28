@@ -1,6 +1,16 @@
-// tailwind.config.js (ESM)
+// tailwind.config.js
+/** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{ts,tsx,js,jsx}'],
-  theme: { extend: {} },
+  content: ['./index.html', './src/**/*.{ts,tsx,js,jsx,html}'],
+  theme: {
+    extend: {
+      colors: {
+        thaiRed: '#A51931',
+        thaiWhite: '#F4F5F8',
+        thaiBlue: '#2D2A4A',
+        thaiBlack: '#000000',
+      },
+    },
+  },
   plugins: [],
 };

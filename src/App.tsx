@@ -24,8 +24,10 @@ import Share from './Share';
 import QR from './QR';
 
 // Firebase
-import { auth, db } from './firebase';
+// import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+// import { signOut } from 'firebase/auth';
+import { auth } from './firebase';
 import {
   collection,
   onSnapshot,
@@ -38,6 +40,7 @@ import {
 
 // URL helper
 import { toHttpsOrNull as toHttps } from './url';
+import { db } from './firebase';
 
 // Build constants (from vite.config.ts -> define)
 declare const __APP_VERSION__: string | undefined;
