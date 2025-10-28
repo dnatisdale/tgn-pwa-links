@@ -1,192 +1,20 @@
+/* =========================
+   Thai Good News — Styles
+   Cleaned & de-duplicated
+   ========================= */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-html,
-:host {
-  text-size-adjust: 100%;
-}
-
-/* banner image sizing for the header */
-.banner {
-  width: 100%;
-  max-width: 560px; /* keeps it tidy on desktop */
-  height: 120px;
-  object-fit: contain;
-}
-
-/* --- Uniform brand buttons --- */
-/* Keep buttons same height + stay blue/red even when disabled */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 40px; /* consistent height */
-  padding: 0 14px;
-  border: none;
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-blue {
-  background: var(--thai-blue);
-  color: #fff;
-}
-.btn-red {
-  background: var(--thai-red);
-  color: #fff;
-}
-
-.btn-blue:hover {
-  filter: brightness(1);
-}
-.btn-red:hover {
-  filter: brightness(1);
-}
-
-/* IMPORTANT: do not gray out disabled — keep brand color */
-.btn-blue:disabled,
-.btn-red:disabled {
-  background: inherit; /* stays same blue/red */
-  color: #fff;
-  opacity: 0.6; /* just a subtle fade */
-  pointer-events: none;
-  filter: none;
-}
-
-/* Thai theme colors */
-:root {
-  --thai-red: #a51931;
-  --thai-blue: #2d2a4a;
-  --thai-white: #f4f5f8;
-  --thai-black: #000000;
-}
-
-.btn {
-  height: 36px;
-  padding: 0 14px;
-  border-radius: 8px;
-  font-weight: 600;
-}
-
-.btn-blue {
-  background: #2d325a;
-  color: #fff;
-  border: none;
-}
-.btn-blue:hover {
-  filter: brightness(1.05);
-}
-.btn-blue:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.btn-red {
-  background: #a51931;
-  color: #fff;
-  border: none;
-}
-.btn-red:hover {
-  filter: brightness(0.95);
-}
-.btn-red:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-/* Link-like small text */
-.linklike {
-  color: #2d325a;
-  text-decoration: underline;
-  background: none;
-  border: none;
-  padding: 0;
-}
-
-/* Variants */
-.btn-red {
-  background: var(--thai-red);
-  color: #fff;
-}
-.btn-blue {
-  background: var(--thai-blue);
-  color: #fff;
-}
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.btn-ghost {
-  background: transparent;
-  border: 1px solid #e5e7eb;
-  color: #111;
-}
-
-/* Link-look button: match height with .btn */
-.linklike {
-  color: var(--thai-blue);
-  text-decoration: underline;
-  background: none;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-}
-
-/* ===== Update toast: shorter + centered ===== */
-.toast {
-  position: fixed;
-  left: 50%;
-  bottom: 20px;
-  transform: translateX(-50%);
-  background: #111827;
-  color: #fff;
-  padding: 8px 12px; /* shorter */
-  border-radius: 10px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
-  z-index: 50;
-}
-.toast-row {
-  display: flex;
-  flex-direction: column; /* center stack */
-  align-items: center;
-  gap: 8px;
-  text-align: center;
-}
-.toast-actions {
-  display: flex;
-  gap: 8px;
-}
-.toast-btn {
-  padding: 6px 10px; /* tidy button sizing */
-  border-radius: 8px;
-  border: 0;
-  cursor: pointer;
-}
-.toast-btn.primary {
-  background: #fff;
-  color: #111827;
-}
-.toast-btn.ghost {
-  background: transparent;
-  color: #fff;
-  border: 1px solid #fff;
-}
-
-/* If your InstallPWA renders its own <button>, normalize its height */
-.install-pwa button {
-  min-height: 40px;
-  border-radius: 10px;
-}
 
 /* ───────────────── Theme: Thai flag colors ───────────────── */
 :root {
   --thai-red: #a51931;
-  --thai-white: #f4f5f8;
   --thai-blue: #2d2a4a;
+  --thai-white: #f4f5f8;
   --thai-black: #000000;
 
-  /* Global typographic base (App sets this dynamically) */
+  /* Global typographic base (App can adjust this) */
   --base: 16px;
 }
 
@@ -194,17 +22,11 @@ html,
 html {
   font-size: var(--base);
 }
-a {
-  text-decoration: underline;
+html,
+:host {
+  text-size-adjust: 100%;
 }
-
-/* Link-look button */
-.linklike {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  color: var(--thai-blue);
+a {
   text-decoration: underline;
 }
 
@@ -215,7 +37,195 @@ a {
   color: #6b7280; /* gray-500-ish */
 }
 
-/* ───────────────── App Shell: keep footer at bottom ───────────────── */
+/* ───────────────── Uniform brand buttons ───────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: filter 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
+}
+.btn-red {
+  background: var(--thai-red);
+  color: #fff;
+}
+.btn-blue {
+  background: var(--thai-blue);
+  color: #fff;
+}
+.btn:hover {
+  filter: brightness(1);
+}
+.btn:disabled {
+  opacity: 0.6;
+  pointer-events: none;
+  filter: none;
+}
+.btn:focus-visible {
+  outline: 2px solid var(--thai-blue);
+  outline-offset: 2px;
+}
+
+/* Link-look button (same row height as .btn when needed) */
+.linklike {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--thai-blue);
+  text-decoration: underline;
+  line-height: 38px;
+}
+
+/* ───────────────── Header + Banner + Overlay actions ───────────────── */
+/* Header is a positioning context so the action cluster can sit on top-right */
+.tgn-header {
+  position: relative;
+  display: block;
+  padding: 6px 10px 18px; /* room for overlay */
+  border-bottom: 1px solid #eee;
+  background: #fff;
+}
+.tgn-header-left {
+  min-width: 0;
+}
+
+/* Banner image (responsive, tidy) */
+.tgn-banner-img {
+  display: block;
+  height: 56px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+/* Absolute cluster in upper-right: [Install (red) over Logout (blue)]  +  LangPill at far right */
+.action-cluster {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+.action-left-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+@media (max-width: 480px) {
+  .action-cluster {
+    top: 4px;
+    right: 8px;
+    gap: 8px;
+  }
+  .tgn-banner-img {
+    height: 48px;
+  }
+}
+
+/* Keep InstallPWA red even if it renders its own inner <button> */
+.install-pwa button {
+  background: var(--thai-red) !important;
+  color: #fff !important;
+  border-radius: 12px !important;
+  min-height: 38px;
+}
+
+/* ───────────────── LangPill (two-tone, 14px, not bold) ─────────────────
+   Requirements:
+   - Furthest item in upper-right (placed as last child of .action-cluster)
+   - Left half Thai-blue with white “a”
+   - Right half white with black “ก”
+   - Subtle inactive fade (almost unnoticeable)
+*/
+.langpill {
+  --thai-blue: #2d2a4a;
+  --white: #ffffff;
+
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  justify-items: center;
+  background: linear-gradient(90deg, var(--thai-blue) 50%, var(--white) 50%);
+  border: 1px solid var(--thai-blue);
+  border-radius: 999px;
+  height: 32px;
+  min-width: 64px;
+  padding: 0;
+  overflow: hidden;
+}
+.langpill .opt {
+  width: 100%;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1;
+  transition: opacity 120ms ease;
+}
+.langpill .opt-en {
+  color: #ffffff;
+} /* white “a” on blue */
+.langpill .opt-th {
+  color: #000000;
+} /* black “ก” on white */
+.langpill .inactive {
+  opacity: 0.88;
+}
+.langpill .active {
+  opacity: 1;
+}
+.langpill:focus-visible {
+  outline: 2px solid rgba(45, 42, 74, 0.35);
+  outline-offset: 2px;
+}
+
+/* ───────────────── Toast (Update available) ───────────────── */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  background: #111827;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  z-index: 50;
+  text-align: center;
+}
+.toast-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+.toast-btn {
+  background: #fff;
+  color: #111827;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.toast-btn.ghost {
+  background: transparent;
+  color: #fff;
+  border: 1px solid #fff;
+}
+
+/* ───────────────── App Shell & Footer ───────────────── */
 .app-shell {
   min-height: 100vh;
   display: flex;
@@ -230,223 +240,6 @@ a {
   padding: 12px;
   text-align: center;
   border-top: 1px solid #e5e7eb;
-}
-
-/* ───────────────── Top bar (right, above banner) ───────────────── */
-.topbar {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  background: var(--thai-white);
-  border-bottom: 1px solid #e5e7eb;
-}
-
-/* Font-size control (small A — slider — big A) */
-.font-size-ctrl {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.font-size-slider {
-  width: 90px;
-}
-@media (max-width: 420px) {
-  .font-size-slider {
-    width: 70px;
-  }
-}
-
-/* Language toggle (a / ก) */
-.lang-toggle {
-  display: inline-flex;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  overflow: hidden;
-}
-.lgbtn {
-  padding: 4px 8px;
-  line-height: 1;
-  background: #fff;
-  color: var(--thai-black);
-  border: 0;
-  cursor: pointer;
-}
-.lgbtn:hover {
-  background: #f3f4f6;
-}
-.lgbtn.active {
-  background: var(--thai-blue);
-  color: #fff;
-}
-
-/* ───────────────── Banner ───────────────── */
-.banner-wrap {
-  border-bottom: 1px solid #111827;
-}
-.banner {
-  max-width: 1200px;
-  width: 100%;
-  display: block;
-  margin: 0 auto;
-}
-
-/* ───────────────── Cards & header row ───────────────── */
-.header {
-  border-bottom: 1px solid #e5e7eb;
-}
-.card {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 12px;
-}
-
-/* Tiny checkbox for cards */
-.card-check {
-  transform: scale(1.1);
-  margin-right: 6px;
-}
-
-/* ───────────────── Buttons (Thai-flag brand) ───────────────── */
-.btn-red {
-  background: var(--thai-red);
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 6px 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.btn-red:hover {
-  filter: brightness(0.95);
-}
-
-.btn-blue {
-  background: var(--thai-blue);
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 6px 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.btn-blue:hover {
-  filter: brightness(1.05);
-}
-
-.btn-disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Force InstallPWA’s inner <button> red if needed */
-.install-pwa button {
-  background: var(--thai-red) !important;
-  color: #fff !important;
-  border-radius: 10px !important;
-}
-
-/* ───────────────── Share dropdown ───────────────── */
-.dropdown {
-  position: absolute;
-  top: 110%;
-  left: 0;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  min-width: 180px;
-  padding: 6px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
-  z-index: 40;
-}
-.drop-item {
-  display: block;
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: none;
-  padding: 8px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-}
-.drop-item:hover {
-  background: #f3f4f6;
-}
-.drop-sep {
-  height: 1px;
-  background: #e5e7eb;
-  margin: 4px 2px;
-}
-
-/* ───────────────── QR / Share alignment helpers ───────────────── */
-.qr-center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.share-center {
-  display: flex;
-  justify-content: center;
-}
-.share-row {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-}
-
-/* ───────────────── Import helpers ───────────────── */
-.file-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-/* Red pill tag for “CSV / JSON / TSV” */
-.pill-red {
-  display: inline-block;
-  background: var(--thai-red);
-  color: #fff;
-  border-radius: 999px;
-  padding: 2px 10px;
-  font-size: 12px;
-  line-height: 18px;
-}
-
-/* ───────────────── Toast (Update available) ───────────────── */
-.toast {
-  position: fixed;
-  left: 50%;
-  bottom: 20px;
-  transform: translateX(-50%);
-  background: #111827;
-  color: #fff;
-  padding: 10px 14px;
-  border-radius: 10px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
-  z-index: 50;
-}
-.toast-row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-.toast-btn {
-  background: #fff;
-  color: #111827;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-.toast-btn.ghost {
-  background: transparent;
-  color: #fff;
-  border: 1px solid #fff;
 }
 
 /* ───────────────── Auth card (Login/Signup) ───────────────── */
@@ -476,216 +269,7 @@ a {
   margin: 0;
 }
 
-/* ===== TWEAKS (safe to append) ===== */
-
-/* Same height for all brand buttons */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 40px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-}
-
-/* theme variants */
-.btn-red {
-  background: var(--thai-red);
-  color: #fff;
-}
-.btn-blue {
-  background: var(--thai-blue);
-  color: #fff;
-}
-
-/* Reuse your theme colors */
-.btn-blue,
-.btn-red {
-  transition: filter 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
-}
-
-.btn-blue:hover {
-  filter: brightness(1);
-}
-.btn-red:hover {
-  filter: brightness(1);
-}
-
-.btn-blue:disabled,
-.btn-red:disabled {
-  opacity: 0.6;
-  pointer-events: none;
-  filter: none;
-}
-
-/* keyboard focus (accessible) */
-.btn-blue:focus-visible,
-.btn-red:focus-visible {
-  outline: 2px solid #2d2a4a; /* Thai blue */
-  outline-offset: 2px;
-}
-
-.btn,
-.btn-red,
-.btn-blue {
-  min-height: 38px; /* consistent height */
-  padding: 8px 14px; /* same padding */
-  border-radius: 10px; /* consistent corners */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1; /* avoid tall lines */
-}
-
-/* in src/styles.css */
-button[data-ready='false']:not(:disabled) {
-  outline: 1px dashed rgba(255, 255, 255, 0.4); /* adjust to your theme */
-  outline-offset: 2px;
-}
-
-/* Make sure simple links match vertically when next to buttons */
-.linklike {
-  line-height: 38px; /* visually same height in rows */
-}
-
-/* Update toast: shorter, centered content */
-.toast {
-  left: 50%;
-  bottom: 16px;
-  transform: translateX(-50%);
-  padding: 8px 12px; /* shorter */
-  border-radius: 10px;
-  text-align: center; /* center text + buttons */
-}
-.toast-row {
-  justify-content: center; /* center buttons */
-  gap: 8px;
-}
-
-/* Keep the topbar on the RIGHT */
-.topbar {
-  display: flex;
-  justify-content: flex-end; /* push controls to the right */
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-/* Ensure footer sticks to bottom (in case it was missing) */
-.app-shell {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-.app-main {
-  flex: 1;
-}
-.site-footer {
-  text-align: center;
-}
-
-/* keep header at very top across pages */
-.site-header {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-/* header layout */
-.site-header__inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 12px;
-}
-
-/* right-side controls */
-.site-header__actions {
-  display: flex;
-  align-items: center;
-  gap: 10px; /* Install | LangPill | Logout */
-}
-
-/* responsive banner:
-   - width scales with viewport
-   - height auto to keep proportions
-   - clamps prevent it from getting too tiny or too huge
-*/
-.banner {
-  width: clamp(180px, 40vw, 420px);
-  height: auto;
-  aspect-ratio: 4 / 1;
-  object-fit: contain;
-}
-
-/* make the page tall and push footer to bottom */
-.app-shell {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-.app-main {
-  flex: 1; /* fills space so footer stays at bottom */
-}
-
-/* Tabs bar directly under the header banner */
-.tabs-bar {
-  position: sticky;
-  top: 60px; /* stays under sticky header */
-  z-index: 40;
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 12px;
-}
-.tabs-list {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.tab {
-  padding: 6px 10px;
-  border-radius: 9999px;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  font-weight: 500;
-}
-.tab-active {
-  background: #2d2a4a;
-  color: #fff;
-  border-color: #2d2a4a;
-}
-
-.tabs-search {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.searchbar {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 6px 10px;
-  min-width: 240px;
-}
-.filter-links .linklike.active {
-  text-decoration: underline;
-}
-.filter-links .sep {
-  margin: 0 6px;
-  color: #6b7280;
-}
-
-/* Tabs bar under sticky header: 3 columns — left (ADD), center (tabs), right (search) */
+/* ───────────────── Tabs bar (under header) ───────────────── */
 .tabs-bar {
   position: sticky;
   top: 60px;
@@ -698,16 +282,12 @@ button[data-ready='false']:not(:disabled) {
   gap: 12px;
   padding: 8px 12px;
 }
-
-/* Center group */
 .tabs-list {
   justify-self: center;
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
-
-/* Regular tabs */
 .tab {
   padding: clamp(6px, 1vw, 8px) clamp(10px, 1.7vw, 14px);
   border-radius: 9999px;
@@ -721,17 +301,10 @@ button[data-ready='false']:not(:disabled) {
   background: #f3f4f6;
 }
 .tab-active {
-  background: #2d2a4a;
+  background: var(--thai-blue);
   color: #fff;
-  border-color: #2d2a4a; /* Thai Blue */
+  border-color: var(--thai-blue);
 }
-.tab-active:hover {
-  background: #f3f4f6;
-  border-color: #e5e7eb;
-  color: #111827; /* your request: text turns black */
-}
-
-/* Right side: filters + search */
 .tabs-search {
   display: flex;
   align-items: center;
@@ -745,12 +318,6 @@ button[data-ready='false']:not(:disabled) {
   padding: 8px 14px;
   min-width: 260px;
 }
-.search-pill-red {
-  border-color: #a51931;
-}
-.search-pill-red:focus {
-  outline: 3px solid #f1c5c9;
-}
 .filter-links .linklike.active {
   text-decoration: underline;
   font-weight: 600;
@@ -760,7 +327,6 @@ button[data-ready='false']:not(:disabled) {
   color: #6b7280;
 }
 
-/* Narrow screens: center everything */
 @media (max-width: 900px) {
   .tabs-bar {
     grid-template-columns: 1fr;
@@ -776,146 +342,123 @@ button[data-ready='false']:not(:disabled) {
   }
 }
 
-/* ADD button now matches Install/Share: red pill + white text */
-.add-btn {
-  text-transform: uppercase;
-  font-weight: 600;
-  margin-right: 6px; /* small gap before the centered tab group */
-}
-
-/* subtle “active” ring when already on the ADD page */
-.add-active {
-  box-shadow: 0 0 0 2px rgba(165, 25, 49, 0.25) inset; /* Thai red */
-}
-
-/* ---- UpdateToastMini ---- */
-.upd-mini {
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
+/* ───────────────── Share/QR helpers ───────────────── */
+.qr-center {
   display: flex;
-  gap: 12px;
+  justify-content: center;
   align-items: center;
-  background: #0f1220; /* Thai-blue-ish dark */
-  color: #fff;
-  border-radius: 14px;
-  padding: 10px 12px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-  z-index: 5000;
 }
-
-.upd-square {
-  width: 48px; /* square & small */
-  height: 48px;
-  border-radius: 12px;
-  background: #1c2240;
-  display: grid;
-  place-items: center;
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.08);
-}
-
-.upd-bolt {
-  font-size: 22px;
-  line-height: 1;
-}
-
-.upd-text {
+.share-center {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  justify-content: center;
 }
-
-.upd-title {
-  font-weight: 700;
-  font-size: 14px; /* close to your Install font */
-}
-
-.upd-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-/* small button helpers (keeps your existing btn look) */
-.btn-sm {
-  padding: 6px 10px;
-  font-size: 14px;
-  border-radius: 10px;
-}
-.btn-blue {
-  background: #222645;
-  color: #fff;
-  border: 1px solid #32375b;
-}
-.btn-gray {
-  background: #3a3d52;
-  color: #fff;
-  border: 1px solid #4a4d66;
-}
-.btn-blue:hover {
-  filter: brightness(1.15);
-}
-.btn-gray:hover {
-  filter: brightness(1.1);
-}
-.tgn-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 10px;
-}
-
-.tgn-header-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
-}
-
-/* === HEADER LAYOUT (push actions to upper-right) === */
-.tgn-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 10px;
-  border-bottom: 1px solid #eee;
-  background: #fff;
-}
-.tgn-header-left {
-  min-width: 0;
-}
-.tgn-banner-img {
-  display: block;
-  height: 48px;
-  max-width: 100%;
-  object-fit: contain;
-}
-.tgn-header-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
-}
-:root {
-  --thai-red: #a51931;
-  --thai-white: #f4f5f8;
-  --thai-blue: #2d2a4a;
-  --thai-black: #000000;
-}
-.langpill {
-  background: var(--thai-blue);
-  color: #fff;
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-weight: 600;
+.share-row {
   display: inline-flex;
+  flex-wrap: wrap;
+  gap: 10px;
   align-items: center;
   justify-content: center;
 }
-@media (max-width: 480px) {
-  .tgn-header {
-    padding: 4px 8px;
-  }
-  .tgn-banner-img {
-    height: 40px;
-  }
+
+/* ───────────────── Import row ───────────────── */
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ───────────────── Pills & small tags ───────────────── */
+.pill-red {
+  display: inline-block;
+  background: var(--thai-red);
+  color: #fff;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/* Positioning context for overlay */
+.tgn-header {
+  position: relative;
+}
+
+/* Upper-right overlay: Install column is rightmost */
+.action-cluster {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  z-index: 10;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.action-right-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+/* LangPill: two-tone + flip */
+.langpill {
+  --thai-blue: #2d2a4a;
+  --white: #ffffff;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  justify-items: center;
+  border: 1px solid var(--thai-blue);
+  border-radius: 999px;
+  height: 32px;
+  min-width: 64px;
+  padding: 0;
+  overflow: hidden;
+}
+.langpill .opt {
+  width: 100%;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1;
+  transition: opacity 120ms ease;
+}
+/* EN mode: left blue/white text, right white/black text */
+.langpill--en {
+  background: linear-gradient(90deg, var(--thai-blue) 50%, var(--white) 50%);
+}
+.langpill--en .opt-en {
+  color: #ffffff;
+}
+.langpill--en .opt-th {
+  color: #000000;
+}
+/* TH mode: left white/black text, right blue/white text */
+.langpill--th {
+  background: linear-gradient(90deg, var(--white) 50%, var(--thai-blue) 50%);
+}
+.langpill--th .opt-en {
+  color: #000000;
+}
+.langpill--th .opt-th {
+  color: #ffffff;
+}
+
+.langpill .inactive {
+  opacity: 0.88;
+}
+.langpill .active {
+  opacity: 1;
+}
+
+/* Keep InstallPWA red even if its internal markup changes */
+.install-pwa button {
+  background: #a51931 !important;
+  color: #fff !important;
+  border-radius: 12px !important;
+  min-height: 38px;
 }

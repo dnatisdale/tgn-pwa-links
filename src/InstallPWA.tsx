@@ -1,114 +1,87 @@
 // src/InstallPWA.tsx
-import React, { useEffect, useMemo, useState } from 'react';
-import type { BeforeInstallPromptEvent } from './types-pwa';
+import React from 'react';
 
 type Props = {
-  className?: string; // e.g. "btn btn-red"
-  label?: string; // when prompt is available
-  disabledLabel?: string; // shown when prompt not yet available
-  showIOSHelp?: boolean; // show iOS instruction dialog if prompt not supported
+  className?: string;
+  label?: string;
+  disabledLabel?: string;
 };
 
-// Simple platform checks
-function isStandalone(): boolean {
-  // PWA already installed?
-  // iOS: navigator.standalone; others: matchMedia
-  // (cast to any to silence TS for iOS)
-  const navAny = navigator as any;
-  return !!navAny.standalone || window.matchMedia('(display-mode: standalone)').matches;
-}
-
-function isIOS(): boolean {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent);
-}
-
 export default function InstallPWA({
-  className = 'btn btn-red',
+  className = '',
   label = 'Install',
   disabledLabel = 'Install',
-  showIOSHelp = true,
 }: Props) {
-  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
-  const [ready, setReady] = useState(false); // whether we’ve seen beforeinstallprompt
-  const [installed, setInstalled] = useState(isStandalone());
+  const [deferredPrompt, setDeferredPrompt] = React.useState<any>(null);
+  const [canInstall, setCanInstall] = React.useState(false);
+  const [installed, setInstalled] = React.useState(false);
 
-  // If app is already installed, hide button
-  useEffect(() => {
-    // Listen for install completion in Chromium
-    const onInstalled = () => setInstalled(true);
-    window.addEventListener('appinstalled', onInstalled);
+  // Detect installed
+  const checkInstalled = React.useCallback(() => {
+    const isStandalone =
+      (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+      // @ts-ignore iOS
+      (window.navigator as any).standalone === true;
+    setInstalled(isStandalone);
+  }, []);
 
-    // Also re-evaluate on visibility changes (some browsers update matchMedia late)
-    const onVis = () => setInstalled(isStandalone());
-    document.addEventListener('visibilitychange', onVis);
+  React.useEffect(() => {
+    checkInstalled();
+
+    const beforeHandler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as any);
+      setCanInstall(true);
+    };
+    window.addEventListener('beforeinstallprompt', beforeHandler as any);
+
+    const appInstalledHandler = () => {
+      setInstalled(true);
+      setCanInstall(false);
+      setDeferredPrompt(null);
+    };
+    window.addEventListener('appinstalled', appInstalledHandler);
 
     return () => {
-      window.removeEventListener('appinstalled', onInstalled);
-      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('beforeinstallprompt', beforeHandler as any);
+      window.removeEventListener('appinstalled', appInstalledHandler);
     };
-  }, []);
-
-  // Capture the install prompt so we can trigger it from our button
-  useEffect(() => {
-    const onBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault(); // stop the native mini-infobar
-      setDeferred(e as BeforeInstallPromptEvent);
-      setReady(true);
-    };
-    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt as EventListener);
-    return () =>
-      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt as EventListener);
-  }, []);
-
-  const iosHelp = useMemo(
-    () => "On iPhone/iPad: tap the Share icon, then 'Add to Home Screen'.",
-    []
-  ); // <-- fixed missing parenthesis
+  }, [checkInstalled]);
 
   const onClick = async () => {
-    // If we already run as installed, do nothing
-    if (installed) return;
-
-    // Chromium path: have a deferred prompt
-    if (deferred) {
-      try {
-        await deferred.prompt();
-        await deferred.userChoice; // "accepted" | "dismissed"
-        // The event becomes unusable after the choice
-        setDeferred(null);
-      } catch {
-        // user dismissed — ignore
-      }
+    // iOS: show tip
+    const isiOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    if (isiOS && isSafari) {
+      alert('บน iPhone/iPad: กด Share → Add to Home Screen เพื่อติดตั้งแอปค่ะ');
       return;
     }
 
-    // No deferred prompt (Safari/iOS or not yet eligible)
-    if (showIOSHelp && isIOS()) {
-      alert(iosHelp);
-      return;
+    if (!deferredPrompt) return;
+    await (deferredPrompt as any).prompt();
+    try {
+      await (deferredPrompt as any).userChoice;
+    } finally {
+      setDeferredPrompt(null);
+      setCanInstall(false);
+      // Install may complete -> appinstalled event will setInstalled(true)
     }
-
-    // Generic hint for other platforms
-    alert(
-      'Install prompt isn’t ready yet.\n\n• Android/Chrome: try again after browsing a bit.\n• iPhone/iPad: tap Share → Add to Home Screen.'
-    );
   };
 
-  // Hide the button completely if we’re already installed
+  // Hide if already installed
   if (installed) return null;
-
-  // Keep the button **enabled** so it never looks faded; show helpful text if not ready
-  const text = deferred ? label : disabledLabel;
 
   return (
     <button
+      type="button"
       className={className}
       onClick={onClick}
-      // no disabled attribute -> keeps consistent height/color
-      aria-label="Install this app"
-      title={deferred ? 'Install PWA' : undefined}
+      disabled={!canInstall}
+      title={canInstall ? label : disabledLabel}
+      aria-disabled={!canInstall}
+      style={{ minWidth: 92 }}
     >
-      {text}
+      {label}
     </button>
   );
 }

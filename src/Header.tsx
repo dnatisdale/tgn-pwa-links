@@ -1,68 +1,42 @@
-// src/Header.tsx — top header: Banner (left) | Install · LangPill · Logout (right)
-// Logout only shows when signedIn=true
+// src/Header.tsx
 import React from 'react';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import InstallPWA from './InstallPWA';
 import LangPill from './LangPill';
 import LogoutButton from './LogoutButton';
-import { Lang } from './i18n';
-import { auth } from './firebase';
-import { signOut } from 'firebase/auth';
 
-type Props = {
-  lang: Lang;
-  onLang: (l: Lang) => void;
-  signedIn: boolean; // NEW: controls whether "Log Out" appears
-};
+export default function Header() {
+  const [isAuthed, setIsAuthed] = React.useState(false);
 
-export default function Header({ lang, onLang, signedIn }: Props) {
-  async function onLogout() {
-    try {
-      await signOut(auth);
-      window.location.hash = '#/browse';
-    } catch (e) {
-      alert(String(e));
-    }
-  }
+  React.useEffect(() => {
+    const auth = getAuth();
+    const unsub = onAuthStateChanged(auth, (u) => setIsAuthed(Boolean(u)));
+    return () => unsub();
+  }, []);
 
   return (
-    <header className="site-header">
-      <div className="site-header__inner">
-        {/* LEFT: responsive banner */}
-        {/* Banner with WebP + PNG fallback */}
-        {/*  <picture>*/}
-        {/* <source srcSet="/banners/Banner" type="image/webp" />*/}
-        {/* <img*/}
-        {/*  src="/banners/banner-1280x720.png"*/}
-        {/*  alt="Thai Good News"*/}
-        {/*  style={{ maxWidth: 680, width: '100%', height: 'auto' }}*/}
-        {/*  loading="eager"*/}
-        {/*  decoding="async"*/}
-        {/*  />*/}
-        {/* </picture>*/}
+    <header className="tgn-header">
+      <div className="tgn-header-left">
+        <picture>
+          <source media="(min-width:1280px)" srcSet="/banners/tgn-banner-2400x600.png?v=1" />
+          <source media="(min-width:700px)" srcSet="/banners/tgn-banner-1200x300.png?v=1" />
+          <img
+            src="/banners/tgn-banner-600x150.png?v=1"
+            alt="Thai Good News"
+            className="tgn-banner-img"
+          />
+        </picture>
+      </div>
 
-        {/* ...inside the header right cluster... */}
-        <div className="tgn-header-right">
-          <LangPill
-            lang={'en'}
-            onChange={function (l: Lang): void {
-              throw new Error('Function not implemented.');
-            }}
-          />
-          <InstallPWA className="langpill" label="Install" disabledLabel="Install" />
-          <LogoutButton className="langpill" />
-        </div>
-        <div className="site-header__actions">
-          <LangPill lang={lang} onChange={onLang} />
-          <InstallPWA
-            className="btn btn-red"
-            label={lang === 'th' ? 'ติดตั้ง' : 'Install'}
-            disabledLabel={lang === 'th' ? 'ติดตั้ง' : 'Install'}
-          />
-          {signedIn && (
-            <button className="btn btn-blue ghost" onClick={onLogout}>
-              {lang === 'th' ? 'ออกจากระบบ' : 'Log Out'}
-            </button>
-          )}
+      {/* Overlay: upper-right */}
+      <div className="action-cluster">
+        {/* LangPill on the LEFT of Install */}
+        <LangPill className="langpill" />
+
+        {/* RIGHT stack: Install (top) with Logout (below) */}
+        <div className="action-right-stack">
+          <InstallPWA className="btn btn-red install-pwa" label="Install" disabledLabel="Install" />
+          {isAuthed ? <LogoutButton className="btn btn-blue" /> : null}
         </div>
       </div>
     </header>
