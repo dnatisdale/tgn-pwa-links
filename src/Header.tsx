@@ -20,7 +20,6 @@ export default function Header() {
     <header className="tgn-header">
       {/* LEFT: responsive banner (picture element handled by Banner component above) */}
       <div className="tgn-header-left" />
-
       {/* RIGHT: LangPill + Install + (Log Out if authed) */}
       <div
         className="tgn-header-right"

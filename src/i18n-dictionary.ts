@@ -3,7 +3,7 @@
 
 export const en = {
   appName: 'Thai Good News',
-  add: 'Add',
+  add: 'ADD',
   browse: 'Browse',
   import: 'Import',
   export: 'Export',
