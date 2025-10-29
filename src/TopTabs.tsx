@@ -1,41 +1,18 @@
-// src/TopTabs.tsx — ADD (big red) on left, middle tabs centered, search on right (Browse only)
 import React from 'react';
-import type { Lang } from './i18n-provider';
+import { useI18n } from './i18n-provider';
 
 type Props = {
-  lang: Lang;
-  route: string; // '#/add' | '#/browse' | '#/import' | '#/export' | '#/contact' | '#/about'
-  setRoute: (r: string) => void;
   q: string;
   setQ: (s: string) => void;
   filterThai: boolean;
   setFilterThai: (b: boolean) => void;
 };
 
-export default function TopTabs({
-  lang,
-  route,
-  setRoute,
-  q,
-  setQ,
-  filterThai,
-  setFilterThai,
-}: Props) {
-  const L = {
-    add: lang === 'th' ? 'เพิ่ม' : 'ADD',
-    browse: lang === 'th' ? 'เรียกดู' : 'Browse',
-    import: lang === 'th' ? 'นำเข้า' : 'Import',
-    export: lang === 'th' ? 'ส่งออก' : 'Export',
-    contact: lang === 'th' ? 'ติดต่อ' : 'Contact',
-    about: lang === 'th' ? 'เกี่ยวกับ' : 'About',
-    search: lang === 'th' ? 'ค้นหาทุกภาษา...' : 'Search all languages...',
-    all: lang === 'th' ? 'ทั้งหมด' : 'All',
-    thai: lang === 'th' ? 'เฉพาะภาษาไทย' : 'Thai only',
-  };
-
+export default function TopTabs({ q, setQ, filterThai, setFilterThai }: Props) {
+  const { t } = useI18n();
+  const route = window.location.hash || '#/browse';
   const go = (hash: string) => {
     if (window.location.hash !== hash) window.location.hash = hash;
-    setRoute(hash);
   };
 
   const Tab = ({ active, label, to }: { active: boolean; label: string; to: string }) => (
@@ -52,25 +29,21 @@ export default function TopTabs({
 
   return (
     <div className="tabs-bar">
-      {/* LEFT: big red ADD */}
       <button
         className={`btn btn-red add-btn ${route.startsWith('#/add') ? 'add-active' : ''}`}
         onClick={() => go('#/add')}
-        aria-current={route.startsWith('#/add') ? 'page' : undefined}
       >
-        {L.add}
+        {t('add')}
       </button>
 
-      {/* MIDDLE: centered tabs */}
       <nav className="tabs-list" aria-label="Primary">
-        <Tab active={route.startsWith('#/browse')} label={L.browse} to="#/browse" />
-        <Tab active={route.startsWith('#/import')} label={L.import} to="#/import" />
-        <Tab active={route.startsWith('#/export')} label={L.export} to="#/export" />
-        <Tab active={route.startsWith('#/contact')} label={L.contact} to="#/contact" />
-        <Tab active={route.startsWith('#/about')} label={L.about} to="#/about" />
+        <Tab active={route.startsWith('#/browse')} label={t('browse')} to="#/browse" />
+        <Tab active={route.startsWith('#/import')} label={t('import')} to="#/import" />
+        <Tab active={route.startsWith('#/export')} label={t('export')} to="#/export" />
+        <Tab active={route.startsWith('#/contact')} label={t('contact')} to="#/contact" />
+        <Tab active={route.startsWith('#/about')} label={t('about')} to="#/about" />
       </nav>
 
-      {/* RIGHT: filters + search (Browse only) */}
       {isBrowse ? (
         <div className="tabs-search">
           <div className="filter-links">
@@ -78,26 +51,26 @@ export default function TopTabs({
               className={!filterThai ? 'linklike active' : 'linklike'}
               onClick={() => setFilterThai(false)}
             >
-              {L.all}
+              {t('all')}
             </button>
             <span className="sep">|</span>
             <button
               className={filterThai ? 'linklike active' : 'linklike'}
               onClick={() => setFilterThai(true)}
             >
-              {L.thai}
+              {t('thai')}
             </button>
           </div>
 
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder={L.search}
+            placeholder={t('search')}
             className="searchbar search-pill-red"
           />
         </div>
       ) : (
-        <div /> // keep space on non-browse pages
+        <div />
       )}
     </div>
   );

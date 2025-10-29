@@ -1,23 +1,18 @@
-// src/App.tsx — remove old ./i18n, keep lang state
 import React, { useEffect, useMemo, useState } from 'react';
 import Banner from './Banner';
-import type { Lang } from './i18n-provider';
-
-import AppMain from './components/AppMain';
-import TopTabs from './TopTabs';
-import Contact from './Contact';
 import Header from './Header';
 import Footer from './Footer';
 import Login from './Login';
 import AddLink from './AddLink';
 import ImportExport from './ImportExport';
 import ExportPage from './Export';
+import TopTabs from './TopTabs';
 import UpdateToast from './UpdateToast';
 import Share from './Share';
 import QR from './QR';
 
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './firebase';
+import { auth, db } from './firebase';
 import {
   collection,
   onSnapshot,
@@ -27,16 +22,13 @@ import {
   deleteDoc,
   updateDoc,
 } from 'firebase/firestore';
-import { toHttpsOrNull as toHttps } from './url';
-import { db } from './firebase';
-
-declare const __APP_VERSION__: string | undefined;
-declare const __BUILD_PRETTY__: string | undefined;
+import { useI18n } from './i18n-provider';
 
 type Row = { id: string; name: string; language: string; url: string };
 
 export default function App() {
-  const [lang, setLang] = useState<Lang>('en');
+  const { lang, t } = useI18n();
+
   const [user, setUser] = useState<any>(null);
   const [rows, setRows] = useState<Row[]>([]);
   const [q, setQ] = useState('');
@@ -44,16 +36,15 @@ export default function App() {
   const [textPx, setTextPx] = useState<number>(16);
   const [qrEnlargedId, setQrEnlargedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
   const [route, setRoute] = useState<string>(window.location.hash || '#/browse');
+  const [showUpdate, setShowUpdate] = useState(false);
+
   const isBrowse = route.startsWith('#/browse');
   const isAdd = route.startsWith('#/add');
   const isImport = route.startsWith('#/import');
   const isExport = route.startsWith('#/export');
   const isAbout = route.startsWith('#/about');
   const isContact = route.startsWith('#/contact');
-
-  const [showUpdate, setShowUpdate] = useState(false);
 
   useEffect(() => onAuthStateChanged(auth, (u) => setUser(u)), []);
   useEffect(() => {
@@ -163,25 +154,27 @@ export default function App() {
   };
 
   const editRow = async (r: Row) => {
-    const name = prompt('Name', r.name ?? '');
+    const name = prompt(t('title'), r.name ?? '');
     if (name === null) return;
-    const language = prompt('Language', r.language ?? '') ?? '';
-    const url = prompt('URL (https only)', r.url ?? '');
+    const language = prompt(t('languageOfContent'), r.language ?? '') ?? '';
+    const url = prompt(t('url'), r.url ?? '');
     if (url === null) return;
-    const https = toHttps(url);
-    if (!https) {
-      alert('Please enter a valid https:// URL');
+    try {
+      const u = new URL(url.startsWith('http') ? url : `https://${url}`);
+      if (u.protocol !== 'https:') throw new Error();
+    } catch {
+      alert(t('invalidUrl'));
       return;
     }
     await updateDoc(doc(db, 'users', user.uid, 'links', r.id), {
       name: name.trim(),
       language: language.trim(),
-      url: https,
+      url: url.trim(),
     });
   };
 
   const deleteRow = async (r: Row) => {
-    if (!confirm(`Delete "${r.name || r.url}"?`)) return;
+    if (!confirm(`${t('delete')} "${r.name || r.url}"?`)) return;
     await deleteDoc(doc(db, 'users', user.uid, 'links', r.id));
     setSelectedIds((prev) => {
       const n = new Set(prev);
@@ -195,18 +188,11 @@ export default function App() {
       <>
         <Banner />
         <div className="app-shell" style={{ fontSize: textPx }}>
-          <Header lang={lang} onLang={setLang} signedIn={false} />
+          <Header />
           <main className="app-main">
-            <Login
-              lang={lang}
-              onLang={setLang}
-              onSignedIn={() => {
-                window.location.hash = '#/browse';
-              }}
-            />
+            <Login />
           </main>
           <UpdateToast
-            lang={lang}
             show={showUpdate}
             onRefresh={() => {
               (window as any).__REFRESH_SW__?.();
@@ -224,40 +210,28 @@ export default function App() {
     <>
       <Banner />
       <div className="app-shell" style={{ fontSize: textPx }}>
-        <Header lang={lang} onLang={setLang} signedIn={true} />
-        <TopTabs
-          lang={lang}
-          route={route}
-          setRoute={setRoute}
-          q={q}
-          setQ={setQ}
-          filterThai={filterThai}
-          setFilterThai={setFilterThai}
-        />
+        <Header />
+        <TopTabs q={q} setQ={setQ} filterThai={filterThai} setFilterThai={setFilterThai} />
         <main className="p-3 max-w-5xl mx-auto app-main">
           {isAdd ? (
             <section>
-              <h2 className="text-lg font-semibold mb-2">{lang === 'th' ? 'เพิ่ม' : 'Add'}</h2>
-              <AddLink lang={lang} />
+              <h2 className="text-lg font-semibold mb-2">{t('add')}</h2>
+              <AddLink />
             </section>
           ) : isImport ? (
             <section>
-              <h2 className="text-lg font-semibold mb-2">Import</h2>
-              <ImportExport lang={lang} />
+              <h2 className="text-lg font-semibold mb-2">{t('import')}</h2>
+              <ImportExport />
             </section>
           ) : isExport ? (
             <section>
-              <h2 className="text-lg font-semibold mb-2">Export</h2>
-              <ExportPage lang={lang} rows={rows} />
+              <h2 className="text-lg font-semibold mb-2">{t('export')}</h2>
+              <ExportPage rows={rows} />
             </section>
-          ) : isContact ? (
-            <Contact />
           ) : isAbout ? (
             <section>
-              <h2 className="text-lg font-semibold mb-2">About</h2>
-              <p className="text-sm text-gray-700">
-                Thai Good News — a simple PWA for saving, sharing, and printing QR link cards.
-              </p>
+              <h2 className="text-lg font-semibold mb-2">{t('about')}</h2>
+              <p className="text-sm text-gray-700">{t('aboutText')}</p>
             </section>
           ) : (
             <section>
@@ -269,8 +243,7 @@ export default function App() {
                     checked={allSelected}
                     onChange={toggleSelectAll}
                   />
-                  {lang === 'th' ? 'เลือกทั้งหมด' : 'Select all'} ({selectedRows.length}/
-                  {filtered.length})
+                  {t('selectAll')} ({selectedRows.length}/{filtered.length})
                 </label>
 
                 <div className="flex items-center gap-8">
@@ -282,7 +255,7 @@ export default function App() {
                     />
                     {!firstSelected && (
                       <span className="text-xs" style={{ color: '#6b7280', marginLeft: 8 }}>
-                        ({lang === 'th' ? 'เลือกอย่างน้อยหนึ่งรายการ' : 'Select at least one item'})
+                        ({t('selectAtLeastOne')})
                       </span>
                     )}
                   </div>
@@ -292,13 +265,11 @@ export default function App() {
                     onClick={batchDownload}
                     disabled={!selectedRows.length}
                   >
-                    {lang === 'th'
-                      ? `ดาวน์โหลดการ์ด QR (${selectedRows.length})`
-                      : `Download QR cards (${selectedRows.length})`}
+                    {t('downloadQRCards')} ({selectedRows.length})
                   </button>
 
                   <button className="linklike" onClick={copySelectedLinks}>
-                    {lang === 'th' ? 'คัดลอกลิงก์' : 'Copy link'}
+                    {t('copyLink')}
                   </button>
                 </div>
               </div>
@@ -324,7 +295,7 @@ export default function App() {
                             }
                             style={{ marginRight: 8 }}
                           />
-                          Select
+                          {t('select')}
                         </label>
                       </div>
 
@@ -337,15 +308,7 @@ export default function App() {
                           if (e.key === 'Enter') setQrEnlargedId(enlarged ? null : row.id);
                         }}
                         tabIndex={0}
-                        title={
-                          enlarged
-                            ? lang === 'th'
-                              ? 'ย่อ QR'
-                              : 'Shrink QR'
-                            : lang === 'th'
-                            ? 'ขยาย QR'
-                            : 'Enlarge QR'
-                        }
+                        title={enlarged ? t('shrinkQR') : t('enlargeQR')}
                         style={{ cursor: 'pointer' }}
                         className="qr-center"
                       >
@@ -360,10 +323,10 @@ export default function App() {
 
                       <div className="mt-2 flex justify-center gap-6 text-sm">
                         <button className="linklike" onClick={() => editRow(row)}>
-                          Edit
+                          {t('edit')}
                         </button>
                         <button className="linklike" onClick={() => deleteRow(row)}>
-                          Delete
+                          {t('delete')}
                         </button>
                       </div>
                     </li>

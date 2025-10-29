@@ -1,10 +1,8 @@
-// src/ImportExport.tsx
 import React, { useMemo, useState } from 'react';
-import type { Lang } from './i18n-provider';
 import { auth, db } from './firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useI18n } from './i18n-provider';
 
-type Props = { lang: Lang };
 type PreviewItem = {
   name: string;
   language: string;
@@ -26,7 +24,6 @@ function toHttpsOrNull(input: string): string | null {
     return null;
   }
 }
-
 function splitCSVorTSV(text: string): string[][] {
   const lines = text
     .split(/\r?\n/)
@@ -37,14 +34,14 @@ function splitCSVorTSV(text: string): string[][] {
   const sep = looksTSV ? '\t' : ',';
   return lines.map((l) => l.split(sep).map((x) => x.trim()));
 }
-
 function asArray(x: any): any[] {
   if (Array.isArray(x)) return x;
   if (x && typeof x === 'object') return [x];
   return [];
 }
 
-export default function ImportExport({ lang }: Props) {
+export default function ImportExport() {
+  const { t } = useI18n();
   const [file, setFile] = useState<File | null>(null);
   const [parsing, setParsing] = useState(false);
   const [preview, setPreview] = useState<PreviewItem[] | null>(null);
@@ -84,13 +81,13 @@ export default function ImportExport({ lang }: Props) {
             language,
             urlRaw,
             urlHttps,
-            reason: urlHttps ? undefined : 'URL must be https (or leave off scheme to auto-https)',
+            reason: urlHttps ? undefined : t('mustBeHttps'),
           };
         });
       } else {
         const grid = splitCSVorTSV(text);
         if (!grid.length) {
-          setMsg('No rows found.');
+          setMsg(t('noRows'));
           setParsing(false);
           return;
         }
@@ -117,7 +114,7 @@ export default function ImportExport({ lang }: Props) {
             language,
             urlRaw,
             urlHttps,
-            reason: urlHttps ? undefined : 'URL must be https (or leave off scheme to auto-https)',
+            reason: urlHttps ? undefined : t('mustBeHttps'),
           };
         });
       }
@@ -134,21 +131,21 @@ export default function ImportExport({ lang }: Props) {
   async function doImport() {
     const user = auth.currentUser;
     if (!user) {
-      alert(lang === 'th' ? 'กรุณาเข้าสู่ระบบก่อน' : 'Please sign in first.');
+      alert(t('pleaseSignIn'));
       return;
     }
     if (!preview || !preview.length) {
-      alert(lang === 'th' ? 'ไม่มีข้อมูลสำหรับนำเข้า' : 'Nothing to import.');
+      alert(t('nothingToImport'));
       return;
     }
     const valid = preview.filter((p) => p.urlHttps);
     if (!valid.length) {
-      alert(lang === 'th' ? 'ไม่มี URL ที่ถูกต้อง (https)' : 'No valid https URLs.');
+      alert(t('invalidUrl'));
       return;
     }
 
     try {
-      setMsg(lang === 'th' ? 'กำลังนำเข้า…' : 'Importing…');
+      setMsg(t('saving'));
       const col = collection(db, 'users', user.uid, 'links');
       for (const v of valid) {
         await addDoc(col, {
@@ -158,7 +155,7 @@ export default function ImportExport({ lang }: Props) {
           createdAt: serverTimestamp(),
         });
       }
-      setMsg(lang === 'th' ? 'นำเข้าสำเร็จ' : 'Import complete');
+      setMsg(t('importComplete'));
       setFile(null);
       setPreview(null);
     } catch (e: any) {
@@ -168,11 +165,11 @@ export default function ImportExport({ lang }: Props) {
 
   return (
     <section>
-      <h2 className="text-lg font-semibold mb-3">{lang === 'th' ? 'นำเข้า' : 'Import'}</h2>
+      <h2 className="text-lg font-semibold mb-3">{t('import')}</h2>
 
       <div className="file-row" style={{ marginBottom: 12 }}>
         <label htmlFor="tgn-import-file" className="btn btn-red" style={{ cursor: 'pointer' }}>
-          {lang === 'th' ? 'เลือกไฟล์' : 'Choose file'}
+          {t('chooseFile')}
         </label>
         <input
           id="tgn-import-file"
@@ -184,14 +181,14 @@ export default function ImportExport({ lang }: Props) {
         <span className="pill-red">(CSV / TSV / JSON)</span>
         {preview && (
           <button className="btn btn-blue" onClick={doImport} disabled={!stats.valid || parsing}>
-            {lang === 'th' ? 'เพิ่ม' : 'Add'}
+            {t('add')}
           </button>
         )}
       </div>
 
       {file && (
         <div className="hint-under" style={{ marginBottom: 8 }}>
-          {lang === 'th' ? 'ไฟล์:' : 'File:'} {file.name}
+          {t('file') || 'File:'} {file.name}
         </div>
       )}
       {msg && <div style={{ marginBottom: 12, color: '#a51931' }}>{msg}</div>}
@@ -199,9 +196,8 @@ export default function ImportExport({ lang }: Props) {
       {preview && (
         <div className="card" style={{ padding: 12 }}>
           <div style={{ marginBottom: 8, fontSize: 14 }}>
-            {lang === 'th'
-              ? `ตรวจสอบตัวอย่าง: ถูกต้อง ${stats.valid} แถว · ข้าม ${stats.invalid} แถว`
-              : `Preview: ${stats.valid} valid · ${stats.invalid} skipped`}
+            {t('preview')}: {stats.valid} {t('valid') || 'valid'} · {stats.invalid}{' '}
+            {t('invalid') || 'invalid'}
           </div>
 
           <div
@@ -231,13 +227,9 @@ export default function ImportExport({ lang }: Props) {
                     </td>
                     <td style={td}>
                       {p.urlHttps ? (
-                        <span style={{ color: '#16a34a', fontWeight: 600 }}>
-                          {lang === 'th' ? 'จะนำเข้า' : 'OK'}
-                        </span>
+                        <span style={{ color: '#16a34a', fontWeight: 600 }}>{t('ok') || 'OK'}</span>
                       ) : (
-                        <span style={{ color: '#a51931' }}>
-                          {p.reason || (lang === 'th' ? 'ไม่ถูกต้อง' : 'Invalid')}
-                        </span>
+                        <span style={{ color: '#a51931' }}>{p.reason || t('invalid')}</span>
                       )}
                     </td>
                   </tr>
@@ -245,18 +237,11 @@ export default function ImportExport({ lang }: Props) {
               </tbody>
             </table>
           </div>
-
-          <div className="hint-under" style={{ marginTop: 8 }}>
-            {lang === 'th'
-              ? 'เคล็ดลับ: ถ้าเว้นว่างหรือเป็น http:// จะถูกข้าม ให้แก้ไขไฟล์แล้วนำเข้าใหม่'
-              : 'Tip: if URL is empty or http:// it’s skipped. Fix your file and re-import.'}
-          </div>
         </div>
       )}
     </section>
   );
 }
-
 const th: React.CSSProperties = {
   textAlign: 'left',
   padding: '8px 10px',

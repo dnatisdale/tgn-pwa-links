@@ -1,10 +1,11 @@
-// src/Export.tsx
 import React from 'react';
-import type { Lang } from './i18n-provider';
+import { useI18n } from './i18n-provider';
 
 type Row = { id: string; name: string; language: string; url: string };
 
-export default function ExportPage({ lang, rows }: { lang: Lang; rows: Row[] }) {
+export default function ExportPage({ rows }: { rows: Row[] }) {
+  const { t } = useI18n();
+
   const download = (filename: string, text: string, mime = 'text/plain') => {
     const blob = new Blob([text], { type: `${mime};charset=utf-8` });
     const a = document.createElement('a');
@@ -25,29 +26,26 @@ export default function ExportPage({ lang, rows }: { lang: Lang; rows: Row[] }) 
       .join('\n');
     download('tgn-links.csv', head + body, 'text/csv');
   };
-
   const toJSON = () =>
     download('tgn-links.json', JSON.stringify(rows, null, 2), 'application/json');
   const doPrint = () => window.print();
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-lg font-semibold mb-3">{lang === 'th' ? 'ส่งออก' : 'Export'}</h2>
+      <h2 className="text-lg font-semibold mb-3">{t('export')}</h2>
       <div className="flex items-center gap-3 mb-4">
         <button className="btn btn-blue" onClick={toCSV}>
-          {lang === 'th' ? 'ส่งออก CSV' : 'Export CSV'}
+          {t('exportCsv')}
         </button>
         <button className="btn btn-blue" onClick={toJSON}>
-          {lang === 'th' ? 'ส่งออก JSON' : 'Export JSON'}
+          {t('exportJson')}
         </button>
         <button className="btn btn-red" onClick={doPrint}>
-          {lang === 'th' ? 'พิมพ์' : 'Print'}
+          {t('print')}
         </button>
       </div>
       <div className="text-sm" style={{ color: '#6b7280' }}>
-        {lang === 'th'
-          ? 'เคล็ดลับ: การส่งออกจะรวมเฉพาะรายการในรายการของคุณตอนนี้เท่านั้น'
-          : 'Tip: Exports include only what’s currently in your list.'}
+        {t('tipExportsFiltered')}
       </div>
     </div>
   );

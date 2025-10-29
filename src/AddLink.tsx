@@ -1,14 +1,12 @@
-// src/AddLink.tsx
 import React, { useState } from 'react';
-import type { Lang } from './i18n-provider';
 import { auth, db } from './firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useI18n } from './i18n-provider';
 
-// helper: ensure https (auto-add if missing), reject http and invalid
 function toHttpsOrNull(input: string): string | null {
   const raw = input.trim();
   if (!raw) return null;
-  if (/^http:\/\//i.test(raw)) return null; // reject non-secure
+  if (/^http:\/\//i.test(raw)) return null;
   const withScheme = /^(https?:)?\/\//i.test(raw) ? raw : `https://${raw}`;
   try {
     const u = new URL(withScheme);
@@ -19,32 +17,8 @@ function toHttpsOrNull(input: string): string | null {
   }
 }
 
-export default function AddLink({ lang }: { lang: Lang }) {
-  const L =
-    lang === 'th'
-      ? {
-          name: 'ชื่อ',
-          language: 'ภาษา',
-          url: 'ลิงก์',
-          save: 'บันทึก',
-          saving: 'กำลังบันทึก…',
-          saved: 'บันทึกแล้ว',
-          signinFirst: 'กรุณาเข้าสู่ระบบก่อน',
-          badUrl: 'ลิงก์ต้องเป็น https:// เท่านั้น หรือพิมพ์โดยไม่ต้องใส่ https://',
-          needName: 'กรุณากรอกชื่อเรื่อง',
-        }
-      : {
-          name: 'Name',
-          language: 'Language',
-          url: 'URL',
-          save: 'Save',
-          saving: 'Saving…',
-          saved: 'Saved',
-          signinFirst: 'Please sign in first.',
-          badUrl: 'URL must be secure (https). You can type it with or without https://',
-          needName: 'Please enter a name',
-        };
-
+export default function AddLink() {
+  const { t } = useI18n();
   const [name, setName] = useState('');
   const [language, setLanguage] = useState('');
   const [url, setUrl] = useState('');
@@ -52,36 +26,23 @@ export default function AddLink({ lang }: { lang: Lang }) {
 
   const onSave = async () => {
     const user = auth.currentUser;
-    if (!user) {
-      alert(L.signinFirst);
-      return;
-    }
-
-    const nameTrim = name.trim();
-    const languageTrim = language.trim();
+    if (!user) return alert(t('pleaseSignIn'));
+    if (!name.trim()) return alert(t('title'));
     const urlHttps = toHttpsOrNull(url);
-
-    if (!nameTrim) {
-      alert(L.needName);
-      return;
-    }
-    if (!urlHttps) {
-      alert(L.badUrl);
-      return;
-    }
+    if (!urlHttps) return alert(t('invalidUrl'));
 
     try {
       setSaving(true);
       await addDoc(collection(db, 'users', user.uid, 'links'), {
-        name: nameTrim,
-        language: languageTrim,
+        name: name.trim(),
+        language: language.trim(),
         url: urlHttps,
         createdAt: serverTimestamp(),
       });
       setName('');
       setLanguage('');
       setUrl('');
-      alert(L.saved);
+      alert(t('saved'));
     } catch (e: any) {
       alert(e?.message || String(e));
     } finally {
@@ -94,49 +55,25 @@ export default function AddLink({ lang }: { lang: Lang }) {
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder={L.name}
-        aria-label={L.name}
+        placeholder={t('title')}
         className="w-full border rounded px-3 py-2 mb-3"
       />
       <input
         value={language}
         onChange={(e) => setLanguage(e.target.value)}
-        placeholder={L.language}
-        aria-label={L.language}
+        placeholder={t('languageOfContent')}
         className="w-full border rounded px-3 py-2 mb-3"
       />
       <input
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        placeholder={L.url}
-        aria-label={L.url}
+        placeholder={t('url')}
         className="w-full border rounded px-3 py-2 mb-1"
         inputMode="url"
-        autoCapitalize="off"
-        autoCorrect="off"
-        spellCheck={false}
       />
-      <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 12 }}>
-        {lang === 'th'
-          ? 'จะเพิ่ม https:// ให้อัตโนมัติ และไม่อนุญาต http://'
-          : 'We’ll add https:// for you automatically; http:// is not allowed.'}
-      </div>
-
-      <button
-        onClick={onSave}
-        disabled={saving}
-        className="btn-red"
-        style={{
-          background: '#a51931',
-          color: '#fff',
-          borderRadius: 8,
-          padding: '10px 16px',
-          fontWeight: 600,
-          border: 'none',
-          cursor: 'pointer',
-        }}
-      >
-        {saving ? L.saving : L.save}
+      <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 12 }}>{t('mustBeHttps')}</div>
+      <button onClick={onSave} disabled={saving} className="btn btn-red">
+        {saving ? t('saving') : t('save')}
       </button>
     </div>
   );
