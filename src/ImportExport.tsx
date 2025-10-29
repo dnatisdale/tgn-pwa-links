@@ -165,7 +165,7 @@ export default function ImportExport() {
 
   return (
     <section>
-      <h1 className="text-lg font-semibold mb-3">{t('import')}</h1>
+      <h2 className="text-lg font-semibold mb-3">{t('import')}</h2>
 
       <div className="file-row" style={{ marginBottom: 12 }}>
         <label htmlFor="tgn-import-file" className="btn btn-red" style={{ cursor: 'pointer' }}>
