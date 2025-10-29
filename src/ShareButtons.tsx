@@ -1,12 +1,11 @@
 import React from 'react';
-import { t, Lang } from './i18n';
+import type { Lang } from './i18n-provider';
 import { normalizeHttps } from './utils';
 
 type Props = { lang: Lang; url: string; name?: string };
 
 const RED = '#DA1A32'; // Thai flag red
 
-// tiny red symbol
 const Dot: React.FC = () => <span style={{ color: RED, fontSize: 12, marginRight: 6 }}>●</span>;
 
 const Btn: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ children, ...rest }) => (
@@ -16,8 +15,7 @@ const Btn: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ children
 );
 
 export default function ShareButtons({ lang, url, name = '' }: Props) {
-  const i = t(lang);
-  const safeUrl = normalizeHttps(url) ?? ''; // ✅ always the real saved URL
+  const safeUrl = normalizeHttps(url) ?? ''; // always use an https URL
   const text = name ? `${name}` : 'Link';
 
   const open = (href: string) => window.open(href, '_blank', 'noopener,noreferrer');
@@ -83,8 +81,7 @@ export default function ShareButtons({ lang, url, name = '' }: Props) {
         </Btn>
         <Btn onClick={shareX}>
           <Dot />X
-        </Btn>{' '}
-        {/* X only */}
+        </Btn>
         <Btn onClick={shareWhats}>
           <Dot />
           WhatsApp

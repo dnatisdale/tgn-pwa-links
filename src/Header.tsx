@@ -4,9 +4,9 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import InstallPWA from './InstallPWA';
 import LangPill from './LangPill';
 import LogoutButton from './LogoutButton';
-import { useI18n } from './i18n-provider'; // <<— add
+import { useI18n } from './i18n-provider';
 
-export default function Header() {
+export default function Header(_props?: { lang?: any; onLang?: any; signedIn?: boolean }) {
   const { t } = useI18n();
   const [isAuthed, setIsAuthed] = React.useState(false);
 
@@ -30,12 +30,8 @@ export default function Header() {
         </picture>
       </div>
 
-      {/* Overlay: upper-right */}
       <div className="action-cluster">
-        {/* LangPill on the LEFT of Install */}
         <LangPill className="langpill" />
-
-        {/* RIGHT stack: Install (top) with Logout (below) */}
         <div className="action-right-stack">
           <InstallPWA
             className="btn btn-red install-pwa"

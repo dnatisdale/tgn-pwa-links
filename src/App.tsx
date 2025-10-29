@@ -1,20 +1,13 @@
-// src/App.tsx — Clean App (tabs, login gate, header/footer, PWA toast)
+// src/App.tsx — remove old ./i18n, keep lang state
 import React, { useEffect, useMemo, useState } from 'react';
 import Banner from './Banner';
+import type { Lang } from './i18n-provider';
 
-// i18n
-import { t, Lang } from './i18n';
 import AppMain from './components/AppMain';
-
-// Tabs + pages
 import TopTabs from './TopTabs';
 import Contact from './Contact';
-
-// Layout parts
 import Header from './Header';
 import Footer from './Footer';
-
-// Pages/parts
 import Login from './Login';
 import AddLink from './AddLink';
 import ImportExport from './ImportExport';
@@ -23,10 +16,7 @@ import UpdateToast from './UpdateToast';
 import Share from './Share';
 import QR from './QR';
 
-// Firebase
-// import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-// import { signOut } from 'firebase/auth';
 import { auth } from './firebase';
 import {
   collection,
@@ -37,27 +27,20 @@ import {
   deleteDoc,
   updateDoc,
 } from 'firebase/firestore';
-
-// URL helper
 import { toHttpsOrNull as toHttps } from './url';
 import { db } from './firebase';
 
-// Build constants (from vite.config.ts -> define)
 declare const __APP_VERSION__: string | undefined;
 declare const __BUILD_PRETTY__: string | undefined;
 
 type Row = { id: string; name: string; language: string; url: string };
 
 export default function App() {
-  // ===== STATE =====
   const [lang, setLang] = useState<Lang>('en');
-  const i = t(lang);
-
   const [user, setUser] = useState<any>(null);
   const [rows, setRows] = useState<Row[]>([]);
   const [q, setQ] = useState('');
   const [filterThai, setFilterThai] = useState(false);
-
   const [textPx, setTextPx] = useState<number>(16);
   const [qrEnlargedId, setQrEnlargedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -72,27 +55,21 @@ export default function App() {
 
   const [showUpdate, setShowUpdate] = useState(false);
 
-  // ===== EFFECTS =====
   useEffect(() => onAuthStateChanged(auth, (u) => setUser(u)), []);
-
   useEffect(() => {
     const onHash = () => setRoute(window.location.hash || '#/browse');
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
-
   useEffect(() => {
     document.documentElement.style.setProperty('--base', `${textPx}px`);
   }, [textPx]);
-
-  // PWA “New version” signal comes from main.tsx (registerSW)
   useEffect(() => {
     const onNeed = () => setShowUpdate(true);
     window.addEventListener('pwa:need-refresh', onNeed);
     return () => window.removeEventListener('pwa:need-refresh', onNeed);
   }, []);
 
-  // Firestore subscribe (only when logged in)
   useEffect(() => {
     if (!user) {
       setRows([]);
@@ -101,10 +78,7 @@ export default function App() {
     const col = collection(db, 'users', user.uid, 'links');
     const qry = query(col, orderBy('name'));
     const off = onSnapshot(qry, (snap) => {
-      const list: Row[] = snap.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as any),
-      }));
+      const list: Row[] = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
       setRows(list);
       setSelectedIds((prev) => {
         const next = new Set<string>();
@@ -115,7 +89,6 @@ export default function App() {
     return () => off();
   }, [user]);
 
-  // ===== DERIVED =====
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     let out = rows.filter((row) => {
@@ -145,7 +118,6 @@ export default function App() {
   const firstSelected = selectedRows[0];
   const allSelected = filtered.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
 
-  // ===== HELPERS =====
   const toggleSelect = (id: string) =>
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -164,19 +136,19 @@ export default function App() {
   const copySelectedLinks = async () => {
     const urls = selectedRows.map((r) => r.url).filter(Boolean);
     if (!urls.length) {
-      alert('Select at least one item');
+      alert(lang === 'th' ? 'เลือกอย่างน้อยหนึ่งรายการ' : 'Select at least one item');
       return;
     }
     try {
       await navigator.clipboard.writeText(urls.join('\n'));
     } catch {
-      alert('Copy failed');
+      alert(lang === 'th' ? 'คัดลอกล้มเหลว' : 'Copy failed');
     }
   };
 
   const batchDownload = async () => {
     if (!selectedRows.length) {
-      alert('Select at least one item');
+      alert(lang === 'th' ? 'เลือกอย่างน้อยหนึ่งรายการ' : 'Select at least one item');
       return;
     }
     const mod = await import('./qrCard');
@@ -218,7 +190,6 @@ export default function App() {
     });
   };
 
-  // ===== LOGIN GATE =====
   if (!user) {
     return (
       <>
@@ -234,7 +205,6 @@ export default function App() {
               }}
             />
           </main>
-
           <UpdateToast
             lang={lang}
             show={showUpdate}
@@ -250,14 +220,11 @@ export default function App() {
     );
   }
 
-  // ===== SIGNED-IN VIEW =====
   return (
     <>
       <Banner />
       <div className="app-shell" style={{ fontSize: textPx }}>
         <Header lang={lang} onLang={setLang} signedIn={true} />
-
-        {/* Tabs directly under banner on ALL signed-in pages */}
         <TopTabs
           lang={lang}
           route={route}
@@ -267,11 +234,10 @@ export default function App() {
           filterThai={filterThai}
           setFilterThai={setFilterThai}
         />
-
         <main className="p-3 max-w-5xl mx-auto app-main">
           {isAdd ? (
             <section>
-              <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
+              <h2 className="text-lg font-semibold mb-2">{lang === 'th' ? 'เพิ่ม' : 'Add'}</h2>
               <AddLink lang={lang} />
             </section>
           ) : isImport ? (
@@ -294,9 +260,7 @@ export default function App() {
               </p>
             </section>
           ) : (
-            // BROWSE
             <section>
-              {/* Toolbar */}
               <div className="flex flex-wrap items-center gap-8 mb-3">
                 <label className="text-sm">
                   <input
@@ -339,7 +303,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Cards */}
               <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {filtered.map((row) => {
                   const enlarged = qrEnlargedId === row.id;

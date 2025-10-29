@@ -1,6 +1,6 @@
 // 01 src/Login.tsx — clean, pill matches sign-in, no stray text
 import React, { useState } from 'react'; // 02
-import { Lang } from './i18n'; // 03
+import type { Lang } from './i18n-provider'; // 03
 import { auth } from './firebase'; // 04
 import LangPill from './LangPill'; // 05
 import {

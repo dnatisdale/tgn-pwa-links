@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { t, tr, Lang } from "./i18n";
+// src/IOSInstallHint.tsx
+import React, { useEffect, useState } from 'react';
 
 function isStandalone() {
   return (
-    // iOS Safari
     (window.navigator as any).standalone === true ||
-    // all modern browsers
-    window.matchMedia?.("(display-mode: standalone)").matches
+    window.matchMedia?.('(display-mode: standalone)').matches
   );
 }
 function isIOS() {
@@ -17,14 +15,14 @@ export default function IOSInstallHint() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    const seen = localStorage.getItem("tgn-hide-ios-hint") === "1";
+    const seen = localStorage.getItem('tgn-hide-ios-hint') === '1';
     if (!seen && isIOS() && !isStandalone()) setShow(true);
   }, []);
 
   if (!show) return null;
 
   const dismiss = () => {
-    localStorage.setItem("tgn-hide-ios-hint", "1");
+    localStorage.setItem('tgn-hide-ios-hint', '1');
     setShow(false);
   };
 
@@ -34,7 +32,9 @@ export default function IOSInstallHint() {
         <span>
           iOS: Open <b>Share</b> (□↑) → <b>Add to Home Screen</b> to install
         </span>
-        <button className="toast-btn" onClick={dismiss}>Got it</button>
+        <button className="toast-btn" onClick={dismiss}>
+          Got it
+        </button>
       </div>
     </div>
   );

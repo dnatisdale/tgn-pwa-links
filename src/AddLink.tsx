@@ -1,89 +1,87 @@
 // src/AddLink.tsx
-import React, { useState } from "react";
-import { t, tr, Lang } from "./i18n";
-import { toHttpsOrNull as toHttps } from "./url";
-import { auth, db } from "./firebase";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import React, { useState } from 'react';
+import type { Lang } from './i18n-provider';
+import { auth, db } from './firebase';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 // helper: ensure https (auto-add if missing), reject http and invalid
 function toHttpsOrNull(input: string): string | null {
   const raw = input.trim();
   if (!raw) return null;
-
-  // If user typed http:// — reject (only secure allowed)
-  if (/^http:\/\//i.test(raw)) return null;
-
-  // If no scheme, prepend https://
+  if (/^http:\/\//i.test(raw)) return null; // reject non-secure
   const withScheme = /^(https?:)?\/\//i.test(raw) ? raw : `https://${raw}`;
-
   try {
     const u = new URL(withScheme);
-    if (u.protocol !== "https:") return null;
+    if (u.protocol !== 'https:') return null;
     return u.toString();
   } catch {
     return null;
   }
 }
 
-type Props = { lang: Lang };
+export default function AddLink({ lang }: { lang: Lang }) {
+  const L =
+    lang === 'th'
+      ? {
+          name: 'ชื่อ',
+          language: 'ภาษา',
+          url: 'ลิงก์',
+          save: 'บันทึก',
+          saving: 'กำลังบันทึก…',
+          saved: 'บันทึกแล้ว',
+          signinFirst: 'กรุณาเข้าสู่ระบบก่อน',
+          badUrl: 'ลิงก์ต้องเป็น https:// เท่านั้น หรือพิมพ์โดยไม่ต้องใส่ https://',
+          needName: 'กรุณากรอกชื่อเรื่อง',
+        }
+      : {
+          name: 'Name',
+          language: 'Language',
+          url: 'URL',
+          save: 'Save',
+          saving: 'Saving…',
+          saved: 'Saved',
+          signinFirst: 'Please sign in first.',
+          badUrl: 'URL must be secure (https). You can type it with or without https://',
+          needName: 'Please enter a name',
+        };
 
-export default function AddLink({ lang }: Props) {
-  const i = t(lang);
-
-  const [name, setName] = useState("");
-  const [language, setLanguage] = useState("");
-  const [url, setUrl] = useState("");
+  const [name, setName] = useState('');
+  const [language, setLanguage] = useState('');
+  const [url, setUrl] = useState('');
   const [saving, setSaving] = useState(false);
 
   const onSave = async () => {
     const user = auth.currentUser;
     if (!user) {
-      alert("Please sign in first.");
+      alert(L.signinFirst);
       return;
     }
-
-    // inside your add handler
-    const https = toHttps(inputUrl);
-    if (!https) {
-      alert(
-        lang === "th"
-          ? "โปรดใส่ลิงก์ https:// ที่ถูกต้อง"
-          : "Please enter a valid https:// URL"
-      );
-      return;
-    }
-    // save https (not the original)
 
     const nameTrim = name.trim();
     const languageTrim = language.trim();
     const urlHttps = toHttpsOrNull(url);
 
     if (!nameTrim) {
-      alert(lang === "th" ? "กรุณากรอกชื่อเรื่อง" : "Please enter a name");
+      alert(L.needName);
       return;
     }
     if (!urlHttps) {
-      alert(
-        lang === "th"
-          ? "ลิงก์ต้องเป็น https:// เท่านั้น หรือพิมพ์โดยไม่ต้องใส่ https://"
-          : "URL must be secure (https). You can type it with or without https://"
-      );
+      alert(L.badUrl);
       return;
     }
 
     try {
       setSaving(true);
-      await addDoc(collection(db, "users", user.uid, "links"), {
+      await addDoc(collection(db, 'users', user.uid, 'links'), {
         name: nameTrim,
         language: languageTrim,
         url: urlHttps,
         createdAt: serverTimestamp(),
       });
-      // clear form
-      setName("");
-      setLanguage("");
-      setUrl("");
-      alert(lang === "th" ? "บันทึกแล้ว" : "Saved");
+      setName('');
+      setLanguage('');
+      setUrl('');
+      alert(L.saved);
     } catch (e: any) {
       alert(e?.message || String(e));
     } finally {
@@ -93,58 +91,52 @@ export default function AddLink({ lang }: Props) {
 
   return (
     <div className="max-w-md">
-      {/* Name */}
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder={i.name} // label inside the field
-        aria-label={i.name}
+        placeholder={L.name}
+        aria-label={L.name}
         className="w-full border rounded px-3 py-2 mb-3"
       />
-
-      {/* Language */}
       <input
         value={language}
         onChange={(e) => setLanguage(e.target.value)}
-        placeholder={i.language} // label inside the field
-        aria-label={i.language}
+        placeholder={L.language}
+        aria-label={L.language}
         className="w-full border rounded px-3 py-2 mb-3"
       />
-
-      {/* URL (https optional; we’ll normalize and enforce https) */}
       <input
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        placeholder={i.url} // uses your new “https optional” text
-        aria-label={i.url}
+        placeholder={L.url}
+        aria-label={L.url}
         className="w-full border rounded px-3 py-2 mb-1"
         inputMode="url"
         autoCapitalize="off"
         autoCorrect="off"
         spellCheck={false}
       />
-      <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 12 }}>
-        {lang === "th"
-          ? "จะเพิ่ม https:// ให้อัตโนมัติ และไม่อนุญาต http://"
-          : "We’ll add https:// for you automatically; http:// is not allowed."}
+      <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 12 }}>
+        {lang === 'th'
+          ? 'จะเพิ่ม https:// ให้อัตโนมัติ และไม่อนุญาต http://'
+          : 'We’ll add https:// for you automatically; http:// is not allowed.'}
       </div>
 
-      {/* Thai-flag RED Save button */}
       <button
         onClick={onSave}
         disabled={saving}
         className="btn-red"
         style={{
-          background: "#a51931", // Thai red
-          color: "#fff",
+          background: '#a51931',
+          color: '#fff',
           borderRadius: 8,
-          padding: "10px 16px",
+          padding: '10px 16px',
           fontWeight: 600,
-          border: "none",
-          cursor: "pointer",
+          border: 'none',
+          cursor: 'pointer',
         }}
       >
-        {saving ? (lang === "th" ? "กำลังบันทึก…" : "Saving…") : i.save}
+        {saving ? L.saving : L.save}
       </button>
     </div>
   );

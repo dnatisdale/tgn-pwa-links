@@ -1,6 +1,6 @@
 // src/TopTabs.tsx — ADD (big red) on left, middle tabs centered, search on right (Browse only)
 import React from 'react';
-import { Lang } from './i18n';
+import type { Lang } from './i18n-provider';
 
 type Props = {
   lang: Lang;
