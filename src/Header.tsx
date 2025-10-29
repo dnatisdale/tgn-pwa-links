@@ -6,7 +6,7 @@ import LangPill from './LangPill';
 import LogoutButton from './LogoutButton';
 import { useI18n } from './i18n-provider';
 
-export default function Header(_props?: { lang?: any; onLang?: any; signedIn?: boolean }) {
+export default function Header() {
   const { t } = useI18n();
   const [isAuthed, setIsAuthed] = React.useState(false);
 
@@ -18,28 +18,31 @@ export default function Header(_props?: { lang?: any; onLang?: any; signedIn?: b
 
   return (
     <header className="tgn-header">
-      <div className="tgn-header-left">
-        <picture>
-          <source media="(min-width:1280px)" srcSet="/banners/tgn-banner-2400x600.png?v=1" />
-          <source media="(min-width:700px)" srcSet="/banners/tgn-banner-1200x300.png?v=1" />
-          <img
-            src="/banners/tgn-banner-600x150.png?v=1"
-            alt="Thai Good News"
-            className="tgn-banner-img"
-          />
-        </picture>
-      </div>
+      {/* LEFT: responsive banner (picture element handled by Banner component above) */}
+      <div className="tgn-header-left" />
 
-      <div className="action-cluster">
-        <LangPill className="langpill" />
-        <div className="action-right-stack">
-          <InstallPWA
-            className="btn btn-red install-pwa"
-            label={t('install')}
-            disabledLabel={t('install')}
-          />
-          {isAuthed ? <LogoutButton className="btn btn-blue">{t('logout')}</LogoutButton> : null}
-        </div>
+      {/* RIGHT: LangPill + Install + (Log Out if authed) */}
+      <div
+        className="tgn-header-right"
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 10,
+          display: 'flex',
+          gap: 10,
+          alignItems: 'center',
+          zIndex: 40, // sit above banner
+        }}
+      >
+        <LangPill />
+
+        <InstallPWA
+          className="btn btn-red install-pwa"
+          label={t('install')}
+          disabledLabel={t('install')}
+        />
+
+        {isAuthed ? <LogoutButton className="btn btn-blue">{t('logout')}</LogoutButton> : null}
       </div>
     </header>
   );

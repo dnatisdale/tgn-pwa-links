@@ -53,11 +53,19 @@ export default function Login() {
           {t('signup')}
         </button>
       </div>
-      <div className="flex">
-        <button className="btn" onClick={continueGuest}>
-          {t('continueAsGuest')}
-        </button>
-      </div>
+
+      <button
+        className="btn"
+        style={{
+          borderRadius: 9999,
+          border: '1px solid #2D2A4A',
+          padding: '6px 14px',
+          fontWeight: 600,
+        }}
+        onClick={continueGuest}
+      >
+        {t('continueAsGuest')}
+      </button>
     </div>
   );
 }

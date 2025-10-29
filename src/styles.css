@@ -96,6 +96,14 @@ a {
   min-width: 0;
 }
 
+.tgn-header-left {
+  height: var(--banner-height, 72px);
+}
+
+.tgn-header-right {
+  /* position/spacing set inline in Header.tsx */
+}
+
 /* Banner image (responsive, tidy) */
 .tgn-banner-img {
   display: block;
