@@ -4,8 +4,10 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import InstallPWA from './InstallPWA';
 import LangPill from './LangPill';
 import LogoutButton from './LogoutButton';
+import { useI18n } from './i18n-provider'; // <<— add
 
 export default function Header() {
+  const { t } = useI18n();
   const [isAuthed, setIsAuthed] = React.useState(false);
 
   React.useEffect(() => {
@@ -35,8 +37,12 @@ export default function Header() {
 
         {/* RIGHT stack: Install (top) with Logout (below) */}
         <div className="action-right-stack">
-          <InstallPWA className="btn btn-red install-pwa" label="Install" disabledLabel="Install" />
-          {isAuthed ? <LogoutButton className="btn btn-blue" /> : null}
+          <InstallPWA
+            className="btn btn-red install-pwa"
+            label={t('install')}
+            disabledLabel={t('install')}
+          />
+          {isAuthed ? <LogoutButton className="btn btn-blue">{t('logout')}</LogoutButton> : null}
         </div>
       </div>
     </header>

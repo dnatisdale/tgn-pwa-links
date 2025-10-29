@@ -462,3 +462,62 @@ a {
   border-radius: 12px !important;
   min-height: 38px;
 }
+
+/* === HEADER SIZING KNOBS (add me once) ===================== */
+:root {
+  --header-pad-top: 6px;
+  --header-pad-right: 10px;
+  --header-pad-bottom: 18px; /* more = extra space under the overlay */
+  --header-pad-left: 10px;
+
+  /* Banner heights by breakpoint */
+  --banner-h-desktop: 56px; /* >= 1280px */
+  --banner-h-tablet: 56px; /* 700px–1279px */
+  --banner-h-mobile: 48px; /* < 700px */
+}
+/* ========================================================== */
+
+/* Header is the positioning context for the overlay cluster */
+.tgn-header {
+  position: relative;
+  display: block;
+  padding: var(--header-pad-top) var(--header-pad-right) var(--header-pad-bottom)
+    var(--header-pad-left);
+  border-bottom: 1px solid #eee;
+  background: #fff;
+}
+
+/* Responsive banner height reads from the knobs above */
+.tgn-banner-img {
+  display: block;
+  height: var(--banner-h-tablet);
+  max-width: 100%;
+  object-fit: contain;
+}
+@media (min-width: 1280px) {
+  .tgn-banner-img {
+    height: var(--banner-h-desktop);
+  }
+}
+@media (max-width: 699px) {
+  .tgn-banner-img {
+    height: var(--banner-h-mobile);
+  }
+}
+
+/* Overlay (LangPill | Install stack) floating at the top-right */
+.action-cluster {
+  position: absolute;
+  top: var(--header-pad-top);
+  right: var(--header-pad-right);
+  z-index: 10;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px; /* space between LangPill and the Install stack */
+}
+.action-right-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px; /* gap between Install (top) and Logout (bottom) */
+}

@@ -1,5 +1,7 @@
 // src/LangPill.tsx
 import React from 'react';
+import { setLang as i18nSetLang } from './i18n';
+
 export type Lang = 'en' | 'th';
 
 type Props = {
@@ -14,6 +16,7 @@ export default function LangPill({ className = '', lang, onLang }: Props) {
     const l = document.documentElement.lang?.toLowerCase();
     return l === 'th' ? 'th' : 'en';
   });
+
   const isControlled = typeof lang !== 'undefined';
   const value: Lang = isControlled ? (lang as Lang) : innerLang;
 
@@ -21,7 +24,11 @@ export default function LangPill({ className = '', lang, onLang }: Props) {
     const next: Lang = value === 'en' ? 'th' : 'en';
     if (!isControlled) setInnerLang(next);
     onLang?.(next);
+
+    // Keep global i18n in sync + persist + notify listeners
+    i18nSetLang(next); // ← important
     document.documentElement.lang = next;
+    localStorage.setItem('tgn.lang', next);
     window.dispatchEvent(new CustomEvent('lang:change', { detail: { lang: next } }));
   };
 

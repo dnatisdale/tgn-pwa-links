@@ -57,3 +57,63 @@ export const t = (l: Lang) => ({
   install: l === 'th' ? 'ติดตั้ง' : 'Install',
   sharePwa: l === 'th' ? 'แชร์ PWA' : 'Share PWA',
 });
+
+// ──────────────────────────────────────────────────────────────
+// TGN i18n compatibility API (append to the end of i18n.ts)
+// Keeps your existing dictionaries intact, but exposes a common API.
+// ──────────────────────────────────────────────────────────────
+// export type Lang = 'en' | 'th';.
+
+// 1) Current language (initialize from <html lang> or localStorage)
+let __lang: Lang =
+  (typeof document !== 'undefined' && (document.documentElement.lang?.toLowerCase() as Lang)) ||
+  (typeof localStorage !== 'undefined' && (localStorage.getItem('tgn.lang') as Lang)) ||
+  'en';
+
+// 2) A small listener set so React (and others) can subscribe
+const __listeners = new Set<(l: Lang) => void>();
+
+/** Read the current language */
+export function getLang(): Lang {
+  return __lang;
+}
+
+/** Set the current language + persist + notify listeners */
+export function setLang(next: Lang) {
+  if (next !== 'en' && next !== 'th') next = 'en';
+  __lang = next;
+  try {
+    if (typeof document !== 'undefined') document.documentElement.lang = next;
+    if (typeof localStorage !== 'undefined') localStorage.setItem('tgn.lang', next);
+  } catch {}
+  // Notify anyone listening (React provider, components, etc.)
+  __listeners.forEach((fn) => fn(next));
+}
+
+/** Subscribe to language changes; returns an unsubscribe function */
+export function onLangChange(fn: (l: Lang) => void) {
+  __listeners.add(fn);
+  // Return a cleanup that returns void (not boolean)
+  return () => {
+    __listeners.delete(fn);
+  };
+}
+
+/**
+ * getTranslator: adapt your existing dictionaries to a (key) => string fn
+ * If you already export a `t()` in this file, feel free to re-export it below
+ * and ignore this helper.
+ */
+export function getTranslator<T extends Record<string, string>>(catalog: Record<Lang, T>) {
+  return function t<K extends keyof T & string>(key: K): string {
+    const lang = getLang();
+    const byLang = catalog[lang] || (catalog as any).en || {};
+    return (byLang[key] ?? (catalog as any).en?.[key] ?? key) as string;
+  };
+}
+
+// OPTIONAL: If you already have `catalog` here, you can export a ready `t()`:
+//
+//   export const t = getTranslator(catalog)
+//
+// Otherwise, your React layer can pass in its own catalog.
