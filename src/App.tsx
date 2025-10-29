@@ -23,6 +23,7 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import { useI18n } from './i18n-provider';
+import Contact from './Contact';
 
 type Row = { id: string; name: string; language: string; url: string };
 
@@ -236,13 +237,18 @@ export default function App() {
             </section>
           ) : isImport ? (
             <section>
-              <h2 className="text-lg font-semibold mb-2">{t('import')}</h2>
+              {/* Heading lives inside ImportExport.tsx */}
               <ImportExport />
             </section>
           ) : isExport ? (
             <section>
-              <h2 className="text-lg font-semibold mb-2">{t('export')}</h2>
+              {/* Heading lives inside Export.tsx */}
               <ExportPage rows={rows} />
+            </section>
+          ) : isContact ? (
+            <section>
+              {/* Heading lives inside Contact.tsx */}
+              <Contact />
             </section>
           ) : isAbout ? (
             <section>

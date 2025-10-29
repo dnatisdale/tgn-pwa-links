@@ -32,7 +32,7 @@ export default function ExportPage({ rows }: { rows: Row[] }) {
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-lg font-semibold mb-3">{t('export')}</h2>
+      <h1 className="text-lg font-semibold mb-3">{t('export')}</h1>
       <div className="flex items-center gap-3 mb-3">
         <button className="btn btn-blue" onClick={toCSV}>
           {t('exportCsv')}
