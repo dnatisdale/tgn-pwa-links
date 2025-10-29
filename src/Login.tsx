@@ -23,6 +23,12 @@ export default function Login() {
     }
   };
 
+  const continueGuest = () => {
+    localStorage.setItem('tgn.guest', '1');
+    window.dispatchEvent(new Event('guest:continue'));
+    window.location.hash = '#/browse';
+  };
+
   return (
     <div className="card" style={{ maxWidth: 480, margin: '24px auto', padding: 16 }}>
       <h2 className="text-lg font-semibold mb-2">{t('signin')}</h2>
@@ -39,12 +45,17 @@ export default function Login() {
         type="password"
         className="w-full border rounded px-3 py-2 mb-3"
       />
-      <div className="flex gap-2">
+      <div className="flex gap-2 mb-3">
         <button className="btn btn-blue" onClick={signIn}>
           {t('signin')}
         </button>
         <button className="btn btn-red" onClick={signUp}>
           {t('signup')}
+        </button>
+      </div>
+      <div className="flex">
+        <button className="btn" onClick={continueGuest}>
+          {t('continueAsGuest')}
         </button>
       </div>
     </div>

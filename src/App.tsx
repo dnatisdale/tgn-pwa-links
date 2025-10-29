@@ -30,6 +30,8 @@ export default function App() {
   const { lang, t } = useI18n();
 
   const [user, setUser] = useState<any>(null);
+  const [guestMode, setGuestMode] = useState(localStorage.getItem('tgn.guest') === '1');
+
   const [rows, setRows] = useState<Row[]>([]);
   const [q, setQ] = useState('');
   const [filterThai, setFilterThai] = useState(false);
@@ -46,23 +48,42 @@ export default function App() {
   const isAbout = route.startsWith('#/about');
   const isContact = route.startsWith('#/contact');
 
+  // auth listener
   useEffect(() => onAuthStateChanged(auth, (u) => setUser(u)), []);
+
+  // hash routing
   useEffect(() => {
     const onHash = () => setRoute(window.location.hash || '#/browse');
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
+
+  // base font size var
   useEffect(() => {
     document.documentElement.style.setProperty('--base', `${textPx}px`);
   }, [textPx]);
+
+  // PWA update toast
   useEffect(() => {
     const onNeed = () => setShowUpdate(true);
     window.addEventListener('pwa:need-refresh', onNeed);
     return () => window.removeEventListener('pwa:need-refresh', onNeed);
   }, []);
 
+  // guest mode event (from "Continue as Guest" button)
+  useEffect(() => {
+    const onGuest = () => {
+      localStorage.setItem('tgn.guest', '1');
+      setGuestMode(true);
+    };
+    window.addEventListener('guest:continue', onGuest);
+    return () => window.removeEventListener('guest:continue', onGuest);
+  }, []);
+
+  // Firestore subscription (only when signed in)
   useEffect(() => {
     if (!user) {
+      // guests (or signed-out) see empty list, but still can browse UI
       setRows([]);
       return;
     }
@@ -71,6 +92,7 @@ export default function App() {
     const off = onSnapshot(qry, (snap) => {
       const list: Row[] = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
       setRows(list);
+      // keep selection for still-visible rows
       setSelectedIds((prev) => {
         const next = new Set<string>();
         for (const id of prev) if (list.find((r) => r.id === id)) next.add(id);
@@ -108,13 +130,6 @@ export default function App() {
   const selectedRows = filtered.filter((r) => selectedIds.has(r.id));
   const firstSelected = selectedRows[0];
   const allSelected = filtered.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
-
-  const toggleSelect = (id: string) =>
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
 
   const toggleSelectAll = () =>
     setSelectedIds((prev) => {
@@ -183,7 +198,8 @@ export default function App() {
     });
   };
 
-  if (!user) {
+  // 🚩 Show Login only when neither signed in nor in guest mode
+  if (!user && !guestMode) {
     return (
       <>
         <Banner />

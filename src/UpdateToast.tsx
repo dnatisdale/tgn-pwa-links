@@ -1,35 +1,29 @@
-// src/UpdateToast.tsx — Thai blue card with "Refresh" / "Skip"
+// src/UpdateToast.tsx — provider-based (no lang prop)
 import React from 'react';
-import type { Lang } from './i18n-provider';
+import { useI18n } from './i18n-provider';
 
 type Props = {
-  lang: Lang;
   show: boolean;
-  onRefresh: () => void; // called when user taps "Refresh"
-  onSkip: () => void; // called when user taps "Skip"
+  onRefresh: () => void;
+  onSkip: () => void;
 };
 
-export default function UpdateToast({ lang, show, onRefresh, onSkip }: Props) {
+export default function UpdateToast({ show, onRefresh, onSkip }: Props) {
+  const { t } = useI18n();
   if (!show) return null;
-
-  const L = {
-    title: lang === 'th' ? 'มีเวอร์ชันใหม่' : 'New Version',
-    open: lang === 'th' ? 'รีเฟรช' : 'Refresh',
-    skip: lang === 'th' ? 'ข้าม' : 'Skip',
-  };
 
   return (
     <div
       role="dialog"
       aria-live="polite"
-      aria-label={L.title}
+      aria-label={t('updateAvailable')}
       className="update-card"
       style={{
         position: 'fixed',
         right: 16,
         bottom: 16,
         zIndex: 60,
-        background: '#2D2A4A', // Thai Blue
+        background: '#2D2A4A',
         color: 'white',
         borderRadius: 14,
         boxShadow: '0 10px 24px rgba(0,0,0,0.20)',
@@ -41,10 +35,9 @@ export default function UpdateToast({ lang, show, onRefresh, onSkip }: Props) {
         gap: 10,
       }}
     >
-      <div style={{ fontWeight: 700, fontSize: 16 }}>{L.title}</div>
+      <div style={{ fontWeight: 700, fontSize: 16 }}>{t('updateAvailable')}</div>
 
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-        {/* Skip — subtle outline */}
         <button
           type="button"
           onClick={onSkip}
@@ -58,17 +51,16 @@ export default function UpdateToast({ lang, show, onRefresh, onSkip }: Props) {
             fontWeight: 600,
           }}
         >
-          {L.skip}
+          {t('close')}
         </button>
 
-        {/* Refresh — primary red (matches Install/Share style) */}
         <button
           type="button"
           onClick={onRefresh}
           className="btn btn-red"
           style={{ borderRadius: 9999, padding: '6px 12px', fontWeight: 700 }}
         >
-          {L.open}
+          {t('refresh')}
         </button>
       </div>
     </div>
