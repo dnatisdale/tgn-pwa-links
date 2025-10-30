@@ -46,18 +46,26 @@ export default function Login() {
         className="w-full border rounded px-3 py-2 mb-3"
       />
 
-      {/* Buttons row */}
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <button className="btn btn-blue" onClick={signIn /* or handleSignIn */}>
+      {/* Buttons row: equal width on mobile, auto on desktop */}
+      <div className="mt-3 grid grid-cols-3 gap-2 md:flex md:flex-wrap md:items-center md:gap-3">
+        <button
+          className="btn btn-blue w-full md:w-auto justify-center"
+          onClick={signIn /* or handleSignIn */}
+        >
           {t('signin') /* or t('signIn') */}
         </button>
 
-        <button className="btn btn-red" onClick={signUp /* or handleSignUp */}>
+        <button
+          className="btn btn-red w-full md:w-auto justify-center"
+          onClick={signUp /* or handleSignUp */}
+        >
           {t('signup') /* or t('signUp') */}
         </button>
 
-        {/* Continue as Guest — thai-blue and on the same row */}
-        <button className="btn btn-blue" onClick={continueGuest /* or handleContinueAsGuest */}>
+        <button
+          className="btn btn-blue w-full md:w-auto justify-center"
+          onClick={continueGuest /* or handleContinueAsGuest */}
+        >
           {t('continueAsGuest')}
         </button>
       </div>
