@@ -18,7 +18,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
 
       // Keep SW off in dev to avoid port/cache traps
-      devOptions: { enabled: true },
+      // devOptions: { enabled: true },
 
       // Precache self-hosted fonts + CSS (served from /public)
       includeAssets: [
