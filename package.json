@@ -7,6 +7,7 @@
     "postinstall": "rimraf node_modules/html2canvas/tsconfig.json",
     "dev": "vite",
     "build": "vite build",
+    "preview": "vite preview --open",
     "sync:drive": "powershell -ExecutionPolicy Bypass -File \"C:\\Users\\dnati\\OneDrive - Global Recordings Network\\C\\SyncToDrive.ps1\""
   },
   "dependencies": {
