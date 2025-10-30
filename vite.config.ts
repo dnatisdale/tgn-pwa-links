@@ -9,19 +9,34 @@ const APP_VERSION = process.env.APP_VERSION || process.env.npm_package_version |
 const BUILD_TIME_PST = new Date().toLocaleString('en-US', {
   timeZone: 'America/Los_Angeles',
 });
-// ==============================================
-
-// vite.config.ts
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import { VitePWA } from "vite-plugin-pwa";
+// ===============================================
 
 export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "autoUpdate",
-            manifest: {
+      registerType: 'autoUpdate',
+
+      // In dev, keep SW disabled to avoid port/cache traps
+      devOptions: { enabled: false },
+
+      // Precache self-hosted fonts + CSS (served from /public)
+      includeAssets: [
+        'fonts/krub/Krub-ExtraLight.woff2',
+        'fonts/krub/Krub-Light.woff2',
+        'fonts/krub/Krub-Regular.woff2',
+        'fonts/krub/Krub-Italic.woff2',
+        'fonts/krub/Krub-Medium.woff2',
+        'fonts/krub/Krub-SemiBold.woff2',
+        'fonts/krub/Krub-Bold.woff2',
+        'fonts/krub.css',
+      ],
+
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'],
+      },
+
+      manifest: {
         name: 'Thai Good News',
         short_name: 'TGN',
         description: 'Offline-capable bilingual URL library with QR sharing',
@@ -29,8 +44,8 @@ export default defineConfig({
         background_color: '#FFFFFF',
         display: 'standalone',
         start_url: '/',
+        scope: '/',
         icons: [
-          // Make sure these paths exist under /public/icons/
           { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
           {
@@ -38,31 +53,17 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable',
-      devOptions: { enabled: false }, // keep SW off in dev; on in build
-      enabled: true, // allow PWA in dev for testing the register
-      includeAssets: [
-        // Krub fonts + CSS (served from /public)
-        "fonts/krub/Krub-ExtraLight.woff2",
-        "fonts/krub/Krub-Light.woff2",
-        "fonts/krub/Krub-Regular.woff2",
-        "fonts/krub/Krub-Italic.woff2",
-        "fonts/krub/Krub-Medium.woff2",
-        "fonts/krub/Krub-SemiBold.woff2",
-        "fonts/krub/Krub-Bold.woff2",
-        "fonts/krub.css",
-      ],
-      workbox: {
-        // make sure fonts & CSS are discoverable for future additions
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
+          },
+        ],
       },
     }),
   ],
+
   server: {
     port: 5173,
     strictPort: true,
-      },
-    }),
-  ],
+  },
+
   define: {
     __APP_VERSION__: JSON.stringify(APP_VERSION),
     __BUILD_TIME_PST__: JSON.stringify(BUILD_TIME_PST),
