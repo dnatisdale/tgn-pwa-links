@@ -48,25 +48,16 @@ export default function Login() {
 
       {/* Buttons row */}
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <button className="btn btn-blue" onClick={signIn}>
-          {t('signin')}
+        <button className="btn btn-blue" onClick={signIn /* or handleSignIn */}>
+          {t('signin') /* or t('signIn') */}
         </button>
 
-        <button className="btn btn-red" onClick={signUp}>
-          {t('signup')}
+        <button className="btn btn-red" onClick={signUp /* or handleSignUp */}>
+          {t('signup') /* or t('signUp') */}
         </button>
 
-        {/* Outline / pill style for Guest (kept your previous styling) */}
-        <button
-          className="btn"
-          style={{
-            borderRadius: 9999,
-            border: '1px solid #2D2A4A',
-            padding: '6px 14px',
-            fontWeight: 600,
-          }}
-          onClick={continueGuest}
-        >
+        {/* Continue as Guest — thai-blue and on the same row */}
+        <button className="btn btn-blue" onClick={continueGuest /* or handleContinueAsGuest */}>
           {t('continueAsGuest')}
         </button>
       </div>
