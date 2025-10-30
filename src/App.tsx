@@ -233,7 +233,6 @@ export default function App() {
 
   return (
     <>
-      <Banner />
       <div className="app-shell" style={{ fontSize: textPx }}>
         <Header />
         <TopTabs q={q} setQ={setQ} filterThai={filterThai} setFilterThai={setFilterThai} />
