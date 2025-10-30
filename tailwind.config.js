@@ -11,8 +11,7 @@ export default {
         thaiBlack: '#000000',
       },
       fontFamily: {
-        // Make Krub the app default
-        sans: ['Krub', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],
+        krub: ['"Krub"', 'system-ui', '"Segoe UI"', '"Noto Sans Thai"', 'Arial', 'sans-serif'],
       },
     },
   },
