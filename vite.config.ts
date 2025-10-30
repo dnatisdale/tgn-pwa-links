@@ -20,21 +20,12 @@ export default defineConfig({
       // Keep SW off in dev to avoid port/cache traps
       // devOptions: { enabled: true },
 
-      // Precache self-hosted fonts + CSS (served from /public)
       includeAssets: [
-        'fonts/krub/Krub-ExtraLight.woff2',
-        'fonts/krub/Krub-Light.woff2',
-        'fonts/krub/Krub-Regular.woff2',
-        'fonts/krub/Krub-Italic.woff2',
-        'fonts/krub/Krub-Medium.woff2',
-        'fonts/krub/Krub-SemiBold.woff2',
-        'fonts/krub/Krub-Bold.woff2',
+        'fonts/krub/Krub-Variable.woff2',
+        'fonts/krub/Krub-VariableItalic.woff2',
         'fonts/krub.css',
       ],
-
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'],
-      },
+      workbox: { globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'] },
 
       manifest: {
         name: 'Thai Good News',
