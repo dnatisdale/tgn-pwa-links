@@ -10,20 +10,23 @@ import { useI18n } from './i18n-provider';
   /* import Banner from './Banner'; */
 }
 
+// src/Header.tsx  (replace the component body)
 export default function Header() {
   const { t } = useI18n();
-  const [isAuthed, setIsAuthed] = React.useState(false);
+  const [isAuthed, setIsAuthed] = React.useState<boolean>(false);
 
   React.useEffect(() => {
     const auth = getAuth();
-    const unsub = onAuthStateChanged(auth, (u) => setIsAuthed(Boolean(u)));
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setIsAuthed(!!u);
+      // console.log('[auth] user', u ? u.email : 'guest');
+    });
     return () => unsub();
   }, []);
 
   return (
-    // src/Header.tsx (inside the component's return)
     <header className="relative w-full">
-      {/* Top-right controls (absolute) */}
+      {/* Top-right controls (always visible) */}
       <div className="absolute top-2 right-3 z-50 flex items-center gap-2">
         <LangPill />
         <InstallPWA
@@ -31,10 +34,10 @@ export default function Header() {
           label={t('install')}
           disabledLabel={t('install')}
         />
-        {isAuthed ? <LogoutButton className="btn btn-blue">{t('logout')}</LogoutButton> : null}
+        {isAuthed && <LogoutButton className="btn btn-blue">{t('logout')}</LogoutButton>}
       </div>
 
-      {/* Banner below; add small top padding on mobile to avoid overlap */}
+      {/* Keep banner below; add padding so buttons don’t overlap on small screens */}
       <div className="pt-10 md:pt-0">
         <Banner />
       </div>

@@ -1,6 +1,36 @@
 import React from 'react';
 import { getAuth, signOut } from 'firebase/auth';
 
+// src/LogoutButton.tsx
+import React from 'react';
+import { getAuth, signOut } from 'firebase/auth';
+
+export default function LogoutButton({
+  className = '',
+  children,
+}: {
+  className?: string;
+  children?: React.ReactNode;
+}) {
+  const onClick = async () => {
+    try {
+      await signOut(getAuth());
+      // clean up any guest flags too
+      localStorage.removeItem('tgn.guest');
+      // optional: navigate home
+      window.location.hash = '#/';
+    } catch (e) {
+      alert((e as Error).message);
+    }
+  };
+
+  return (
+    <button className={className || 'btn btn-blue'} onClick={onClick}>
+      {children || 'Log out'}
+    </button>
+  );
+}
+
 export default function LogoutButton({
   className,
   children,
