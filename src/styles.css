@@ -2,36 +2,28 @@
    Thai Good News — Styles
    Cleaned & de-duplicated
    ========================= */
-/* styles.css */
-/* @import '/public/fonts/krub/krub.css'; */
-
-@import './fonts.css';
+/* src/styles.css */
+@import '/fonts/krub.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Global typography defaults */
 @layer base {
   html,
   body {
     @apply font-krub font-normal;
-  } /* Krub Regular (400) */
+  }
+  h1 {
+    @apply font-bold;
+  }
+  h2 {
+    @apply font-semibold;
+  }
+  h3 {
+    @apply font-medium;
+  }
 }
-h1 {
-  @apply font-bold;
-}
-h2 {
-  @apply font-semibold;
-}
-h3 {
-  @apply font-medium;
-}
-strong,
-b {
-  @apply font-semibold;
-}
-
 /* ───────────────── Theme: Thai flag colors ───────────────── */
 :root {
   --thai-red: #a51931;
