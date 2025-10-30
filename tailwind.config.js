@@ -13,4 +13,12 @@ export default {
     },
   },
   plugins: [],
+  theme: {
+    extend: {
+      fontFamily: {
+        en: ['Inter', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],
+        th: ['"Noto Sans Thai"', 'ui-sans-serif', 'system-ui', 'Tahoma', 'Arial', 'sans-serif'],
+      },
+    },
+  },
 };

@@ -49,6 +49,20 @@ export default function App() {
   const isAbout = route.startsWith('#/about');
   const isContact = route.startsWith('#/contact');
 
+  // keyword: set html lang + font class
+  useEffect(() => {
+    const current = i18n.language || 'en';
+    document.documentElement.setAttribute('lang', current);
+
+    // Remove both, then add the right one to <body>
+    document.body.classList.remove('font-en', 'font-th');
+    if (current.startsWith('th')) {
+      document.body.classList.add('font-th');
+    } else {
+      document.body.classList.add('font-en');
+    }
+  }, [i18n.language]);
+
   // auth listener
   useEffect(() => onAuthStateChanged(auth, (u) => setUser(u)), []);
 
