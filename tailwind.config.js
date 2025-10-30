@@ -12,13 +12,17 @@ export default {
       },
     },
   },
-  plugins: [],
+  // tailwind.config.js
+// module.exports = {
+  content: ['./index.html', './src/**/*.{ts,tsx,js,jsx}'],
   theme: {
-    extend: {
-      fontFamily: {
-        en: ['Inter', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],
-        th: ['"Noto Sans Thai"', 'ui-sans-serif', 'system-ui', 'Tahoma', 'Arial', 'sans-serif'],
-      },
+    fontFamily: {
+      // DEFAULT for the whole app
+      sans: ['Krub', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],
+    },
+    extend: {},
+  },
+  plugins: [],
     },
   },
 };
