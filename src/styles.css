@@ -12,21 +12,22 @@
 /* Global typography defaults */
 @layer base {
   html,
-  body { @apply font-krub font-normal; } /* Krub Regular (400) */
-  }
-  h1 {
-    @apply font-bold;
-  }
-  h2 {
-    @apply font-semibold;
-  }
-  h3 {
-    @apply font-medium;
-  }
-  strong,
-  b {
-    @apply font-semibold;
-  }
+  body {
+    @apply font-krub font-normal;
+  } /* Krub Regular (400) */
+}
+h1 {
+  @apply font-bold;
+}
+h2 {
+  @apply font-semibold;
+}
+h3 {
+  @apply font-medium;
+}
+strong,
+b {
+  @apply font-semibold;
 }
 
 /* ───────────────── Theme: Thai flag colors ───────────────── */
