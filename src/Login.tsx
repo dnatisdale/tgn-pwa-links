@@ -1,3 +1,4 @@
+// src/Login.tsx
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from './firebase';
@@ -31,7 +32,6 @@ export default function Login() {
 
   return (
     <div className="card" style={{ maxWidth: 480, margin: '24px auto', padding: 16 }}>
-      <h2 className="text-lg font-semibold mb-2">{t('signin')}</h2>
       <input
         value={email}
         onChange={(e) => setEmail(e.target.value)}
@@ -45,27 +45,31 @@ export default function Login() {
         type="password"
         className="w-full border rounded px-3 py-2 mb-3"
       />
-      <div className="flex gap-2 mb-3">
+
+      {/* Buttons row */}
+      <div className="mt-3 flex flex-wrap items-center gap-3">
         <button className="btn btn-blue" onClick={signIn}>
           {t('signin')}
         </button>
+
         <button className="btn btn-red" onClick={signUp}>
           {t('signup')}
         </button>
-      </div>
 
-      <button
-        className="btn"
-        style={{
-          borderRadius: 9999,
-          border: '1px solid #2D2A4A',
-          padding: '6px 14px',
-          fontWeight: 600,
-        }}
-        onClick={continueGuest}
-      >
-        {t('continueAsGuest')}
-      </button>
+        {/* Outline / pill style for Guest (kept your previous styling) */}
+        <button
+          className="btn"
+          style={{
+            borderRadius: 9999,
+            border: '1px solid #2D2A4A',
+            padding: '6px 14px',
+            fontWeight: 600,
+          }}
+          onClick={continueGuest}
+        >
+          {t('continueAsGuest')}
+        </button>
+      </div>
     </div>
   );
 }
