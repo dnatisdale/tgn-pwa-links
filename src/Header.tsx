@@ -20,7 +20,7 @@ export default function Header() {
   return (
     <header className="w-full">
       {/* Banner on top */}
-      <Banner />
+      {/* <Banner /> */}
 
       {/* Controls row BELOW banner, aligned right */}
       <div className="max-w-5xl mx-auto px-3 py-2 flex items-center justify-end gap-2">
