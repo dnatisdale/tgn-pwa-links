@@ -5,7 +5,9 @@ import InstallPWA from './InstallPWA';
 import LangPill from './LangPill';
 import LogoutButton from './LogoutButton';
 import { useI18n } from './i18n-provider';
-import Banner from './Banner';
+{
+  /* import Banner from './Banner'; */
+}
 
 export default function Header() {
   const { t } = useI18n();
