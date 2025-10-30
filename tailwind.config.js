@@ -10,19 +10,11 @@ export default {
         thaiBlue: '#2D2A4A',
         thaiBlack: '#000000',
       },
+      fontFamily: {
+        // Make Krub the app default
+        sans: ['Krub', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],
+      },
     },
-  },
-  // tailwind.config.js
-// module.exports = {
-  content: ['./index.html', './src/**/*.{ts,tsx,js,jsx}'],
-  theme: {
-    fontFamily: {
-      // DEFAULT for the whole app
-      sans: ['Krub', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],
-    },
-    extend: {},
   },
   plugins: [],
-    },
-  },
 };
