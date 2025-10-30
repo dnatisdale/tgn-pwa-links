@@ -1,5 +1,6 @@
 // src/Header.tsx
 import React from 'react';
+import Banner from './Banner';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import InstallPWA from './InstallPWA';
 import LangPill from './LangPill';
@@ -20,12 +21,10 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="w-full">
-      {/* Banner on top */}
-      {/* <Banner /> */}
-
-      {/* Controls row BELOW banner, aligned right */}
-      <div className="max-w-5xl mx-auto px-3 py-2 flex items-center justify-end gap-2">
+    // src/Header.tsx (inside the component's return)
+    <header className="relative w-full">
+      {/* Top-right controls (absolute) */}
+      <div className="absolute top-2 right-3 z-50 flex items-center gap-2">
         <LangPill />
         <InstallPWA
           className="btn btn-red install-pwa"
@@ -33,6 +32,11 @@ export default function Header() {
           disabledLabel={t('install')}
         />
         {isAuthed ? <LogoutButton className="btn btn-blue">{t('logout')}</LogoutButton> : null}
+      </div>
+
+      {/* Banner below; add small top padding on mobile to avoid overlap */}
+      <div className="pt-10 md:pt-0">
+        <Banner />
       </div>
     </header>
   );
