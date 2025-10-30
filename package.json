@@ -8,10 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview --open",
-    "dev:clean": "powershell -Command \"npx kill-port 5173; npx kill-port 5174; npx kill-port 5175; vite\"",
-    "preview:clean": "powershell -Command \"npx kill-port 5173; npx kill-port 5174; npx kill-port 5175; vite preview --open\"",
-    "ports:free": "powershell -Command \"npx kill-port 5173; npx kill-port 5174; npx kill-port 5175\"",
-    "node:kill": "taskkill /F /IM node.exe",
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
     "sync:drive": "powershell -ExecutionPolicy Bypass -File \"C:\\Users\\dnati\\OneDrive - Global Recordings Network\\C\\SyncToDrive.ps1\""
   },
   "dependencies": {
