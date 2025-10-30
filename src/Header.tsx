@@ -5,6 +5,7 @@ import InstallPWA from './InstallPWA';
 import LangPill from './LangPill';
 import LogoutButton from './LogoutButton';
 import { useI18n } from './i18n-provider';
+import Banner from './Banner'; // ✅ add this
 
 export default function Header() {
   const { t } = useI18n();
@@ -17,9 +18,13 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="tgn-header">
-      {/* LEFT: responsive banner (picture element handled by Banner component above) */}
-      <div className="tgn-header-left" />
+    <header className="tgn-header" style={{ position: 'relative' }}>
+      {' '}
+      {/* ✅ make it a positioning context */}
+      {/* LEFT: responsive banner */}
+      <div className="tgn-header-left">
+        <Banner /> {/* ✅ actually render the banner */}
+      </div>
       {/* RIGHT: LangPill + Install + (Log Out if authed) */}
       <div
         className="tgn-header-right"
