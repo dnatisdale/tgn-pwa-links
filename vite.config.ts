@@ -11,13 +11,17 @@ const BUILD_TIME_PST = new Date().toLocaleString('en-US', {
 });
 // ==============================================
 
+// vite.config.ts
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { VitePWA } from "vite-plugin-pwa";
+
 export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: [], // add files under /public if you want to precache specific assets
-      manifest: {
+      registerType: "autoUpdate",
+            manifest: {
         name: 'Thai Good News',
         short_name: 'TGN',
         description: 'Offline-capable bilingual URL library with QR sharing',
@@ -34,15 +38,28 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable',
-          },
-        ],
-      },
+      devOptions: { enabled: false }, // keep SW off in dev; on in build
+      enabled: true, // allow PWA in dev for testing the register
+      includeAssets: [
+        // Krub fonts + CSS (served from /public)
+        "fonts/krub/Krub-ExtraLight.woff2",
+        "fonts/krub/Krub-Light.woff2",
+        "fonts/krub/Krub-Regular.woff2",
+        "fonts/krub/Krub-Italic.woff2",
+        "fonts/krub/Krub-Medium.woff2",
+        "fonts/krub/Krub-SemiBold.woff2",
+        "fonts/krub/Krub-Bold.woff2",
+        "fonts/krub.css",
+      ],
       workbox: {
-        // sensible defaults; you can tweak later
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,woff2}'],
+        // make sure fonts & CSS are discoverable for future additions
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
       },
-      devOptions: {
-        enabled: true, // allow PWA in dev for testing the register
+    }),
+  ],
+  server: {
+    port: 5173,
+    strictPort: true,
       },
     }),
   ],
