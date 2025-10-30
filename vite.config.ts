@@ -58,12 +58,12 @@ export default defineConfig({
       },
     }),
   ],
-
   server: {
+    // Let Vite pick the next free port automatically
+    // (remove "port" to be fully flexible, or keep it as a preference)
     port: 5173,
-    strictPort: true,
+    strictPort: false,
     fs: { strict: false },
-    historyApiFallback: true,
   },
 
   define: {
