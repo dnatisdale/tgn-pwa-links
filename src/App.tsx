@@ -212,7 +212,6 @@ export default function App() {
   if (!user && !guestMode) {
     return (
       <>
-        <Banner />
         <div className="app-shell" style={{ fontSize: textPx }}>
           <Header />
           <main className="app-main">
