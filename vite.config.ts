@@ -17,7 +17,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
 
-      // In dev, keep SW disabled to avoid port/cache traps
+      // Keep SW off in dev to avoid port/cache traps
       devOptions: { enabled: false },
 
       // Precache self-hosted fonts + CSS (served from /public)
