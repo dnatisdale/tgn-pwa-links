@@ -2,15 +2,40 @@
    Thai Good News — Styles
    Cleaned & de-duplicated
    ========================= */
-
+/* styles.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Global typography defaults */
 @layer base {
-  html {
-    @apply font-sans;
+  html,
+  body {
+    @apply font-normal; /* default weight = regular */
+  }
+  h1 {
+    @apply font-bold;
+  }
+  h2 {
+    @apply font-semibold;
+  }
+  h3 {
+    @apply font-medium;
+  }
+  strong,
+  b {
+    @apply font-semibold;
   }
 }
+
+/* @tailwind base; */
+/* @tailwind components; */
+/* @tailwind utilities; */
+/* @layer base { */
+/*   html { */
+/*     @apply font-sans; */
+/*   } */
+/* } */
 
 /* ───────────────── Theme: Thai flag colors ───────────────── */
 :root {
