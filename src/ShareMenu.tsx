@@ -184,5 +184,5 @@ const btnStyleRed: React.CSSProperties = {
   background: '#A51931', // Thai red
   color: '#F4F5F8',
   cursor: 'pointer',
-  fontSize: 34,
+  fontSize: 14,
 };
