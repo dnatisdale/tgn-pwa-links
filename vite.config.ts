@@ -20,11 +20,7 @@ export default defineConfig({
       // Keep SW off in dev to avoid port/cache traps
       // devOptions: { enabled: true },
 
-      includeAssets: [
-        'fonts/krub/Krub-Variable.woff2',
-        'fonts/krub/Krub-VariableItalic.woff2',
-        'fonts/krub.css',
-      ],
+      includeAssets: ['fonts/krub/Krub-Variable.woff2', 'fonts/krub.css'],
       workbox: { globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'] },
 
       manifest: {
