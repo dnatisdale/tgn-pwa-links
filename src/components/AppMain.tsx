@@ -1,4 +1,4 @@
-// src/components/AppMain.tsx — Unified TopBar + Search + Logout + Main content
+// src/components/AppMain.tsx — TopBar + Search + Logout + Main content (TS props fixed)
 
 import AddLink from '../AddLink';
 import ImportExport from '../ImportExport';
@@ -168,11 +168,14 @@ function AppMain({ user, onLogout }: { user: any; onLogout?: () => void }) {
 
       <main className="p-3 max-w-5xl mx-auto w-full app-main not-italic">
         {isAdd ? (
-          <AddLink lang={lang} />
+          // ❌ Removed unsupported prop `lang`
+          <AddLink />
         ) : isImport ? (
-          <ImportExport lang={lang} />
+          // ❌ Removed unsupported prop `lang`
+          <ImportExport />
         ) : isExport ? (
-          <ExportPage lang={lang} rows={rows} />
+          // ❌ Removed unsupported prop `lang` – this page only needs rows
+          <ExportPage rows={rows} />
         ) : isAbout ? (
           <section>
             <h2 className="text-lg font-semibold mb-2 not-italic">About</h2>
@@ -196,10 +199,10 @@ function AppMain({ user, onLogout }: { user: any; onLogout?: () => void }) {
 
               <div className="flex items-center gap-8">
                 <div>
+                  {/* ❌ Removed unsupported prop `qrCanvasId` */}
                   <Share
                     url={firstSelected ? firstSelected.url : ''}
                     title={firstSelected ? firstSelected.name || 'Link' : ''}
-                    qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
                   />
                 </div>
 
@@ -285,6 +288,16 @@ function AppMain({ user, onLogout }: { user: any; onLogout?: () => void }) {
 
         <footer className="site-footer mt-8 text-sm text-gray-600 not-italic">{buildText}</footer>
       </main>
+
+      {/* Keep UpdateToast here only if you mount AppMain directly */}
+      <UpdateToast
+        show={showUpdate}
+        onRefresh={() => {
+          (window as any).__REFRESH_SW__?.();
+          setShowUpdate(false);
+        }}
+        onSkip={() => setShowUpdate(false)}
+      />
     </div>
   );
 }
