@@ -4,6 +4,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
+        // enables the class "font-krub"
         krub: ['"Krub"', 'system-ui', 'sans-serif'],
       },
       colors: {

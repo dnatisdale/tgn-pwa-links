@@ -1,26 +1,43 @@
+/* === Krub variable font (one face, weight range) === */
 @font-face {
   font-family: 'Krub';
   src: url('/fonts/Krub/Krub-VariableFont_wght.woff2') format('woff2-variations');
-  font-weight: 300 800; /* adjust if your file ranges differ (e.g., 100 900) */
+  font-weight: 300 800; /* adjust if your file supports a wider range */
   font-style: normal;
   font-display: swap;
 }
 
-/* 2) Tailwind injections */
+/* === Tailwind injections === */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* 3) Put all @apply inside layers (fixes your current build error) */
+/* === Put all @apply inside Tailwind layers === */
 @layer base {
   html,
   body,
   #root {
     height: 100%;
   }
-  /* use Krub everywhere and kill default italics */
   body {
     @apply font-krub not-italic;
+  }
+
+  /* kill stray italics anywhere */
+  button,
+  a,
+  label,
+  input,
+  select,
+  textarea,
+  strong,
+  em,
+  i,
+  .btn,
+  .linklike,
+  .share,
+  .share * {
+    font-style: normal !important;
   }
 }
 
@@ -30,7 +47,7 @@
   }
   .app-main {
     @apply flex-1;
-  } /* keeps footer down */
+  } /* pushes footer to the bottom */
   .site-footer {
     @apply mt-8;
   }

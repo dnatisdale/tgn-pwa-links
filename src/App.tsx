@@ -24,7 +24,7 @@ import {
 import { useI18n } from './i18n-provider';
 import './styles.css';
 
-/* ===== Sticky TopBar with Search + Filter + Logout ===== */
+/* ===== Sticky TopBar (Thai-blue) with Search pill + Filter + Log Out ===== */
 function TopBar({
   q,
   setQ,
@@ -45,7 +45,7 @@ function TopBar({
           Thai Good News
         </div>
 
-        {/* Search capsule with Thai-red rim */}
+        {/* Capsule search with tiny Thai-red rim */}
         <div className="relative flex items-center w-full sm:max-w-md">
           <input
             value={q}
@@ -299,7 +299,7 @@ export default function App() {
 
   return (
     <div className="app-shell" style={{ fontSize: textPx }}>
-      <Header /> {/* ✅ keeps your banner */}
+      <Header /> {/* ✅ Banner stays */}
       <TopBar
         q={q}
         setQ={setQ}
