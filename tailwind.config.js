@@ -1,6 +1,6 @@
 // tailwind.config.js
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: ['./index.html', './src/**/*.{ts,tsx,js,jsx,html}'],
   theme: {
     extend: {
@@ -11,7 +11,7 @@ export default {
         thaiBlack: '#000000',
       },
       fontFamily: {
-        krub: ['"Krub"', 'system-ui', '"Segoe UI"', '"Noto Sans Thai"', 'Arial', 'sans-serif'],
+        krub: ['Krub', 'system-ui', 'sans-serif'],
       },
     },
   },

@@ -124,17 +124,35 @@ function AppMain() {
       ) : (
         <section>
           {/* Search + filter */}
-          <div className="flex flex-wrap gap-4 items-center mb-3">
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder={
-                lang === "th" ? "ค้นหาทุกภาษา..." : "Search all languages..."
-              }
-              className="border rounded px-2 py-1 min-w-[260px]"
-            />
-            <div className="text-sm">
-              <button className="linklike" onClick={() => setFilterThai(false)}>
+          {/* Search field with Thai-red border + red pill and Thai-white magnifier */}
+<div className="relative flex items-center min-w-[260px] w-full max-w-md">
+  <input
+    value={q}
+    onChange={(e) => setQ(e.target.value)}
+    placeholder={lang === "th" ? "ค้นหาทุกภาษา..." : "Search all languages..."}
+    className="w-full rounded-lg border-2 border-[#A51931] px-3 py-2 pr-16 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#A51931]"
+  />
+  {/* ~0.5-inch red pill on the right (48px wide) */}
+  <div
+    className="absolute right-1 inset-y-1 w-12 rounded-full bg-[#A51931] flex items-center justify-center pointer-events-none"
+    aria-hidden="true"
+  >
+    {/* Thai-white magnifying glass */}
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-5 w-5 text-[#F4F5F8]"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  </div>
+</div>
                 {lang === "th" ? "ทั้งหมด" : "All"}
               </button>
               &nbsp;|&nbsp;
