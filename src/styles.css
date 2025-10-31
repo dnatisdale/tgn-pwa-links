@@ -1,23 +1,24 @@
-/* =========================
-   Thai Good News — Styles
-   Cleaned & de-duplicated
-   ========================= */
-/* src/styles.css */
+@font-face {
+  font-family: 'Krub';
+  src: url('/fonts/Krub/Krub-VariableFont_wght.woff2') format('woff2-variations');
+  font-weight: 300 800; /* adjust if your file ranges differ (e.g., 100 900) */
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 2) Tailwind injections */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ---- imports / fonts (if using Option A/B) go here ---- */
-/* @import url(...) or @font-face ... */
-
-/* Put all @apply rules inside a layer */
+/* 3) Put all @apply inside layers (fixes your current build error) */
 @layer base {
   html,
   body,
   #root {
     height: 100%;
   }
-  /* default app body font + no italics */
+  /* use Krub everywhere and kill default italics */
   body {
     @apply font-krub not-italic;
   }
@@ -29,12 +30,11 @@
   }
   .app-main {
     @apply flex-1;
-  } /* keeps footer at bottom */
+  } /* keeps footer down */
   .site-footer {
     @apply mt-8;
   }
 
-  /* Buttons/links — kill surprise italics */
   .btn {
     @apply rounded-full px-4 py-2 text-white not-italic;
   }
