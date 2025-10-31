@@ -1,85 +1,11 @@
-/* === Krub variable font (one face, weight range) === */
-@font-face {
-  font-family: 'Krub';
-  src: url('/fonts/Krub/Krub-VariableFont_wght.woff2') format('woff2-variations');
-  font-weight: 300 800; /* adjust if your file supports a wider range */
-  font-style: normal;
-  font-display: swap;
-}
-
-/* === Tailwind injections === */
+/* =========================
+   Thai Good News — Styles
+   Cleaned & de-duplicated
+   ========================= */
+/* src/styles.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* === Put all @apply inside Tailwind layers === */
-@layer base {
-  html,
-  body,
-  #root {
-    height: 100%;
-  }
-  body {
-    @apply font-krub not-italic;
-  }
-
-  /* kill stray italics anywhere */
-  button,
-  a,
-  label,
-  input,
-  select,
-  textarea,
-  strong,
-  em,
-  i,
-  .btn,
-  .linklike,
-  .share,
-  .share * {
-    font-style: normal !important;
-  }
-}
-
-@layer components {
-  .app-shell {
-    @apply min-h-screen flex flex-col;
-  }
-  .app-main {
-    @apply flex-1;
-  } /* pushes footer to the bottom */
-  .site-footer {
-    @apply mt-8;
-  }
-
-  .btn {
-    @apply rounded-full px-4 py-2 text-white not-italic;
-  }
-  .btn-blue {
-    @apply bg-thaiBlue hover:opacity-90;
-  }
-  .linklike {
-    @apply underline cursor-pointer not-italic;
-  }
-  .card {
-    @apply rounded-lg border border-gray-200 p-3 bg-white not-italic;
-  }
-  .qr-center {
-    @apply flex justify-center;
-  }
-}
-
-/* Kill any surprise italics */
-button,
-a,
-label,
-input,
-.btn,
-.linklike,
-.share,
-.share * {
-  font-style: normal !important;
-}
 
 @layer base {
   html,

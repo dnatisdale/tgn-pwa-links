@@ -1,46 +1,77 @@
-// src/TopTabs.tsx
-// Simple, hash-link top tabs. No external state required.
+import React from 'react';
+import { useI18n } from './i18n-provider';
 
-import * as React from 'react';
+type Props = {
+  q: string;
+  setQ: (s: string) => void;
+  filterThai: boolean;
+  setFilterThai: (b: boolean) => void;
+};
 
-export default function TopTabs() {
-  // Edit labels/links as needed
-  const tabs = [
-    { href: '#/', label: 'Home' },
-    { href: '#/add', label: 'Add Link' },
-    { href: '#/import-export', label: 'Import/Export' },
-    { href: '#/qr', label: 'QR' },
-    { href: '#/contact', label: 'Contact' },
-  ];
+export default function TopTabs({ q, setQ, filterThai, setFilterThai }: Props) {
+  const { t } = useI18n();
+  const route = window.location.hash || '#/browse';
+  const go = (hash: string) => {
+    if (window.location.hash !== hash) window.location.hash = hash;
+  };
 
-  // Determine active tab by current hash
-  const [hash, setHash] = React.useState<string>(window.location.hash || '#/');
-  React.useEffect(() => {
-    const onHashChange = () => setHash(window.location.hash || '#/');
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
-  }, []);
+  const Tab = ({ active, label, to }: { active: boolean; label: string; to: string }) => (
+    <button
+      className={`tab ${active ? 'tab-active' : ''}`}
+      onClick={() => go(to)}
+      aria-current={active ? 'page' : undefined}
+    >
+      {label}
+    </button>
+  );
+
+  const isBrowse = route.startsWith('#/browse');
 
   return (
-    <nav className="w-full">
-      <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-2">
-        {tabs.map((t) => {
-          const isActive = hash === t.href;
-          return (
-            <a
-              key={t.href}
-              href={t.href}
-              className={[
-                'px-3 py-1 rounded-lg text-sm transition',
-                isActive ? 'bg-[#2D2A4A] text-white' : 'bg-white text-gray-700 hover:bg-gray-100',
-                'border border-gray-200',
-              ].join(' ')}
+    <div className="tabs-bar">
+      <button
+        className={`btn btn-red add-btn ${route.startsWith('#/add') ? 'add-active' : ''}`}
+        onClick={() => go('#/add')}
+      >
+        {t('add')}
+      </button>
+
+      <nav className="tabs-list" aria-label="Primary">
+        <Tab active={route.startsWith('#/browse')} label={t('browse')} to="#/browse" />
+        <Tab active={route.startsWith('#/import')} label={t('import')} to="#/import" />
+        <Tab active={route.startsWith('#/export')} label={t('export')} to="#/export" />
+        <Tab active={route.startsWith('#/contact')} label={t('contact')} to="#/contact" />
+        <Tab active={route.startsWith('#/about')} label={t('about')} to="#/about" />
+      </nav>
+
+      {isBrowse ? (
+        <div className="tabs-search">
+          <div className="filter-links">
+            <button
+              className={!filterThai ? 'linklike active' : 'linklike'}
+              onClick={() => setFilterThai(false)}
             >
-              {t.label}
-            </a>
-          );
-        })}
-      </div>
-    </nav>
+              {t('all')}
+            </button>
+            <span className="sep">|</span>
+            <button
+              className={filterThai ? 'linklike active' : 'linklike'}
+              onClick={() => setFilterThai(true)}
+            >
+              {t('thai')}
+            </button>
+          </div>
+
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={t('search')}
+            className="searchbar search-pill-red"
+          />
+        </div>
+      ) : (
+        <div />
+      )}
+    </div>
   );
 }

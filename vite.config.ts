@@ -22,7 +22,7 @@ export default defineConfig({
 
       includeAssets: [
         'fonts/krub/Krub-Variable.woff2',
-        // 'fonts/krub/Krub-VariableItalic.woff2',
+        'fonts/krub/Krub-VariableItalic.woff2',
         'fonts/krub.css',
       ],
       workbox: { globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'] },

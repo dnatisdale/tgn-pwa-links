@@ -1,16 +1,17 @@
+// tailwind.config.js
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: ['./index.html', './src/**/*.{ts,tsx,js,jsx,html}'],
   theme: {
     extend: {
-      fontFamily: {
-        // enables the class "font-krub"
-        krub: ['"Krub"', 'system-ui', 'sans-serif'],
-      },
       colors: {
         thaiRed: '#A51931',
-        thaiBlue: '#2D2A4A',
         thaiWhite: '#F4F5F8',
+        thaiBlue: '#2D2A4A',
+        thaiBlack: '#000000',
+      },
+      fontFamily: {
+        krub: ['"Krub"', 'system-ui', '"Segoe UI"', '"Noto Sans Thai"', 'Arial', 'sans-serif'],
       },
     },
   },
