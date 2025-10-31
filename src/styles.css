@@ -7,24 +7,50 @@
 @tailwind components;
 @tailwind utilities;
 
-/* === Global fixes === */
-html,
-body,
-#root {
-  height: 100%;
+/* ---- imports / fonts (if using Option A/B) go here ---- */
+/* @import url(...) or @font-face ... */
+
+/* Put all @apply rules inside a layer */
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  /* default app body font + no italics */
+  body {
+    @apply font-krub not-italic;
+  }
 }
-body {
-  font-style: normal !important;
+
+@layer components {
+  .app-shell {
+    @apply min-h-screen flex flex-col;
+  }
+  .app-main {
+    @apply flex-1;
+  } /* keeps footer at bottom */
+  .site-footer {
+    @apply mt-8;
+  }
+
+  /* Buttons/links — kill surprise italics */
+  .btn {
+    @apply rounded-full px-4 py-2 text-white not-italic;
+  }
+  .btn-blue {
+    @apply bg-thaiBlue hover:opacity-90;
+  }
+  .linklike {
+    @apply underline cursor-pointer not-italic;
+  }
+  .card {
+    @apply rounded-lg border border-gray-200 p-3 bg-white not-italic;
+  }
+  .qr-center {
+    @apply flex justify-center;
+  }
 }
-.app-shell {
-  @apply min-h-screen flex flex-col;
-}
-.app-main {
-  @apply flex-1;
-} /* pushes footer down */
-.site-footer {
-  @apply mt-8;
-} /* extra breathing room */
 
 /* Kill any surprise italics */
 button,
@@ -36,23 +62,6 @@ input,
 .share,
 .share * {
   font-style: normal !important;
-}
-
-/* Small helpers you’re using */
-.btn {
-  @apply rounded-full px-4 py-2 text-white not-italic;
-}
-.btn-blue {
-  @apply bg-thaiBlue hover:opacity-90;
-}
-.linklike {
-  @apply underline cursor-pointer;
-}
-.card {
-  @apply rounded-lg border border-gray-200 p-3 bg-white;
-}
-.qr-center {
-  @apply flex justify-center;
 }
 
 @layer base {
