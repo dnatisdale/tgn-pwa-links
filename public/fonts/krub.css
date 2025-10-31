@@ -6,13 +6,3 @@
   font-style: normal;
   font-display: swap;
 }
-
-/* OPTIONAL: disable the italic face
-@font-face{
-  font-family:"Krub";
-  src:url("/fonts/krub/Krub-VariableItalic.woff2") format("woff2");
-  font-weight:200 700;
-  font-style:italic;
-  font-display:swap;
-}
-*/
