@@ -3,8 +3,6 @@
    Cleaned & de-duplicated
    ========================= */
 /* src/styles.css */
-@import '/fonts/krub.css';
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
