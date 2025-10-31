@@ -10,7 +10,7 @@
 @layer base {
   html,
   body {
-    @apply font-krub font-normal;
+    @apply font-krub font-normal not-italic; /* ← key line */
   }
   h1 {
     @apply font-bold;
