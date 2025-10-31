@@ -10,12 +10,13 @@ type Props = {
 export default function LogoutButton({ className = 'btn btn-blue', children }: Props) {
   const [busy, setBusy] = React.useState(false);
 
-  const onClick = async () => {
+  const handleLogout = async () => {
     try {
       setBusy(true);
       await signOut(getAuth());
-      localStorage.removeItem('tgn.guest'); // cleanup guest flag
-      // navigate home (adjust if you use a router)
+      // clean up any guest flag
+      localStorage.removeItem('tgn.guest');
+      // simple navigate home (adjust if you have a router)
       window.location.hash = '#/';
     } catch (err) {
       console.error('Logout failed:', err);
@@ -30,7 +31,7 @@ export default function LogoutButton({ className = 'btn btn-blue', children }: P
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={handleLogout}
       className={className}
       disabled={busy}
       style={{ padding: '6px 12px', borderRadius: 12, fontWeight: 600 }}
