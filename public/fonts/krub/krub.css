@@ -1,8 +1,7 @@
-/* /public/fonts/krub.css */
 @font-face {
   font-family: 'Krub';
   src: url('/fonts/krub/Krub-Variable.woff2') format('woff2');
-  font-weight: 200 700; /* supports 200–700 */
+  font-weight: 200 700;
   font-style: normal;
   font-display: swap;
 }
