@@ -32,7 +32,7 @@ export default defineConfig({
         short_name: 'TGN',
         description: 'Offline-capable bilingual URL library with QR sharing',
         theme_color: '#2D2A4A',
-        background_color: '#FFFFFF',
+        background_color: '#FFSFFFF',
         display: 'standalone',
         start_url: './',
         scope: './',
