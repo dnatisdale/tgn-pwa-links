@@ -1,4 +1,4 @@
-// src/components/AppMain.tsx — fixed & simplified main body
+// src/components/AppMain.tsx — TopBar + Search (sticky) + main content
 
 import AddLink from '../AddLink';
 import ImportExport from '../ImportExport';
@@ -19,14 +19,89 @@ declare global {
   }
 }
 
-// Build constants
+// Build constants (vite define)
 declare const __APP_VERSION__: string | undefined;
 declare const __BUILD_PRETTY__: string | undefined;
+
+function TopBar({
+  q,
+  setQ,
+  filterThai,
+  setFilterThai,
+}: {
+  q: string;
+  setQ: (s: string) => void;
+  filterThai: boolean;
+  setFilterThai: (v: boolean) => void;
+}) {
+  return (
+    <header className="sticky top-0 z-30 w-full" style={{ background: '#2D2A4A' /* Thai blue */ }}>
+      <div className="max-w-5xl mx-auto px-3 py-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        {/* App title (kept small to save space) */}
+        <div className="text-white/90 text-sm font-semibold tracking-wide">Thai Good News</div>
+
+        {/* Search pill */}
+        <div className="relative flex items-center w-full sm:max-w-md">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search all Thai Languages..."
+            className="w-full rounded-full border border-[#A51931] pl-4 pr-10 py-2
+                       text-gray-900 placeholder-gray-500 focus:outline-none
+                       focus:ring-2 focus:ring-[#A51931] bg-white"
+            aria-label="Search all Thai Languages"
+          />
+          <div
+            className="absolute right-2 inset-y-0 w-8 rounded-full flex items-center justify-center pointer-events-none"
+            aria-hidden="true"
+            title="Search"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#A51931"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Quick filter */}
+        <div className="flex items-center gap-3 text-xs sm:text-sm text-white/90">
+          <button
+            className={`underline-offset-4 ${
+              !filterThai ? 'underline' : 'opacity-80 hover:opacity-100'
+            }`}
+            onClick={() => setFilterThai(false)}
+            aria-pressed={!filterThai}
+          >
+            All
+          </button>
+          <span className="opacity-60">|</span>
+          <button
+            className={`underline-offset-4 ${
+              filterThai ? 'underline' : 'opacity-80 hover:opacity-100'
+            }`}
+            onClick={() => setFilterThai(true)}
+            aria-pressed={filterThai}
+          >
+            Thai only
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}
 
 function AppMain() {
   const {
     lang,
-    setLang, // (not used here yet but kept for future toggles)
     user,
     rows,
     q,
@@ -34,7 +109,7 @@ function AppMain() {
     filterThai,
     setFilterThai,
     textPx,
-    setTextPx, // (not used here in this file but part of global logic)
+    setTextPx,
     qrEnlargedId,
     setQrEnlargedId,
     selectedIds,
@@ -92,195 +167,148 @@ function AppMain() {
     });
   };
 
-  // SAFE build text for footer
   const buildText =
     (__APP_VERSION__ ? `v${__APP_VERSION__}` : 'dev') +
     (__BUILD_PRETTY__ ? ` • ${__BUILD_PRETTY__}` : '');
 
   return (
-    <main className="p-3 max-w-5xl mx-auto app-main">
-      {isAdd ? (
-        <section>
-          <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
-          <AddLink lang={lang} />
-        </section>
-      ) : isImport ? (
-        <section>
-          <h2 className="text-lg font-semibold mb-2">Import</h2>
-          <ImportExport lang={lang} />
-        </section>
-      ) : isExport ? (
-        <section>
-          <h2 className="text-lg font-semibold mb-2">Export</h2>
-          <ExportPage lang={lang} rows={rows} />
-        </section>
-      ) : isAbout ? (
-        <section>
-          <h2 className="text-lg font-semibold mb-2">About</h2>
-          <p className="text-sm text-gray-700">
-            Thai Good News — a simple PWA for saving, sharing, and printing QR link cards.
-          </p>
-        </section>
-      ) : (
-        <section>
-          {/* ===================== Search & Filter ===================== */}
-          <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-3">
-            {/* Capsule pill search with tiny Thai-red rim */}
-            <div className="relative flex items-center min-w-[260px] w-full sm:max-w-md">
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                // Dan’s preferred text:
-                placeholder={'Search all Thai Languages...'}
-                className="w-full rounded-full border border-[#A51931] pl-4 pr-12 py-2 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#A51931]"
-              />
-              {/* Magnifying glass inside the pill, right side */}
-              <div
-                className="absolute right-2 inset-y-0 w-8 rounded-full flex items-center justify-center pointer-events-none"
-                aria-hidden="true"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-[#A51931]"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+    <div className="min-h-screen flex flex-col">
+      {/* ==== Sticky TopBar (search lives here) ==== */}
+      <TopBar q={q} setQ={setQ} filterThai={filterThai} setFilterThai={setFilterThai} />
+
+      {/* ==== Page content ==== */}
+      <main className="p-3 max-w-5xl mx-auto w-full app-main">
+        {isAdd ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
+            <AddLink lang={lang} />
+          </section>
+        ) : isImport ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">Import</h2>
+            <ImportExport lang={lang} />
+          </section>
+        ) : isExport ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">Export</h2>
+            <ExportPage lang={lang} rows={rows} />
+          </section>
+        ) : isAbout ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">About</h2>
+            <p className="text-sm text-gray-700">
+              Thai Good News — a simple PWA for saving, sharing, and printing QR link cards.
+            </p>
+          </section>
+        ) : (
+          <section>
+            {/* === Toolbar (no search here anymore) === */}
+            <div className="flex flex-wrap items-center gap-8 mb-3 mt-2">
+              <label className="text-sm">
+                <input
+                  type="checkbox"
+                  className="card-check"
+                  checked={allSelected}
+                  onChange={toggleSelectAll}
+                />{' '}
+                Select all ({selectedRows.length}/{filtered.length})
+              </label>
+
+              <div className="flex items-center gap-8">
+                <div>
+                  <Share
+                    url={firstSelected ? firstSelected.url : ''}
+                    title={firstSelected ? firstSelected.name || 'Link' : ''}
+                    qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
+                  />
+                  {!firstSelected && (
+                    <span className="text-xs" style={{ color: '#6b7280', marginLeft: 8 }}>
+                      ( Select at least one item )
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  className="btn btn-blue"
+                  onClick={batchDownload}
+                  disabled={!selectedRows.length}
                 >
-                  <circle cx="11" cy="11" r="7" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
+                  Download QR cards ({selectedRows.length})
+                </button>
+
+                <button className="linklike" onClick={copySelectedLinks}>
+                  Copy link
+                </button>
               </div>
             </div>
 
-            {/* Quick filter links */}
-            <div className="text-sm">
-              <button
-                className="linklike"
-                onClick={() => setFilterThai(false)}
-                aria-pressed={!filterThai}
-              >
-                {lang === 'th' ? 'ทั้งหมด' : 'All'}
-              </button>
-              &nbsp;|&nbsp;
-              <button
-                className="linklike"
-                onClick={() => setFilterThai(true)}
-                aria-pressed={filterThai}
-              >
-                {lang === 'th' ? 'เฉพาะภาษาไทย' : 'Thai only'}
-              </button>
-            </div>
-          </div>
+            {/* Empty state */}
+            {!filtered.length && <div className="text-sm text-gray-600 mb-3">{i.empty}</div>}
 
-          {/* ===================== Toolbar ===================== */}
-          <div className="flex flex-wrap items-center gap-8 mb-3">
-            <label className="text-sm">
-              <input
-                type="checkbox"
-                className="card-check"
-                checked={allSelected}
-                onChange={toggleSelectAll}
-              />{' '}
-              Select all ({selectedRows.length}/{filtered.length})
-            </label>
+            {/* Card grid */}
+            <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filtered.map((row) => {
+                const enlarged = qrEnlargedId === row.id;
+                const qrSize = enlarged ? 320 : 192;
+                const checked = selectedIds.has(row.id);
+                return (
+                  <li key={row.id} className="card">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleSelect(row.id)}
+                          style={{ marginRight: 8 }}
+                        />
+                        Select
+                      </label>
+                    </div>
 
-            <div className="flex items-center gap-8">
-              <div>
-                <Share
-                  url={firstSelected ? firstSelected.url : ''}
-                  title={firstSelected ? firstSelected.name || 'Link' : ''}
-                  qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
-                />
-                {!firstSelected && (
-                  <span className="text-xs" style={{ color: '#6b7280', marginLeft: 8 }}>
-                    ( Select at least one item )
-                  </span>
-                )}
-              </div>
+                    <div className="text-base font-semibold text-center">{row.name}</div>
 
-              <button
-                className="btn btn-blue"
-                onClick={batchDownload}
-                disabled={!selectedRows.length}
-              >
-                Download QR cards ({selectedRows.length})
-              </button>
+                    <div
+                      role="button"
+                      onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') setQrEnlargedId(enlarged ? null : row.id);
+                      }}
+                      tabIndex={0}
+                      title={enlarged ? 'Shrink QR' : 'Enlarge QR'}
+                      style={{ cursor: 'pointer' }}
+                      className="qr-center"
+                    >
+                      <QR url={row.url} size={qrSize} idForDownload={`qr-${row.id}`} />
+                    </div>
 
-              <button className="linklike" onClick={copySelectedLinks}>
-                Copy link
-              </button>
-            </div>
-          </div>
+                    <div className="mt-2 text-center">
+                      <a href={row.url} className="underline" target="_blank" rel="noreferrer">
+                        {row.url}
+                      </a>
+                    </div>
 
-          {/* ===================== Empty State ===================== */}
-          {!filtered.length && <div className="text-sm text-gray-600 mb-3">{i.empty}</div>}
+                    <div className="mt-2 flex justify-center gap-6 text-sm">
+                      <button className="linklike" onClick={() => editRow(row)}>
+                        Edit
+                      </button>
+                      <button className="linklike" onClick={() => deleteRow(row)}>
+                        Delete
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
 
-          {/* ===================== Card Grid ===================== */}
-          <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {filtered.map((row) => {
-              const enlarged = qrEnlargedId === row.id;
-              const qrSize = enlarged ? 320 : 192;
-              const checked = selectedIds.has(row.id);
-              return (
-                <li key={row.id} className="card">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => toggleSelect(row.id)}
-                        style={{ marginRight: 8 }}
-                      />
-                      Select
-                    </label>
-                  </div>
+        {/* Footer */}
+        <footer className="site-footer mt-8">
+          <div>{buildText}</div>
+        </footer>
+      </main>
 
-                  <div className="text-base font-semibold text-center">{row.name}</div>
-
-                  <div
-                    role="button"
-                    onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') setQrEnlargedId(enlarged ? null : row.id);
-                    }}
-                    tabIndex={0}
-                    title={enlarged ? 'Shrink QR' : 'Enlarge QR'}
-                    style={{ cursor: 'pointer' }}
-                    className="qr-center"
-                  >
-                    <QR url={row.url} size={qrSize} idForDownload={`qr-${row.id}`} />
-                  </div>
-
-                  <div className="mt-2 text-center">
-                    <a href={row.url} className="underline" target="_blank" rel="noreferrer">
-                      {row.url}
-                    </a>
-                  </div>
-
-                  <div className="mt-2 flex justify-center gap-6 text-sm">
-                    <button className="linklike" onClick={() => editRow(row)}>
-                      Edit
-                    </button>
-                    <button className="linklike" onClick={() => deleteRow(row)}>
-                      Delete
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
-
-      {/* ===================== FOOTER ===================== */}
-      <footer className="site-footer">
-        <div>{buildText}</div>
-      </footer>
-
-      {/* ===================== UPDATE TOAST ===================== */}
+      {/* Update toast */}
       <UpdateToast
         lang={lang}
         show={showUpdate}
@@ -290,7 +318,7 @@ function AppMain() {
         }}
         onSkip={() => setShowUpdate(false)}
       />
-    </main>
+    </div>
   );
 }
 
