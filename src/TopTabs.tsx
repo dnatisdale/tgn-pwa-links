@@ -83,13 +83,13 @@ export default function TopTabs({ q, setQ, filterThai, setFilterThai }: Props) {
               />
             </svg>
           </div>
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={t('search')}
-            className="searchbar search-pill-red"
-          />
-        </div>
+          {/*<input */}
+          {/*  value={q} */}
+          {/*  onChange={(e) => setQ(e.target.value)} */}
+          {/*  placeholder={t('search')} */}
+          {/*  className="searchbar search-pill-red" */}
+        {/*  /> */}
+      {/*  </div> */}
       ) : (
         <div />
       )}
