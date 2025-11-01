@@ -86,7 +86,13 @@ export default function ImportExport() {
           const language = String(o.language ?? '').trim();
           const urlRaw = String(o.url ?? '').trim();
           const urlHttps = toHttpsOrNull(urlRaw);
-          return { name, language, urlRaw, urlHttps, reason: urlHttps ? undefined : tOr('mustBeHttps', 'Must be an HTTPS link') };
+          return {
+            name,
+            language,
+            urlRaw,
+            urlHttps,
+            reason: urlHttps ? undefined : tOr('mustBeHttps', 'Must be an HTTPS link'),
+          };
         });
       } else {
         const grid = splitCSVorTSV(text);
@@ -99,7 +105,9 @@ export default function ImportExport() {
         const hasHeader = ['name', 'language', 'url'].some((h) => header.includes(h));
         const body = hasHeader ? grid.slice(1) : grid;
 
-        let nameIdx = 0, langIdx = 1, urlIdx = 2;
+        let nameIdx = 0,
+          langIdx = 1,
+          urlIdx = 2;
         if (hasHeader) {
           nameIdx = header.indexOf('name');
           langIdx = header.indexOf('language');
@@ -111,7 +119,13 @@ export default function ImportExport() {
           const language = (cols[langIdx] ?? '').trim();
           const urlRaw = (cols[urlIdx] ?? '').trim();
           const urlHttps = toHttpsOrNull(urlRaw);
-          return { name, language, urlRaw, urlHttps, reason: urlHttps ? undefined : tOr('mustBeHttps', 'Must be an HTTPS link') };
+          return {
+            name,
+            language,
+            urlRaw,
+            urlHttps,
+            reason: urlHttps ? undefined : tOr('mustBeHttps', 'Must be an HTTPS link'),
+          };
         });
       }
 
@@ -145,7 +159,8 @@ export default function ImportExport() {
       return;
     }
     // Heuristic: if starts with '{' or '[' treat as JSON
-    const hint = text.trim().startsWith('{') || text.trim().startsWith('[') ? 'data.json' : 'data.csv';
+    const hint =
+      text.trim().startsWith('{') || text.trim().startsWith('[') ? 'data.json' : 'data.csv';
     await parseFromText(text, hint);
   }
 
@@ -192,7 +207,11 @@ export default function ImportExport() {
       {/* File picker row */}
       <div className="file-row flex items-center gap-3 mb-3">
         {/* Accessible label tied to the hidden input */}
-        <label htmlFor="tgn-import-file" className="btn btn-red not-italic" style={{ cursor: 'pointer' }}>
+        <label
+          htmlFor="tgn-import-file"
+          className="btn btn-red not-italic"
+          style={{ cursor: 'pointer' }}
+        >
           {tOr('chooseFile', 'Choose file')}
         </label>
 
@@ -209,7 +228,11 @@ export default function ImportExport() {
         <span className="pill-red not-italic">(CSV / TSV / JSON)</span>
 
         {preview && (
-          <button className="btn btn-blue not-italic" onClick={doImport} disabled={!stats.valid || parsing}>
+          <button
+            className="btn btn-blue not-italic"
+            onClick={doImport}
+            disabled={!stats.valid || parsing}
+          >
             {tOr('add', 'Add')}
           </button>
         )}
@@ -244,7 +267,11 @@ export default function ImportExport() {
             {tOr('preview', 'Preview')}
           </button>
           {preview && (
-            <button className="btn btn-red not-italic" onClick={doImport} disabled={!stats.valid || parsing}>
+            <button
+              className="btn btn-red not-italic"
+              onClick={doImport}
+              disabled={!stats.valid || parsing}
+            >
               {tOr('add', 'Add')}
             </button>
           )}
@@ -252,13 +279,18 @@ export default function ImportExport() {
       </div>
 
       {/* Status / errors */}
-      {msg && <div className="mb-3 not-italic" style={{ color: '#a51931' }}>{msg}</div>}
+      {msg && (
+        <div className="mb-3 not-italic" style={{ color: '#a51931' }}>
+          {msg}
+        </div>
+      )}
 
       {/* Preview table */}
       {preview && (
         <div className="card" style={{ padding: 12 }}>
           <div className="mb-2 not-italic" style={{ fontSize: 14 }}>
-            {tOr('preview', 'Preview')}: {stats.valid} {tOr('valid', 'valid')} · {stats.invalid} {tOr('invalid', 'invalid')}
+            {tOr('preview', 'Preview')}: {stats.valid} {tOr('valid', 'valid')} · {stats.invalid}{' '}
+            {tOr('invalid', 'invalid')}
           </div>
 
           <div
@@ -290,7 +322,9 @@ export default function ImportExport() {
                       {p.urlHttps ? (
                         <span style={{ color: '#16a34a', fontWeight: 600 }}>{tOr('ok', 'OK')}</span>
                       ) : (
-                        <span style={{ color: '#a51931' }}>{p.reason || tOr('invalid', 'invalid')}</span>
+                        <span style={{ color: '#a51931' }}>
+                          {p.reason || tOr('invalid', 'invalid')}
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -307,12 +341,12 @@ export default function ImportExport() {
 const th: React.CSSProperties = {
   textAlign: 'left',
   padding: '8px 10px',
-  borderBottom: '1px solid '#e5e7eb',
+  borderBottom: '1px solid #e5e7eb',
   fontWeight: 600,
 };
 
 const td: React.CSSProperties = {
   textAlign: 'left',
   padding: '8px 10px',
-  borderBottom: '1px solid '#f3f4f6',
+  borderBottom: '1px solid #f3f4f6',
 };
