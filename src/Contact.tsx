@@ -72,20 +72,20 @@ export default function Contact() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           autoComplete="name"
-          placeholder={tOr('Name', 'Your name')}
+          placeholder={tOr('Name', 'Name')}
         />
 
         <input
           id="contactEmail"
           name="contactEmail"
           type="email"
-          aria-label={tOr('Email', 'Your email')}
+          aria-label={tOr('Email', 'Email')}
           className="w-full border rounded px-3 py-2 mb-3 not-italic"
           value={fromEmail}
           onChange={(e) => setFromEmail(e.target.value)}
           autoComplete="email"
           inputMode="email"
-          placeholder={tOr('Email', 'Your email')}
+          placeholder={tOr('Email', 'Email')}
         />
 
         <textarea
