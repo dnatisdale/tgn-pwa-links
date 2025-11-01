@@ -173,8 +173,10 @@ export default function ImportExport() {
         </label>
         <input
           id="tgn-import-file"
+          name="tgn-import-file"
           type="file"
           accept=".csv,.tsv,.json,text/csv,text/tab-separated-values,application/json"
+          className="w-full border rounded px-3 py-2 mb-3 not-italic"
           onChange={onPickFile}
           style={{ display: 'none' }}
         />

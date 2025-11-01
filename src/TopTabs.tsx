@@ -125,7 +125,13 @@ export default function TopTabs({
             </button>
           </div>
 
+          {/* Put this near the search input in TopTabs.tsx */}
+          <label htmlFor="search" className="sr-only">
+            Search
+          </label>
           <input
+            id="search"
+            name="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={tOr('search', 'Search')}
