@@ -92,7 +92,7 @@ export default function Contact() {
         <button
           type="submit"
           className="btn btn-red not-italic"
-          style={{ borderRadius: 9999, padding: '8px 16px', fontWeight: 700 }}
+          style={{ borderRadius: 9999, padding: '8px 16px', fontWeight: 400 }}
           title={tOr('send', 'Send')}
         >
           {tOr('send', 'Send')}
