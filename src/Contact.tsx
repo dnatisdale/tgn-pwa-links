@@ -27,7 +27,6 @@ export default function Contact() {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Build a mailto link with subject/body; encode safely
     const subject = encodeURIComponent(
       `${tOr('contactSubject', 'TGN Contact')}: ${name || tOr('yourName', 'Your name')}`
     );
@@ -46,14 +45,12 @@ export default function Contact() {
         </a>
       </p>
 
-      {/* Optional quick contact form (mailto) */}
+      {/* Minimal contact form (mailto) */}
       <form onSubmit={onSubmit} noValidate>
-        <label htmlFor="contactName" className="block text-sm font-semibold mb-1 not-italic">
-          {tOr('yourName', 'Your name')}
-        </label>
         <input
           id="contactName"
           name="contactName"
+          aria-label={tOr('yourName', 'Your name')}
           className="w-full border rounded px-3 py-2 mb-3 not-italic"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -61,13 +58,11 @@ export default function Contact() {
           placeholder={tOr('yourName', 'Your name')}
         />
 
-        <label htmlFor="contactEmail" className="block text-sm font-semibold mb-1 not-italic">
-          {tOr('yourEmail', 'Your email')}
-        </label>
         <input
           id="contactEmail"
           name="contactEmail"
           type="email"
+          aria-label={tOr('yourEmail', 'Your email')}
           className="w-full border rounded px-3 py-2 mb-3 not-italic"
           value={fromEmail}
           onChange={(e) => setFromEmail(e.target.value)}
@@ -76,13 +71,11 @@ export default function Contact() {
           placeholder={tOr('yourEmail', 'Your email')}
         />
 
-        <label htmlFor="contactMsg" className="block text-sm font-semibold mb-1 not-italic">
-          {tOr('message', 'Message')}
-        </label>
         <textarea
           id="contactMsg"
           name="contactMsg"
           rows={6}
+          aria-label={tOr('message', 'Message')}
           className="w-full border rounded px-3 py-2 mb-3 not-italic"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
@@ -92,7 +85,12 @@ export default function Contact() {
         <button
           type="submit"
           className="btn btn-red not-italic"
-          style={{ borderRadius: 9999, padding: '8px 16px', fontWeight: 400 }}
+          style={{
+            borderRadius: 9999,
+            padding: '8px 16px',
+            fontWeight: 700,
+            fontStyle: 'normal', // <-- hard-force non-italic
+          }}
           title={tOr('send', 'Send')}
         >
           {tOr('send', 'Send')}
