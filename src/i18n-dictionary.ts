@@ -65,15 +65,23 @@ export const en = {
   tipExportsFiltered: 'Tip: Exports include only what’s currently in your list.',
 
   // Contact screen
+
+  contactTitle: 'Contact',
   contactName: 'Name',
   contactEmail: 'Email',
-  contactSubject: 'Subject',
   contactMessage: 'Message',
   contactSend: 'Send',
-  phContactName: 'Your full name',
-  phContactEmail: 'your@email.com',
-  phContactSubject: 'What is this about?',
-  phContactMessage: 'Type your message here...',
+  contactSending: 'Sending…',
+  contactCooling: 'Wait…',
+  contactSuccess: 'Sent ✅',
+  contactError: 'Error:',
+  contactErrorMissing: 'Email + message required.',
+  contactErrorTooLong: 'Max 500 chars.',
+  contactErrorCooldown: 'Please wait a moment.',
+  contactErrorGeneric: 'Send failed. Try again.',
+  phContactName: 'Name',
+  phContactEmail: 'Email',
+  phContactMessage: 'Message',
 
   // QR
   enlargeQR: 'Enlarge QR',
@@ -147,15 +155,22 @@ export const th = {
   tipExportsFiltered: 'เคล็ดลับ: การส่งออกจะรวมเฉพาะรายการที่อยู่ในรายการของคุณตอนนี้เท่านั้น',
 
   // Contact Screen
+  contactTitle: 'ติดต่อ',
   contactName: 'ชื่อ',
   contactEmail: 'อีเมล',
-  contactSubject: 'หัวข้อ',
   contactMessage: 'ข้อความ',
   contactSend: 'ส่ง',
-  phContactName: 'ชื่อ-นามสกุล',
-  phContactEmail: 'อีเมลของคุณ',
-  phContactSubject: 'เกี่ยวกับเรื่องอะไร',
-  phContactMessage: 'พิมพ์ข้อความที่นี่...',
+  contactSending: 'กำลังส่ง…',
+  contactCooling: 'รอสักครู่…',
+  contactSuccess: 'ส่งแล้ว ✅',
+  contactError: 'ผิดพลาด:',
+  contactErrorMissing: 'กรุณาใส่อีเมลและข้อความ',
+  contactErrorTooLong: 'ยาวสุด 500 ตัวอักษร',
+  contactErrorCooldown: 'โปรดรอสักครู่',
+  contactErrorGeneric: 'ส่งไม่สำเร็จ โปรดลองอีกครั้ง',
+  phContactName: 'ชื่อ',
+  phContactEmail: 'อีเมล',
+  phContactMessage: 'ข้อความ',
 
   // QR
   enlargeQR: 'ขยาย QR',

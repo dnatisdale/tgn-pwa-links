@@ -12,6 +12,7 @@
     "sync:drive": "powershell -ExecutionPolicy Bypass -File \"C:\\Users\\dnati\\OneDrive - Global Recordings Network\\C\\SyncToDrive.ps1\""
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "firebase": "^10.14.1",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.1",
