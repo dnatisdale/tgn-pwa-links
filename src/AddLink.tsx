@@ -125,7 +125,7 @@ export default function AddLink() {
           color: '#F4F5F8',
           borderRadius: 9999,
           padding: '8px 16px',
-          fontWeight: 700,
+          fontWeight: 600,
         }}
       >
         {saving ? T('saving', 'Saving…') : T('save', 'Save')}
