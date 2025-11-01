@@ -1,3 +1,4 @@
+// src/ImportExport.tsx
 import React, { useMemo, useState } from 'react';
 import { auth, db } from './firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
@@ -42,25 +43,20 @@ function asArray(x: any): any[] {
   return [];
 }
 
-  // export default function ImportExport() {
+// ✅ Restored component wrapper and moved hooks/i18n inside
+export default function ImportExport() {
   // --- safe i18n so the UI never shows "undefined" ---
-  // let t = (k: string) => k;
-  //  try {
-  // --- safe i18n so the UI never shows "undefined" ---
-type I18nLike = { t?: (k: string) => string };
-
-const i18n = (useI18n?.() as I18nLike) ?? {};
-const rawT = i18n.t;
-
-const tOr = (k: string, fb: string) => {
-  try {
-    const v = rawT?.(k);
-    return (v ?? '').toString().trim() || fb;
-  } catch {
-    return fb;
-  }
-};
-
+  type I18nLike = { t?: (k: string) => string };
+  const i18n = (useI18n?.() as I18nLike) ?? {};
+  const rawT = i18n.t;
+  const tOr = (k: string, fb: string) => {
+    try {
+      const v = rawT?.(k);
+      return (v ?? '').toString().trim() || fb;
+    } catch {
+      return fb;
+    }
+  };
 
   const [file, setFile] = useState<File | null>(null);
   const [pasteText, setPasteText] = useState<string>(''); // new: paste area
@@ -308,17 +304,29 @@ const tOr = (k: string, fb: string) => {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead style={{ position: 'sticky', top: 0, background: '#f9fafb' }}>
                 <tr>
-                  <th className="text-left px-2 py-2 border-b border-gray-200 font-semibold">Name</th>
-                  <th className="text-left px-2 py-2 border-b border-gray-200 font-semibold">Language</th>
-                  <th className="text-left px-2 py-2 border-b border-gray-200 font-semibold">URL</th>
-                  <th className="text-left px-2 py-2 border-b border-gray-200 font-semibold">Status</th>
+                  <th className="text-left px-2 py-2 border-b border-gray-200 font-semibold">
+                    Name
+                  </th>
+                  <th className="text-left px-2 py-2 border-b border-gray-200 font-semibold">
+                    Language
+                  </th>
+                  <th className="text-left px-2 py-2 border-b border-gray-200 font-semibold">
+                    URL
+                  </th>
+                  <th className="text-left px-2 py-2 border-b border-gray-200 font-semibold">
+                    Status
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {preview.map((p, idx) => (
                   <tr key={idx}>
-                    <td className="text-left px-2 py-2 border-b border-gray-100">{p.name || <em style={{ color: '#6b7280' }}>—</em>}</td>
-                    <td className="text-left px-2 py-2 border-b border-gray-100">{p.language || <em style={{ color: '#6b7280' }}>—</em>}</td>
+                    <td className="text-left px-2 py-2 border-b border-gray-100">
+                      {p.name || <em style={{ color: '#6b7280' }}>—</em>}
+                    </td>
+                    <td className="text-left px-2 py-2 border-b border-gray-100">
+                      {p.language || <em style={{ color: '#6b7280' }}>—</em>}
+                    </td>
                     <td className="text-left px-2 py-2 border-b border-gray-100" title={p.urlRaw}>
                       {p.urlRaw}
                     </td>
