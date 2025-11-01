@@ -42,21 +42,25 @@ function asArray(x: any): any[] {
   return [];
 }
 
-export default function ImportExport() {
+  // export default function ImportExport() {
   // --- safe i18n so the UI never shows "undefined" ---
-  let t = (k: string) => k;
+  // let t = (k: string) => k;
+  //  try {
+  // --- safe i18n so the UI never shows "undefined" ---
+type I18nLike = { t?: (k: string) => string };
+
+const i18n = (useI18n?.() as I18nLike) ?? {};
+const rawT = i18n.t;
+
+const tOr = (k: string, fb: string) => {
   try {
-    const i = useI18n();
-    if (i && typeof i.t === 'function') t = i.t;
-  } catch {}
-  const tOr = (k: string, fb: string) => {
-    try {
-      const v = t?.(k);
-      return (v ?? '').toString().trim() || fb;
-    } catch {
-      return fb;
-    }
-  };
+    const v = rawT?.(k);
+    return (v ?? '').toString().trim() || fb;
+  } catch {
+    return fb;
+  }
+};
+
 
   const [file, setFile] = useState<File | null>(null);
   const [pasteText, setPasteText] = useState<string>(''); // new: paste area
@@ -304,21 +308,21 @@ export default function ImportExport() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead style={{ position: 'sticky', top: 0, background: '#f9fafb' }}>
                 <tr>
-                  <th style={th}>Name</th>
-                  <th style={th}>Language</th>
-                  <th style={th}>URL</th>
-                  <th style={th}>Status</th>
+                  <th className="text-left px-2 py-2 border-b border-gray-200 font-semibold">Name</th>
+                  <th className="text-left px-2 py-2 border-b border-gray-200 font-semibold">Language</th>
+                  <th className="text-left px-2 py-2 border-b border-gray-200 font-semibold">URL</th>
+                  <th className="text-left px-2 py-2 border-b border-gray-200 font-semibold">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {preview.map((p, idx) => (
                   <tr key={idx}>
-                    <td style={td}>{p.name || <em style={{ color: '#6b7280' }}>—</em>}</td>
-                    <td style={td}>{p.language || <em style={{ color: '#6b7280' }}>—</em>}</td>
-                    <td style={td} title={p.urlRaw}>
+                    <td className="text-left px-2 py-2 border-b border-gray-100">{p.name || <em style={{ color: '#6b7280' }}>—</em>}</td>
+                    <td className="text-left px-2 py-2 border-b border-gray-100">{p.language || <em style={{ color: '#6b7280' }}>—</em>}</td>
+                    <td className="text-left px-2 py-2 border-b border-gray-100" title={p.urlRaw}>
                       {p.urlRaw}
                     </td>
-                    <td style={td}>
+                    <td className="text-left px-2 py-2 border-b border-gray-100">
                       {p.urlHttps ? (
                         <span style={{ color: '#16a34a', fontWeight: 600 }}>{tOr('ok', 'OK')}</span>
                       ) : (
@@ -337,16 +341,3 @@ export default function ImportExport() {
     </section>
   );
 }
-
-const th: React.CSSProperties = {
-  textAlign: 'left',
-  padding: '8px 10px',
-  borderBottom: '1px solid #e5e7eb',
-  fontWeight: 600,
-};
-
-const td: React.CSSProperties = {
-  textAlign: 'left',
-  padding: '8px 10px',
-  borderBottom: '1px solid #f3f4f6',
-};
