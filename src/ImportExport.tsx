@@ -314,5 +314,5 @@ const th: React.CSSProperties = {
 const td: React.CSSProperties = {
   textAlign: 'left',
   padding: '8px 10px',
-  borderBottom: '1px solid #f3f4f6',
+  borderBottom: '1px solid '#f3f4f6',
 };
