@@ -1,7 +1,5 @@
-// src/App.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import Banner from './Banner';
-import AppMain from './components/AppMain';
 import Header from './Header';
 import Footer from './Footer';
 import Login from './Login';
@@ -25,24 +23,11 @@ import {
 } from 'firebase/firestore';
 import { useI18n } from './i18n-provider';
 import Contact from './Contact';
-// NOTE: If AddLink is imported elsewhere too, prefer to keep only one render site.
-// If you still import it here, ensure it exists:
-import AddLink from './AddLink';
 
 type Row = { id: string; name: string; language: string; url: string };
 
 export default function App() {
   const { lang, t } = useI18n();
-
-  // --- SAFE TRANSLATION HELPER: never let UI render "undefined" ---
-  const tOr = (k: string, fb: string) => {
-    try {
-      const v = t?.(k);
-      return (v ?? '').toString().trim() || fb;
-    } catch {
-      return fb;
-    }
-  };
 
   const [user, setUser] = useState<any>(null);
   const [guestMode, setGuestMode] = useState(localStorage.getItem('tgn.guest') === '1');
@@ -193,16 +178,16 @@ export default function App() {
   };
 
   const editRow = async (r: Row) => {
-    const name = prompt(tOr('title', 'Title'), r.name ?? '');
+    const name = prompt(t('title'), r.name ?? '');
     if (name === null) return;
-    const language = prompt(tOr('languageOfContent', 'Language'), r.language ?? '') ?? '';
-    const url = prompt(tOr('url', 'URL'), r.url ?? '');
+    const language = prompt(t('languageOfContent'), r.language ?? '') ?? '';
+    const url = prompt(t('url'), r.url ?? '');
     if (url === null) return;
     try {
       const u = new URL(url.startsWith('http') ? url : `https://${url}`);
       if (u.protocol !== 'https:') throw new Error();
     } catch {
-      alert(tOr('invalidUrl', 'Please enter a valid HTTPS URL (https://...)'));
+      alert(t('invalidUrl'));
       return;
     }
     await updateDoc(doc(db, 'users', user.uid, 'links', r.id), {
@@ -213,7 +198,7 @@ export default function App() {
   };
 
   const deleteRow = async (r: Row) => {
-    if (!confirm(`${tOr('delete', 'Delete')} "${r.name || r.url}"?`)) return;
+    if (!confirm(`${t('delete')} "${r.name || r.url}"?`)) return;
     await deleteDoc(doc(db, 'users', user.uid, 'links', r.id));
     setSelectedIds((prev) => {
       const n = new Set(prev);
@@ -253,7 +238,7 @@ export default function App() {
         <main className="p-3 max-w-5xl mx-auto app-main">
           {isAdd ? (
             <section>
-              <h2 className="text-lg font-semibold mb-2 not-italic">{tOr('add', 'Add')}</h2>
+              <h2 className="text-lg font-semibold mb-2">{t('add')}</h2>
               <AddLink />
             </section>
           ) : isImport ? (
@@ -273,51 +258,46 @@ export default function App() {
             </section>
           ) : isAbout ? (
             <section>
-              <h2 className="text-lg font-semibold mb-2 not-italic">{tOr('about', 'About')}</h2>
-              <p className="text-sm text-gray-700 not-italic">
-                {tOr('aboutText', 'This app helps you organize and share links.')}
-              </p>
+              <h2 className="text-lg font-semibold mb-2">{t('about')}</h2>
+              <p className="text-sm text-gray-700">{t('aboutText')}</p>
             </section>
           ) : (
             <section>
               <div className="flex flex-wrap items-center gap-8 mb-3">
-                <label className="text-sm not-italic">
+                <label className="text-sm">
                   <input
                     type="checkbox"
                     className="card-check"
                     checked={allSelected}
                     onChange={toggleSelectAll}
                   />
-                  {tOr('selectAll', 'Select all')} ({selectedRows.length}/{filtered.length})
+                  {t('selectAll')} ({selectedRows.length}/{filtered.length})
                 </label>
 
-                <div className="flex items-center gap-8 not-italic">
-                  <div className="not-italic">
-                    {/* Wrap Share in a not-italic container to defeat inherited italics */}
-                    <div className="not-italic">
-                      <Share
-                        url={firstSelected ? firstSelected.url : ''}
-                        title={firstSelected ? firstSelected.name || 'Link' : ''}
-                        qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
-                      />
-                    </div>
+                <div className="flex items-center gap-8">
+                  <div>
+                    <Share
+                      url={firstSelected ? firstSelected.url : ''}
+                      title={firstSelected ? firstSelected.name || 'Link' : ''}
+                      qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
+                    />
                     {!firstSelected && (
                       <span className="text-xs" style={{ color: '#6b7280', marginLeft: 8 }}>
-                        ({tOr('selectAtLeastOne', 'Select at least one')})
+                        ({t('selectAtLeastOne')})
                       </span>
                     )}
                   </div>
 
                   <button
-                    className="btn btn-blue not-italic"
+                    className="btn btn-blue"
                     onClick={batchDownload}
                     disabled={!selectedRows.length}
                   >
-                    {tOr('downloadQRCards', 'Download QR cards')} ({selectedRows.length})
+                    {t('downloadQRCards')} ({selectedRows.length})
                   </button>
 
-                  <button className="linklike not-italic" onClick={copySelectedLinks}>
-                    {tOr('copyLink', 'Copy link')}
+                  <button className="linklike" onClick={copySelectedLinks}>
+                    {t('copyLink')}
                   </button>
                 </div>
               </div>
@@ -330,7 +310,7 @@ export default function App() {
                   return (
                     <li key={row.id} className="card">
                       <div className="flex items-center justify-between mb-2">
-                        <label className="text-sm not-italic">
+                        <label className="text-sm">
                           <input
                             type="checkbox"
                             checked={checked}
@@ -343,13 +323,11 @@ export default function App() {
                             }
                             style={{ marginRight: 8 }}
                           />
-                          {tOr('select', 'Select')}
+                          {t('select')}
                         </label>
                       </div>
 
-                      <div className="text-base font-semibold text-center not-italic">
-                        {row.name}
-                      </div>
+                      <div className="text-base font-semibold text-center">{row.name}</div>
 
                       <div
                         role="button"
@@ -358,27 +336,25 @@ export default function App() {
                           if (e.key === 'Enter') setQrEnlargedId(enlarged ? null : row.id);
                         }}
                         tabIndex={0}
-                        title={
-                          enlarged ? tOr('shrinkQR', 'Shrink QR') : tOr('enlargeQR', 'Enlarge QR')
-                        }
+                        title={enlarged ? t('shrinkQR') : t('enlargeQR')}
                         style={{ cursor: 'pointer' }}
-                        className="qr-center not-italic"
+                        className="qr-center"
                       >
                         <QR url={row.url} size={qrSize} idForDownload={`qr-${row.id}`} />
                       </div>
 
-                      <div className="mt-2 text-center not-italic">
+                      <div className="mt-2 text-center">
                         <a href={row.url} className="underline" target="_blank" rel="noreferrer">
                           {row.url}
                         </a>
                       </div>
 
-                      <div className="mt-2 flex justify-center gap-6 text-sm not-italic">
-                        <button className="linklike not-italic" onClick={() => editRow(row)}>
-                          {tOr('edit', 'Edit')}
+                      <div className="mt-2 flex justify-center gap-6 text-sm">
+                        <button className="linklike" onClick={() => editRow(row)}>
+                          {t('edit')}
                         </button>
-                        <button className="linklike not-italic" onClick={() => deleteRow(row)}>
-                          {tOr('delete', 'Delete')}
+                        <button className="linklike" onClick={() => deleteRow(row)}>
+                          {t('delete')}
                         </button>
                       </div>
                     </li>

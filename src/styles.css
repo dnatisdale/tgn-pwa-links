@@ -544,3 +544,12 @@ a {
   align-items: flex-end;
   gap: 6px; /* gap between Install (top) and Logout (bottom) */
 }
+/* Guardrail: never italicize action controls */
+button,
+.btn,
+.btn-red,
+.btn-blue,
+.linklike,
+.share-btn {
+  font-style: normal !important;
+}
