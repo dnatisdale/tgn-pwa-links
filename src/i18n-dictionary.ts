@@ -64,6 +64,17 @@ export const en = {
   importComplete: 'Import complete',
   tipExportsFiltered: 'Tip: Exports include only what’s currently in your list.',
 
+  // Contact screen
+  contactName: 'Name',
+  contactEmail: 'Email',
+  contactSubject: 'Subject',
+  contactMessage: 'Message',
+  contactSend: 'Send',
+  phContactName: 'Your full name',
+  phContactEmail: 'your@email.com',
+  phContactSubject: 'What is this about?',
+  phContactMessage: 'Type your message here...',
+
   // QR
   enlargeQR: 'Enlarge QR',
   shrinkQR: 'Shrink QR',
@@ -134,6 +145,17 @@ export const th = {
   nothingToImport: 'ไม่มีข้อมูลสำหรับนำเข้า',
   importComplete: 'นำเข้าสำเร็จ',
   tipExportsFiltered: 'เคล็ดลับ: การส่งออกจะรวมเฉพาะรายการที่อยู่ในรายการของคุณตอนนี้เท่านั้น',
+
+  // Contact Screen
+  contactName: 'ชื่อ',
+  contactEmail: 'อีเมล',
+  contactSubject: 'หัวข้อ',
+  contactMessage: 'ข้อความ',
+  contactSend: 'ส่ง',
+  phContactName: 'ชื่อ-นามสกุล',
+  phContactEmail: 'อีเมลของคุณ',
+  phContactSubject: 'เกี่ยวกับเรื่องอะไร',
+  phContactMessage: 'พิมพ์ข้อความที่นี่...',
 
   // QR
   enlargeQR: 'ขยาย QR',
