@@ -6,7 +6,7 @@ import { useI18n } from './i18n-provider';
 function toHttpsOrNull(input: string): string | null {
   const raw = input.trim();
   if (!raw) return null;
-  if (/^http:\/\//i.test(raw)) return null;
+  if (/^http:\/\//i.test(raw)) return null; // disallow plain http
   const withScheme = /^(https?:)?\/\//i.test(raw) ? raw : `https://${raw}`;
   try {
     const u = new URL(withScheme);
@@ -18,33 +18,50 @@ function toHttpsOrNull(input: string): string | null {
 }
 
 export default function AddLink() {
-  const { t } = useI18n();
-  const [name, setName] = useState('');
+  // Safe t() fallback so labels/alerts never show "undefined"
+  let t = (k: string) => k as unknown as string;
+  try {
+    const i = useI18n();
+    if (i && typeof i.t === 'function') t = i.t;
+  } catch {
+    /* ignore if provider not mounted */
+  }
+  const T = (k: string, fb: string) => {
+    try {
+      const v = t?.(k);
+      return (v ?? '').toString().trim() || fb;
+    } catch {
+      return fb;
+    }
+  };
+
+  const [title, setTitle] = useState('');
   const [language, setLanguage] = useState('');
   const [url, setUrl] = useState('');
   const [saving, setSaving] = useState(false);
 
   const onSave = async () => {
     const user = auth.currentUser;
-    if (!user) return alert(t('pleaseSignIn'));
-    if (!name.trim()) return alert(t('title'));
+    if (!user) return alert(T('pleaseSignIn', 'Please sign in first.'));
+    if (!title.trim()) return alert(T('pleaseEnterTitle', 'Please enter a title.'));
+    if (!language.trim()) return alert(T('pleaseEnterLanguage', 'Please enter the language.'));
     const urlHttps = toHttpsOrNull(url);
-    if (!urlHttps) return alert(t('invalidUrl'));
+    if (!urlHttps) return alert(T('invalidUrl', 'Please enter a valid HTTPS URL (https://...)'));
 
     try {
       setSaving(true);
       await addDoc(collection(db, 'users', user.uid, 'links'), {
-        name: name.trim(),
+        name: title.trim(),
         language: language.trim(),
         url: urlHttps,
         createdAt: serverTimestamp(),
       });
-      setName('');
+      setTitle('');
       setLanguage('');
       setUrl('');
-      alert(t('saved'));
+      alert(T('saved', 'Saved!'));
     } catch (e: any) {
-      alert(e?.message || String(e));
+      alert(e?.message || T('saveFailed', 'Save failed. Please try again.'));
     } finally {
       setSaving(false);
     }
@@ -52,37 +69,66 @@ export default function AddLink() {
 
   return (
     <div className="max-w-md">
+      {/* Title */}
+      <label htmlFor="title" className="block text-sm font-semibold mb-1 not-italic">
+        {T('title', 'Title')}
+      </label>
       <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder={t('title')}
-        className="w-full border rounded px-3 py-2 mb-3"
+        id="title"
+        name="title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder={T('title', 'Title')}
+        className="w-full border rounded px-3 py-2 mb-3 not-italic"
+        autoComplete="off"
       />
+
+      {/* Language */}
+      <label htmlFor="language" className="block text-sm font-semibold mb-1 not-italic">
+        {T('languageOfContent', 'Language')}
+      </label>
       <input
+        id="language"
+        name="language"
         value={language}
         onChange={(e) => setLanguage(e.target.value)}
-        placeholder={t('languageOfContent')}
-        className="w-full border rounded px-3 py-2 mb-3"
+        placeholder={T('languageOfContent', 'Language')}
+        className="w-full border rounded px-3 py-2 mb-3 not-italic"
+        autoComplete="off"
       />
+
+      {/* URL */}
+      <label htmlFor="url" className="block text-sm font-semibold mb-1 not-italic">
+        {T('url', 'URL')}
+      </label>
       <input
+        id="url"
+        name="url"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        placeholder={t('url')}
-        className="w-full border rounded px-3 py-2 mb-1"
+        placeholder={T('url', 'URL')}
+        className="w-full border rounded px-3 py-2 mb-1 not-italic"
         inputMode="url"
+        autoComplete="off"
       />
-      <label htmlFor="title" className="...">Title</label>
-<input name="title" id="title" ... />
 
-<label htmlFor="language" className="...">Language</label>
-<input name="language" id="language" ... />
+      <div className="text-xs text-gray-500 mb-3 not-italic">
+        {T('mustBeHttps', 'Must be an HTTPS link')}
+      </div>
 
-<label htmlFor="url" className="...">URL</label>
-<input name="url" id="url" inputMode="url" ... />
-
-      <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 12 }}>{t('mustBeHttps')}</div>
-      <button onClick={onSave} disabled={saving} className="btn btn-red">
-        {saving ? t('saving') : t('save')}
+      <button
+        onClick={onSave}
+        disabled={saving}
+        className="not-italic"
+        style={{
+          background: '#A51931',
+          color: '#F4F5F8',
+          borderRadius: 9999,
+          padding: '8px 16px',
+          fontWeight: 700,
+        }}
+      >
+        {saving ? T('saving', 'Saving…') : T('save', 'Save')}
       </button>
     </div>
   );
