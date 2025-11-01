@@ -1,7 +1,9 @@
 {
   "name": "Thai Good News",
   "short_name": "TGN",
+  "id": "/",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#F4F5F8",
   "theme_color": "#2D2A4A",
@@ -28,5 +30,6 @@
       "type": "image/webp",
       "form_factor": "narrow"
     }
-  ]
+  ],
+  "categories": ["productivity", "education"]
 }

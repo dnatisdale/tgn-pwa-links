@@ -71,6 +71,15 @@ export default function AddLink() {
         className="w-full border rounded px-3 py-2 mb-1"
         inputMode="url"
       />
+      <label htmlFor="title" className="...">Title</label>
+<input name="title" id="title" ... />
+
+<label htmlFor="language" className="...">Language</label>
+<input name="language" id="language" ... />
+
+<label htmlFor="url" className="...">URL</label>
+<input name="url" id="url" inputMode="url" ... />
+
       <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 12 }}>{t('mustBeHttps')}</div>
       <button onClick={onSave} disabled={saving} className="btn btn-red">
         {saving ? t('saving') : t('save')}
