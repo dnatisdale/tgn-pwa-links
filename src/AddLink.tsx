@@ -1,10 +1,11 @@
+// src/AddLink.tsx
 import React, { useState } from 'react';
 import { auth, db } from './firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useI18n } from './i18n-provider';
 
 function toHttpsOrNull(input: string): string | null {
-  const raw = input.trim();
+  const raw = (input || '').trim();
   if (!raw) return null;
   if (/^http:\/\//i.test(raw)) return null; // disallow plain http
   const withScheme = /^(https?:)?\/\//i.test(raw) ? raw : `https://${raw}`;
@@ -18,7 +19,7 @@ function toHttpsOrNull(input: string): string | null {
 }
 
 export default function AddLink() {
-  // Safe t() fallback so labels/alerts never show "undefined"
+  // Safe t() fallback so UI never shows "undefined"
   let t = (k: string) => k as unknown as string;
   try {
     const i = useI18n();
@@ -40,7 +41,7 @@ export default function AddLink() {
   const [url, setUrl] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const onSave = async () => {
+  const doSave = async () => {
     const user = auth.currentUser;
     if (!user) return alert(T('pleaseSignIn', 'Please sign in first.'));
     if (!title.trim()) return alert(T('pleaseEnterTitle', 'Please enter a title.'));
@@ -67,15 +68,19 @@ export default function AddLink() {
     }
   };
 
+  // NEW: handle Enter/Return to save
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!saving) doSave();
+  };
+
   return (
-    <div className="max-w-md">
-      {/* Title */}
-      <label htmlFor="title" className="block text-sm font-semibold mb-1 not-italic">
-        {T('title', 'Title')}
-      </label>
+    <form className="max-w-md" onSubmit={onSubmit} noValidate>
+      {/* Title (no label; placeholder + aria-label) */}
       <input
         id="title"
         name="title"
+        aria-label={T('title', 'Title')}
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder={T('title', 'Title')}
@@ -84,12 +89,10 @@ export default function AddLink() {
       />
 
       {/* Language */}
-      <label htmlFor="language" className="block text-sm font-semibold mb-1 not-italic">
-        {T('languageOfContent', 'Language')}
-      </label>
       <input
         id="language"
         name="language"
+        aria-label={T('languageOfContent', 'Language')}
         value={language}
         onChange={(e) => setLanguage(e.target.value)}
         placeholder={T('languageOfContent', 'Language')}
@@ -98,12 +101,10 @@ export default function AddLink() {
       />
 
       {/* URL */}
-      <label htmlFor="url" className="block text-sm font-semibold mb-1 not-italic">
-        {T('url', 'URL')}
-      </label>
       <input
         id="url"
         name="url"
+        aria-label={T('url', 'URL')}
         value={url}
         onChange={(e) => setUrl(e.target.value)}
         placeholder={T('url', 'URL')}
@@ -113,11 +114,13 @@ export default function AddLink() {
       />
 
       <div className="text-xs text-gray-500 mb-3 not-italic">
-        {T('mustBeHttps', 'Must be an HTTPS link')}
+        {T('mustBeHttps', 'URL must be https (or leave off scheme to auto-https)')}
+        <br />
+        {T('pressEnterToSave', 'Tip: press Enter to save')}
       </div>
 
       <button
-        onClick={onSave}
+        type="submit" // <-- submit triggers onSubmit
         disabled={saving}
         className="not-italic"
         style={{
@@ -126,10 +129,12 @@ export default function AddLink() {
           borderRadius: 9999,
           padding: '8px 16px',
           fontWeight: 600,
+          fontStyle: 'normal',
         }}
+        title={T('save', 'Save')}
       >
         {saving ? T('saving', 'Saving…') : T('save', 'Save')}
       </button>
-    </div>
+    </form>
   );
 }
