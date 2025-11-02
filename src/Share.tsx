@@ -30,7 +30,7 @@ export default function Share({ url, title = 'Link' }: Props) {
     <div className="flex items-center gap-8">
       <button
         className="btn btn-red"
-        style={{ borderRadius: 9999, padding: '8px 16px', fontWeight: 700 }}
+        style={{ borderRadius: 9999, padding: '8px 16px', fontWeight: 600 }}
         onClick={webShare}
       >
         {t('share')}

@@ -75,7 +75,7 @@ a {
   color: #fff;
 }
 .btn:hover {
-  filter: brightness(1);
+  filter: brightness(1.3);
 }
 .btn:disabled {
   opacity: 0.6;
@@ -314,14 +314,14 @@ a {
 .tab {
   padding: clamp(6px, 1vw, 8px) clamp(10px, 1.7vw, 14px);
   border-radius: 9999px;
-  border: 1px solid #e5e7eb;
+  border: 2px solid #e5e7eb;
   background: #fff;
-  font-weight: 600;
+  font-weight: 400;
   color: #111827;
-  font-size: clamp(12px, 1vw, 14px);
+  font-size: clamp(18px, 1vw, 14px);
 }
 .tab:hover {
-  background: #f3f4f6;
+  background: #dadadb;
 }
 .tab-active {
   background: var(--thai-blue);
@@ -336,10 +336,10 @@ a {
   justify-self: end;
 }
 .searchbar {
-  border: 1px solid #e5e7eb;
+  border: 3px solid #a51931;
   border-radius: 9999px;
   padding: 8px 14px;
-  min-width: 260px;
+  min-width: 50px;
 }
 .filter-links .linklike.active {
   text-decoration: underline;
