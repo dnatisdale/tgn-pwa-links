@@ -112,7 +112,7 @@ export default function Contact() {
   return (
     <section className="w-full max-w-3xl mx-auto px-4 sm:px-6">
       {/* Title: bold, not italic, minimal text */}
-      <h2 className="text-lg font-semibold mb-2">{tt('contactTitle', 'Contact')}</h2>
+      <h2 className="text-lg font-semibold mb-2">{tt('contactTitle', 'Contact Us')}</h2>
 
       {/* Compact vertical spacing between fields */}
       <form ref={formRef} onSubmit={onSubmit} className="space-y-2" noValidate>
