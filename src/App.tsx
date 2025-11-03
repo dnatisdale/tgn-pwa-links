@@ -318,15 +318,19 @@ export default function App() {
                   </div>
 
                   <button
-                    className="btn btn-blue not-italic"
+                    className="group btn btn-blue not-italic"
                     onClick={batchDownload}
                     disabled={!selectedRows.length}
                   >
-                    {tOr('downloadQRCards', 'Download QR cards')} ({selectedRows.length})
+                    <span className="motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]">
+                      {tOr('downloadQRCards', 'Download QR cards')} ({selectedRows.length})
+                    </span>
                   </button>
 
-                  <button className="linklike not-italic" onClick={copySelectedLinks}>
-                    {tOr('copyLink', 'Copy link')}
+                  <button className="group linklike not-italic" onClick={copySelectedLinks}>
+                    <span className="motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]">
+                      {tOr('copyLink', 'Copy link')}
+                    </span>
                   </button>
                 </div>
               </div>

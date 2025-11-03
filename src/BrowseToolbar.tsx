@@ -21,6 +21,8 @@ export default function BrowseToolbar({ q, setQ, filterThai, setFilterThai }: Pr
     if (!q) setQ('');
   };
 
+  const isOpen = expanded || !!q;
+
   return (
     <div className="flex items-center justify-between gap-4 mt-2 mb-4">
       {/* Left: language filter */}
@@ -48,18 +50,23 @@ export default function BrowseToolbar({ q, setQ, filterThai, setFilterThai }: Pr
         <div
           className={[
             'relative flex items-center transition-all duration-200',
-            expanded || q ? 'w-64' : 'w-10',
+            isOpen ? 'w-64' : 'w-10',
           ].join(' ')}
         >
-          {/* Circle button */}
+          {/* Circle button — Thai red closed; white fill + Thai red border when open */}
           <button
-            onClick={expanded ? closeSearch : openSearch}
-            className="flex items-center justify-center w-10 h-10 rounded-full border border-gray-300 bg-white hover:bg-gray-50"
-            title={expanded ? 'Close search' : 'Search'}
+            onClick={isOpen ? closeSearch : openSearch}
+            className={[
+              'flex items-center justify-center w-10 h-10 rounded-full border transition-colors duration-200',
+              isOpen
+                ? 'bg-white border-[#A51931] text-[#A51931]' // open: white fill, Thai-red border, red icon
+                : 'bg-[#A51931] border-black text-white hover:opacity-95', // closed: Thai-red fill, white icon
+            ].join(' ')}
+            title={isOpen ? 'Close search' : 'Search'}
             aria-label="Search"
             type="button"
           >
-            {/* magnifying glass */}
+            {/* magnifying glass uses currentColor so it follows button text color */}
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="18"
@@ -84,7 +91,7 @@ export default function BrowseToolbar({ q, setQ, filterThai, setFilterThai }: Pr
               'absolute right-0 h-10 pl-3 pr-3 rounded-full border border-gray-300 bg-white',
               'outline-none text-sm not-italic',
               'transition-all duration-200',
-              expanded || q
+              isOpen
                 ? 'opacity-100 pointer-events-auto w-52 ml-2'
                 : 'opacity-0 pointer-events-none w-0',
             ].join(' ')}

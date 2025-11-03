@@ -5,24 +5,22 @@ import { useI18n } from './i18n-provider';
 export type ShareProps = {
   url: string;
   title?: string;
-  /** Optional: id of an existing <canvas> that holds a QR image (for future use) */
+  /** Optional: id of a QR <canvas> (for future use) */
   qrCanvasId?: string;
 };
 
-export default function Share({ url, title = 'Link', qrCanvasId }: ShareProps) {
+const grow =
+  'motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]';
+
+export default function Share({ url, title = 'Link' }: ShareProps) {
   const { t } = useI18n();
 
   const webShare = async () => {
-    // (optional) if you ever need the canvas, you can read it like this:
-    // const qrCanvas = qrCanvasId
-    //   ? (document.getElementById(qrCanvasId) as HTMLCanvasElement | null)
-    //   : null;
-
     if (navigator.share) {
       try {
         await navigator.share({ title, text: title, url });
       } catch {
-        /* user canceled or share failed */
+        /* cancelled */
       }
       return;
     }
@@ -45,16 +43,19 @@ export default function Share({ url, title = 'Link', qrCanvasId }: ShareProps) {
 
   return (
     <div className="flex items-center gap-8">
+      {/* Share button: red pill, grows text on hover/focus/press */}
       <button
-        className="btn btn-red"
+        className="group btn btn-red"
         style={{ borderRadius: 9999, padding: '8px 16px', fontWeight: 600 }}
         onClick={webShare}
+        type="button"
       >
-        {t('share')}
+        <span className={grow}>{t('share')}</span>
       </button>
 
-      <button className="linklike" onClick={copy}>
-        {t('copyLink')}
+      {/* Copy link: linklike text only grows */}
+      <button className="group linklike" onClick={copy} type="button">
+        <span className={grow}>{t('copyLink')}</span>
       </button>
     </div>
   );

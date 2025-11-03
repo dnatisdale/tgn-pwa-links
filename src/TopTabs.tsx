@@ -66,17 +66,26 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
   const TabBtn = ({ active, label, to }: { active: boolean; label: string; to: TabKey }) => (
     <button
       className={[
-        baseBtn,
+        'group inline-flex items-center justify-center select-none not-italic transition-colors duration-200 border rounded-full',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black',
         // responsive sizing
         'text-sm sm:text-base px-3 py-1.5 sm:px-5 sm:py-2',
         active
-          ? 'bg-[#2D2A4A] border-[#2D2A4A] text-white shadow-sm' // Thai blue + white
+          ? 'bg-[#2D2A4A] border-[#2D2A4A] text-white shadow-sm'
           : 'bg-white border-gray-300 text-[#2D2A4A] hover:bg-gray-50',
       ].join(' ')}
       onClick={() => go(to)}
       aria-current={active ? 'page' : undefined}
     >
-      {label}
+      <span
+        className={[
+          // ONLY scale the text/icon, not the whole button
+          'motion-safe:transition-transform motion-safe:duration-150',
+          'group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]',
+        ].join(' ')}
+      >
+        {label}
+      </span>
     </button>
   );
 
@@ -93,7 +102,8 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
           {/* Keep ADD as the first chip, styled in Thai red, still part of the centered row */}
           <button
             className={[
-              baseBtn,
+              'group inline-flex items-center justify-center select-none not-italic border rounded-xl',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black',
               'text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2',
               currentTab === 'ADD'
                 ? 'bg-[#A51931] text-white border-black'
@@ -101,7 +111,9 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
             ].join(' ')}
             onClick={() => go('ADD')}
           >
-            {tOr('add', 'Add')}
+            <span className="motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]">
+              {tOr('add', 'Add')}
+            </span>
           </button>
 
           <nav
