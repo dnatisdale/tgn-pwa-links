@@ -26,7 +26,7 @@ export default function Header() {
       <div className="absolute top-2 right-3 z-50 flex items-center gap-2">
         <LangPill />
         <InstallPWA className="btn btn-red" label={t('install')} disabledLabel={t('install')} />
-        {isAuthed && <LogoutButton className="btn btn-blue">{t('logout')}</LogoutButton>}
+        {isAuthed && <Logout Button className="btn btn-blue">{t('logout')}</LogoutButton>}
       </div>
 
       {/* Add a bit of top padding on small screens so buttons don't overlap the banner */}
