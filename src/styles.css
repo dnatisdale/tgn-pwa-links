@@ -578,3 +578,16 @@ button,
   white-space: nowrap;
   border: 0;
 }
+
+/* Keep same colors on hover/focus/active for specific buttons */
+.btn-static,
+.btn-static:hover,
+.btn-static:focus,
+.btn-static:active {
+  background: inherit !important;
+  color: inherit !important;
+  border-color: inherit !important;
+  opacity: 1 !important;
+  filter: none !important;
+  box-shadow: inherit !important;
+}

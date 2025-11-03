@@ -3,8 +3,8 @@ import React from 'react';
 
 type Props = {
   className?: string;
-  label?: string; // shown when install is available
-  disabledLabel?: string; // shown when not available / already installed
+  label?: string;         // when install is available
+  disabledLabel?: string; // when not available / already installed
 };
 
 const grow =
@@ -41,9 +41,7 @@ export default function InstallPWA({
       await prompt.prompt?.();
       await prompt.userChoice;
       setPrompt(null);
-    } catch {
-      /* user canceled */
-    }
+    } catch {}
   };
 
   const canInstall = !!prompt && !installed;
@@ -53,7 +51,7 @@ export default function InstallPWA({
       type="button"
       onClick={canInstall ? doInstall : undefined}
       disabled={!canInstall}
-      className={`group ${className}`}
+      className={`group ${className} btn-static`}   {/* <- freezes hover colors */}
       title={canInstall ? label : disabledLabel}
       style={{ borderRadius: 12, fontWeight: 600, padding: '6px 12px' }}
     >
