@@ -11,8 +11,7 @@ const grow =
   'motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]';
 
 export default function InstallPWA({
-  // default class is now "ADD-like"
-  className = 'btn add-like',
+  className = '',
   label = 'Install',
   disabledLabel = 'Install',
 }: Props) {
@@ -52,9 +51,15 @@ export default function InstallPWA({
       type="button"
       onClick={canInstall ? doInstall : undefined}
       disabled={!canInstall}
-      className={`group ${className} btn-static`} /* freeze hover colors */
+      // 👇 EXACTLY like your ADD chip: Thai-red bg, black border, rounded-xl, same text size/weight
+      className={[
+        'group inline-flex items-center justify-center select-none not-italic',
+        'font-semibold text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2',
+        'rounded-xl border border-black',
+        canInstall ? 'bg-[#A51931] text-white' : 'bg-[#A51931] text-white opacity-95',
+        className,
+      ].join(' ')}
       title={canInstall ? label : disabledLabel}
-      style={{ borderRadius: 12, fontWeight: 600, padding: '8px 16px' }}
     >
       <span className={grow}>{canInstall ? label : disabledLabel}</span>
     </button>
