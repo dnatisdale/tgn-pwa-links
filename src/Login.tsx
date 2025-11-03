@@ -4,6 +4,10 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'fire
 import { auth } from './firebase';
 import { useI18n } from './i18n-provider';
 
+// gentle grow, text-only (respects Reduce Motion)
+const grow =
+  'motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]';
+
 export default function Login() {
   // Safe i18n: never render "undefined"
   let t = (k: string) => k;
@@ -33,6 +37,7 @@ export default function Login() {
   const signUp = async () => {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
+      localStorage.removeItem('tgn.guest');
     } catch (e: any) {
       alert(e?.message || String(e));
     }
@@ -86,30 +91,36 @@ export default function Login() {
 
         {/* Buttons row */}
         <div className="mt-3 grid grid-cols-3 gap-2 md:flex md:flex-wrap md:items-center md:gap-3">
+          {/* Sign in */}
           <button
             type="submit"
-            className="btn btn-blue w-full md:w-auto justify-center not-italic"
+            className="group btn btn-blue w-full md:w-auto justify-center not-italic"
+            aria-label={tOr('signin', 'Sign in')}
             title={tOr('signin', 'Sign in')}
           >
-            {tOr('signin', 'Sign in')}
+            <span className={grow}>{tOr('signin', 'Sign in')}</span>
           </button>
 
+          {/* Sign up */}
           <button
             type="button"
-            className="btn btn-red w-full md:w-auto justify-center not-italic"
+            className="group btn btn-red w-full md:w-auto justify-center not-italic"
             onClick={signUp}
+            aria-label={tOr('signup', 'Sign up')}
             title={tOr('signup', 'Sign up')}
           >
-            {tOr('signup', 'Sign up')}
+            <span className={grow}>{tOr('signup', 'Sign up')}</span>
           </button>
 
+          {/* Continue as Guest */}
           <button
             type="button"
-            className="btn btn-blue w-full md:w-auto justify-center not-italic"
+            className="group btn btn-blue w-full md:w-auto justify-center not-italic"
             onClick={continueGuest}
+            aria-label={tOr('continueAsGuest', 'Continue as Guest')}
             title={tOr('continueAsGuest', 'Continue as Guest')}
           >
-            {tOr('continueAsGuest', 'Continue as Guest')}
+            <span className={grow}>{tOr('continueAsGuest', 'Continue as Guest')}</span>
           </button>
         </div>
       </form>

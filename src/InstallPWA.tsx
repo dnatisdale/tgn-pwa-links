@@ -1,36 +1,63 @@
+// src/InstallPWA.tsx
 import React from 'react';
 
-let deferred: any = null;
+type Props = {
+  className?: string;
+  label?: string; // shown when install is available
+  disabledLabel?: string; // shown when not available / already installed
+};
+
+const grow =
+  'motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]';
 
 export default function InstallPWA({
-  className = 'btn btn-red install-pwa',
+  className = 'btn btn-red',
   label = 'Install',
   disabledLabel = 'Install',
-}) {
-  const [canInstall, setCanInstall] = React.useState(false);
+}: Props) {
+  const [prompt, setPrompt] = React.useState<any>(null);
+  const [installed, setInstalled] = React.useState(false);
 
   React.useEffect(() => {
-    const onBIP = (e: any) => {
+    const onBeforeInstall = (e: any) => {
       e.preventDefault();
-      deferred = e;
-      setCanInstall(true);
+      setPrompt(e);
     };
-    window.addEventListener('beforeinstallprompt', onBIP);
-    return () => window.removeEventListener('beforeinstallprompt', onBIP);
+    const onInstalled = () => {
+      setInstalled(true);
+      setPrompt(null);
+    };
+    window.addEventListener('beforeinstallprompt', onBeforeInstall);
+    window.addEventListener('appinstalled', onInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBeforeInstall);
+      window.removeEventListener('appinstalled', onInstalled);
+    };
   }, []);
 
-  const onClick = async () => {
-    if (!deferred) return;
-    deferred.prompt();
-    const choice = await deferred.userChoice;
-    deferred = null;
-    setCanInstall(false);
-    // optional: console.log('A2HS choice', choice.outcome)
+  const doInstall = async () => {
+    if (!prompt) return;
+    try {
+      await prompt.prompt?.();
+      await prompt.userChoice;
+      setPrompt(null);
+    } catch {
+      /* user canceled */
+    }
   };
 
+  const canInstall = !!prompt && !installed;
+
   return (
-    <button className={className} onClick={onClick} disabled={!canInstall}>
-      {canInstall ? label : disabledLabel}
+    <button
+      type="button"
+      onClick={canInstall ? doInstall : undefined}
+      disabled={!canInstall}
+      className={`group ${className}`}
+      title={canInstall ? label : disabledLabel}
+      style={{ borderRadius: 12, fontWeight: 600, padding: '6px 12px' }}
+    >
+      <span className={grow}>{canInstall ? label : disabledLabel}</span>
     </button>
   );
 }
