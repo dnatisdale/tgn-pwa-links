@@ -5,12 +5,11 @@ import { useI18n } from './i18n-provider';
 type TabKey = 'BROWSE' | 'ADD' | 'IMPORT' | 'EXPORT' | 'CONTACT' | 'ABOUT';
 
 type Props = {
-  /** Optional lifted-state API (works with hash routing) */
   activeTab?: TabKey;
   setActiveTab?: (t: TabKey) => void;
 };
 
-// helpers to translate between hash and TabKey
+// hash helpers
 const hashToTab = (hash: string): TabKey => {
   if (hash.startsWith('#/add')) return 'ADD';
   if (hash.startsWith('#/import')) return 'IMPORT';
@@ -56,17 +55,22 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
   const go = (tab: TabKey) => {
     const nextHash = tabToHash(tab);
     if (typeof window !== 'undefined' && window.location.hash !== nextHash) {
-      window.location.hash = nextHash; // deep-linking
+      window.location.hash = nextHash;
     }
     setActiveTab?.(tab);
   };
 
+  const baseBtn =
+    'inline-flex items-center justify-center select-none not-italic transition-colors duration-200 border rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black';
+
   const TabBtn = ({ active, label, to }: { active: boolean; label: string; to: TabKey }) => (
     <button
       className={[
-        'px-5 py-2 rounded-full border transition-colors duration-200 not-italic',
+        baseBtn,
+        // responsive sizing
+        'text-sm sm:text-base px-3 py-1.5 sm:px-5 sm:py-2',
         active
-          ? 'bg-[#2D2A4A] border-[#2D2A4A] text-white shadow-sm' // Thai blue + white text ✅
+          ? 'bg-[#2D2A4A] border-[#2D2A4A] text-white shadow-sm' // Thai blue + white
           : 'bg-white border-gray-300 text-[#2D2A4A] hover:bg-gray-50',
       ].join(' ')}
       onClick={() => go(to)}
@@ -78,31 +82,45 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
 
   return (
     <div className="w-full">
-      <div className="flex items-center gap-3 my-3">
-        {/* ADD button stays on the left */}
-        <button
-          className={[
-            'px-4 py-2 rounded-xl border not-italic',
-            currentTab === 'ADD'
-              ? 'bg-[#A51931] text-white border-black'
-              : 'bg-[#A51931] text-white border-black opacity-95',
-          ].join(' ')}
-          onClick={() => go('ADD')}
+      {/* Centered container, wraps nicely on phones, constrained on wide screens */}
+      <div className="mx-auto max-w-5xl px-2">
+        <div
+          className="
+            flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4
+            my-3
+          "
         >
-          {tOr('add', 'Add')}
-        </button>
+          {/* Keep ADD as the first chip, styled in Thai red, still part of the centered row */}
+          <button
+            className={[
+              baseBtn,
+              'text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2',
+              currentTab === 'ADD'
+                ? 'bg-[#A51931] text-white border-black'
+                : 'bg-[#A51931] text-white/95 border-black hover:text-white',
+            ].join(' ')}
+            onClick={() => go('ADD')}
+          >
+            {tOr('add', 'Add')}
+          </button>
 
-        <nav className="flex items-center gap-3" aria-label="Primary">
-          <TabBtn active={currentTab === 'BROWSE'} label={tOr('browse', 'Browse')} to="BROWSE" />
-          <TabBtn active={currentTab === 'IMPORT'} label={tOr('import', 'Import')} to="IMPORT" />
-          <TabBtn active={currentTab === 'EXPORT'} label={tOr('export', 'Export')} to="EXPORT" />
-          <TabBtn
-            active={currentTab === 'CONTACT'}
-            label={tOr('contact', 'Contact')}
-            to="CONTACT"
-          />
-          <TabBtn active={currentTab === 'ABOUT'} label={tOr('about', 'About')} to="ABOUT" />
-        </nav>
+          <nav
+            className="
+              flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4
+            "
+            aria-label="Primary"
+          >
+            <TabBtn active={currentTab === 'BROWSE'} label={tOr('browse', 'Browse')} to="BROWSE" />
+            <TabBtn active={currentTab === 'IMPORT'} label={tOr('import', 'Import')} to="IMPORT" />
+            <TabBtn active={currentTab === 'EXPORT'} label={tOr('export', 'Export')} to="EXPORT" />
+            <TabBtn
+              active={currentTab === 'CONTACT'}
+              label={tOr('contact', 'Contact')}
+              to="CONTACT"
+            />
+            <TabBtn active={currentTab === 'ABOUT'} label={tOr('about', 'About')} to="ABOUT" />
+          </nav>
+        </div>
       </div>
     </div>
   );
