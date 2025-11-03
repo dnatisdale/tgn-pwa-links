@@ -155,14 +155,12 @@ export default function Contact() {
         </div>
 
         {/* Message */}
-        <label htmlFor="message" className="block text-sm font-semibold mb-1 not-italic">
-          {tt('contactMessage', 'Message')}
-        </label>
-
         <div className="relative">
           <textarea
             id="message"
             name="message"
+            type="text"
+            aria-label={tt('phContactMessage', 'Message')}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             maxLength={500}
