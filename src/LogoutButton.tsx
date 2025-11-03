@@ -1,6 +1,7 @@
 // src/LogoutButton.tsx
 import React from 'react';
-import { getAuth, signOut } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
+import { auth } from './firebase';
 
 type Props = {
   className?: string;
@@ -13,11 +14,9 @@ export default function LogoutButton({ className = 'btn btn-blue', children }: P
   const handleLogout = async () => {
     try {
       setBusy(true);
-      await signOut(getAuth());
-      // clean up any guest flag
-      localStorage.removeItem('tgn.guest');
-      // simple navigate home (adjust if you have a router)
-      window.location.hash = '#/';
+      await signOut(auth); // ✅ use the shared instance
+      localStorage.removeItem('tgn.guest'); // clear guest flag
+      window.location.hash = '#/'; // simple navigate home
     } catch (err) {
       console.error('Logout failed:', err);
       alert('Could not log out. Please try again.');

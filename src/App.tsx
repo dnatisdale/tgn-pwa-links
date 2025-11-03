@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Banner from './Banner';
 import AppMain from './components/AppMain';
 import Header from './Header';
+import BrowseToolbar from './BrowseToolbar';
 import Footer from './Footer';
 import Login from './Login';
 import ImportExport from './ImportExport';
@@ -249,7 +250,7 @@ export default function App() {
     <>
       <div className="app-shell" style={{ fontSize: textPx }}>
         <Header />
-        <TopTabs q={q} setQ={setQ} filterThai={filterThai} setFilterThai={setFilterThai} />
+        <TopTabs />
         <main className="p-3 max-w-5xl mx-auto app-main">
           {isAdd ? (
             <section>
@@ -280,6 +281,14 @@ export default function App() {
             </section>
           ) : (
             <section>
+              {/* Language filter + expanding search moved here */}
+              <BrowseToolbar
+                q={q}
+                setQ={setQ}
+                filterThai={filterThai}
+                setFilterThai={setFilterThai}
+              />
+
               <div className="flex flex-wrap items-center gap-8 mb-3">
                 <label className="text-sm not-italic">
                   <input

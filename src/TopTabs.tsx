@@ -1,17 +1,11 @@
+// src/TopTabs.tsx
 import React from 'react';
 import { useI18n } from './i18n-provider';
 
 type TabKey = 'BROWSE' | 'ADD' | 'IMPORT' | 'EXPORT' | 'CONTACT' | 'ABOUT';
 
 type Props = {
-  q: string;
-  setQ: (s: string) => void;
-  filterThai: boolean;
-  setFilterThai: (b: boolean) => void;
-
-  /** Optional lifted-state API (works alongside hash routing).
-   * If provided, TopTabs will call setActiveTab and also update location.hash for deep-links.
-   */
+  /** Optional lifted-state API (works with hash routing) */
   activeTab?: TabKey;
   setActiveTab?: (t: TabKey) => void;
 };
@@ -38,22 +32,14 @@ const tabToHash = (t: TabKey) =>
     ? '#/about'
     : '#/browse';
 
-export default function TopTabs({
-  q,
-  setQ,
-  filterThai,
-  setFilterThai,
-  activeTab,
-  setActiveTab,
-}: Props) {
-  // --- safe i18n (prevents "undefined") ---
+export default function TopTabs({ activeTab, setActiveTab }: Props) {
+  // safe i18n
   let t = (k: string) => k;
   try {
     const i = useI18n();
     if (i && typeof i.t === 'function') t = i.t;
-  } catch {
-    /* ignore if provider not mounted */
-  }
+  } catch {}
+
   const tOr = (k: string, fb: string) => {
     try {
       const v = t?.(k);
@@ -63,24 +49,26 @@ export default function TopTabs({
     }
   };
 
-  // Determine current tab (prefer lifted state if provided, else from hash)
   const currentHash =
     typeof window !== 'undefined' ? window.location.hash || '#/browse' : '#/browse';
   const currentTab: TabKey = activeTab ?? hashToTab(currentHash);
 
   const go = (tab: TabKey) => {
     const nextHash = tabToHash(tab);
-    // update hash for deep-linking/bookmarks
     if (typeof window !== 'undefined' && window.location.hash !== nextHash) {
-      window.location.hash = nextHash;
+      window.location.hash = nextHash; // deep-linking
     }
-    // also notify parent if they provided lifted state
     setActiveTab?.(tab);
   };
 
-  const Tab = ({ active, label, to }: { active: boolean; label: string; to: TabKey }) => (
+  const TabBtn = ({ active, label, to }: { active: boolean; label: string; to: TabKey }) => (
     <button
-      className={`tab ${active ? 'tab-active' : ''} not-italic`}
+      className={[
+        'px-5 py-2 rounded-full border transition-colors duration-200 not-italic',
+        active
+          ? 'bg-[#2D2A4A] border-[#2D2A4A] text-white shadow-sm' // Thai blue + white text ✅
+          : 'bg-white border-gray-300 text-[#2D2A4A] hover:bg-gray-50',
+      ].join(' ')}
       onClick={() => go(to)}
       aria-current={active ? 'page' : undefined}
     >
@@ -88,60 +76,34 @@ export default function TopTabs({
     </button>
   );
 
-  const isBrowse = currentTab === 'BROWSE';
-
   return (
-    <div className="tabs-bar">
-      <button
-        className={`btn btn-red add-btn not-italic ${currentTab === 'ADD' ? 'add-active' : ''}`}
-        onClick={() => go('ADD')}
-      >
-        {tOr('add', 'Add')}
-      </button>
+    <div className="w-full">
+      <div className="flex items-center gap-3 my-3">
+        {/* ADD button stays on the left */}
+        <button
+          className={[
+            'px-4 py-2 rounded-xl border not-italic',
+            currentTab === 'ADD'
+              ? 'bg-[#A51931] text-white border-black'
+              : 'bg-[#A51931] text-white border-black opacity-95',
+          ].join(' ')}
+          onClick={() => go('ADD')}
+        >
+          {tOr('add', 'Add')}
+        </button>
 
-      <nav className="tabs-list" aria-label="Primary">
-        <Tab active={currentTab === 'BROWSE'} label={tOr('browse', 'Browse')} to="BROWSE" />
-        <Tab active={currentTab === 'IMPORT'} label={tOr('import', 'Import')} to="IMPORT" />
-        <Tab active={currentTab === 'EXPORT'} label={tOr('export', 'Export')} to="EXPORT" />
-        <Tab active={currentTab === 'CONTACT'} label={tOr('contact', 'Contact')} to="CONTACT" />
-        <Tab active={currentTab === 'ABOUT'} label={tOr('about', 'About')} to="ABOUT" />
-      </nav>
-
-      {isBrowse ? (
-        <div className="tabs-search">
-          <div className="filter-links">
-            <button
-              className={`${!filterThai ? 'active' : ''} linklike not-italic`}
-              onClick={() => setFilterThai(false)}
-            >
-              {tOr('all', 'All')}
-            </button>
-            <span className="sep">|</span>
-            <button
-              className={`${filterThai ? 'active' : ''} linklike not-italic`}
-              onClick={() => setFilterThai(true)}
-            >
-              {tOr('thai', 'Thai')}
-            </button>
-          </div>
-
-          {/* Put this near the search input in TopTabs.tsx */}
-          <label htmlFor="search" className="sr-only">
-            Search
-          </label>
-          <input
-            id="search"
-            name="search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={tOr('search', 'Search')}
-            className="searchbar search-pill-red not-italic"
-            aria-label={tOr('search', 'Search')}
+        <nav className="flex items-center gap-3" aria-label="Primary">
+          <TabBtn active={currentTab === 'BROWSE'} label={tOr('browse', 'Browse')} to="BROWSE" />
+          <TabBtn active={currentTab === 'IMPORT'} label={tOr('import', 'Import')} to="IMPORT" />
+          <TabBtn active={currentTab === 'EXPORT'} label={tOr('export', 'Export')} to="EXPORT" />
+          <TabBtn
+            active={currentTab === 'CONTACT'}
+            label={tOr('contact', 'Contact')}
+            to="CONTACT"
           />
-        </div>
-      ) : (
-        <div />
-      )}
+          <TabBtn active={currentTab === 'ABOUT'} label={tOr('about', 'About')} to="ABOUT" />
+        </nav>
+      </div>
     </div>
   );
 }

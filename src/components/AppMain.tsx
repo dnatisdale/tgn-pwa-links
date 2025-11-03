@@ -101,17 +101,17 @@ function AppMain() {
       {isAdd ? (
         <section>
           <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
-          <AddLink lang={lang} />
+          <AddLink />
         </section>
       ) : isImport ? (
         <section>
           <h2 className="text-lg font-semibold mb-2">Import</h2>
-          <ImportExport lang={lang} />
+          <ImportExport />
         </section>
       ) : isExport ? (
         <section>
           <h2 className="text-lg font-semibold mb-2">Export</h2>
-          <ExportPage lang={lang} rows={rows} />
+          <ExportPage rows={rows} />
         </section>
       ) : isAbout ? (
         <section>
@@ -247,7 +247,6 @@ function AppMain() {
 
       {/* UPDATE TOAST */}
       <UpdateToast
-        lang={lang}
         show={showUpdate}
         onRefresh={() => {
           (window as any).__REFRESH_SW__?.();
