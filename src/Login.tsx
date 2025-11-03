@@ -9,19 +9,27 @@ const grow =
   'motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]';
 
 export default function Login() {
-  // Safe i18n: never render "undefined"
-  let t = (k: string) => k;
-  try {
-    const i = useI18n();
-    if (i && typeof i.t === 'function') t = i.t;
-  } catch {}
-  const tOr = (k: string, fb: string) => {
+  // Safe i18n: never render "undefined" and avoid type mismatch
+  const rawT = (() => {
     try {
-      const v = t?.(k);
-      return (v ?? '').toString().trim() || fb;
+      return useI18n().t; // typed as (key: keyof Catalog) => string
     } catch {
-      return fb;
+      return undefined;
     }
+  })();
+
+  // expose a lenient t: (k: string) => string
+  const t = (k: string) => {
+    try {
+      return (rawT as any)?.(k) ?? k; // call if present; else echo key
+    } catch {
+      return k;
+    }
+  };
+
+  const tOr = (k: string, fb: string) => {
+    const v = t(k);
+    return (v ?? '').toString().trim() || fb;
   };
 
   const [email, setEmail] = useState('');
@@ -91,25 +99,25 @@ export default function Login() {
 
         {/* Buttons row */}
         <div className="mt-3 grid grid-cols-3 gap-2 md:flex md:flex-wrap md:items-center md:gap-3">
-          {/* Sign in */}
+          {/* Sign In */}
           <button
             type="submit"
             className="group btn btn-blue w-full md:w-auto justify-center not-italic"
-            aria-label={tOr('signin', 'Sign in')}
-            title={tOr('signin', 'Sign in')}
+            aria-label={tOr('signIn', 'Sign In')}
+            title={tOr('signIn', 'Sign In')}
           >
-            <span className={grow}>{tOr('signin', 'Sign in')}</span>
+            <span className={grow}>{tOr('signIn', 'Sign In')}</span>
           </button>
 
-          {/* Sign up */}
+          {/* Sign Up */}
           <button
             type="button"
             className="group btn btn-red w-full md:w-auto justify-center not-italic"
             onClick={signUp}
-            aria-label={tOr('signup', 'Sign up')}
-            title={tOr('signup', 'Sign up')}
+            aria-label={tOr('signUp', 'Sign Up')}
+            title={tOr('signUp', 'Sign Up')}
           >
-            <span className={grow}>{tOr('signup', 'Sign up')}</span>
+            <span className={grow}>{tOr('signUp', 'Sign Up')}</span>
           </button>
 
           {/* Continue as Guest */}
