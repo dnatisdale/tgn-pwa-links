@@ -154,21 +154,25 @@ export default function Contact() {
           />
         </div>
 
-        <div>
+        {/* Message */}
+        <label htmlFor="message" className="block text-sm font-semibold mb-1 not-italic">
+          {tt('contactMessage', 'Message')}
+        </label>
+
+        <div className="relative">
           <textarea
-            id="contactMessage"
-            name="contactMessage"
-            aria-label={tt('contactMessage', 'Message')}
-            className="w-full rounded-xl border border-black/30 p-3 min-h-[140px]"
+            id="message"
+            name="message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            maxLength={500}
             placeholder={tt('phContactMessage', 'Message')}
+            className="w-full border rounded px-3 py-2 pr-16 not-italic"
+            rows={6}
             required
-            maxLength={MAX_MESSAGE_LEN}
           />
-          <div className="mt-1 text-xs text-black/60">
-            {charsUsed}/{MAX_MESSAGE_LEN}
-          </div>
+          {/* counter INSIDE the textarea area */}
+          <span className="counter-inside">{message.length}/500</span>
         </div>
 
         {status === 'sent' && <p className="text-sm">{tt('contactSuccess', 'Sent ✅')}</p>}

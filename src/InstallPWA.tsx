@@ -3,15 +3,16 @@ import React from 'react';
 
 type Props = {
   className?: string;
-  label?: string;         // when install is available
-  disabledLabel?: string; // when not available / already installed
+  label?: string;
+  disabledLabel?: string;
 };
 
 const grow =
   'motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]';
 
 export default function InstallPWA({
-  className = 'btn btn-red',
+  // default class is now "ADD-like"
+  className = 'btn add-like',
   label = 'Install',
   disabledLabel = 'Install',
 }: Props) {
@@ -51,9 +52,9 @@ export default function InstallPWA({
       type="button"
       onClick={canInstall ? doInstall : undefined}
       disabled={!canInstall}
-      className={`group ${className} btn-static`}   {/* <- freezes hover colors */}
+      className={`group ${className} btn-static`} /* freeze hover colors */
       title={canInstall ? label : disabledLabel}
-      style={{ borderRadius: 12, fontWeight: 600, padding: '6px 12px' }}
+      style={{ borderRadius: 12, fontWeight: 600, padding: '8px 16px' }}
     >
       <span className={grow}>{canInstall ? label : disabledLabel}</span>
     </button>

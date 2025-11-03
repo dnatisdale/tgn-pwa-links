@@ -591,3 +591,55 @@ button,
   filter: none !important;
   box-shadow: inherit !important;
 }
+
+/* === Unified button look (same text size/weight as Browse) === */
+.btn {
+  font-size: 1rem; /* ~text-base */
+  line-height: 1.25rem;
+  font-weight: 600; /* semibold */
+  border-radius: 9999px; /* pill */
+  padding: 8px 20px; /* like Browse chip */
+}
+
+/* Color helpers for Thai palette */
+.btn-red {
+  background: #a51931;
+  color: #fff;
+  border: 1px solid #000;
+}
+.btn-blue {
+  background: #2d2a4a;
+  color: #fff;
+  border: 1px solid #2d2a4a;
+}
+
+/* Keep same colors on hover/focus/active for specific buttons */
+.btn-static,
+.btn-static:hover,
+.btn-static:focus,
+.btn-static:active {
+  background: inherit !important;
+  color: inherit !important;
+  border-color: inherit !important;
+  opacity: 1 !important;
+  filter: none !important;
+  box-shadow: inherit !important;
+}
+
+/* Make Install look exactly like ADD */
+.add-like {
+  background: #a51931;
+  color: #fff;
+  border: 1px solid #000;
+  border-radius: 12px;
+}
+
+/* Inside-textarea counter */
+.counter-inside {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  font-size: 0.8rem;
+  color: #6b7280; /* gray-500 */
+  pointer-events: none;
+}
