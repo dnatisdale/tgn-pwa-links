@@ -75,7 +75,7 @@ a {
   color: #fff;
 }
 .btn:hover {
-  filter: brightness(1.3);
+  filter: brightness(1);
 }
 .btn:disabled {
   opacity: 0.6;
@@ -116,6 +116,7 @@ a {
 }
 
 .tgn-header-right {
+  position: relative; /* keeps linter happy; safe default */
   /* position/spacing set inline in Header.tsx */
 }
 
