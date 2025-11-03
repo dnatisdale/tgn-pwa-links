@@ -321,11 +321,11 @@ a {
   font-size: clamp(18px, 1vw, 14px);
 }
 .tab:hover {
-  background: #dadadb;
+  background: #ffffff;
 }
 .tab-active {
   background: var(--thai-blue);
-  color: #fff;
+  color: #000000;
   border-color: var(--thai-blue);
 }
 .tabs-search {
