@@ -318,18 +318,19 @@ export default function App() {
                   </div>
 
                   <button
-                    className="group btn btn-blue not-italic"
                     onClick={batchDownload}
                     disabled={!selectedRows.length}
+                    className={[
+                      'group inline-flex items-center justify-center select-none not-italic',
+                      'font-semibold text-sm sm:text-base px-4 py-2',
+                      'rounded-xl border',
+                      selectedRows.length
+                        ? 'bg-[#2D2A4A] text-white border-[#2D2A4A]'
+                        : 'bg-[#2D2A4A] text-white border-[#2D2A4A] opacity-50 cursor-not-allowed',
+                    ].join(' ')}
                   >
                     <span className="motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]">
                       {tOr('downloadQRCards', 'Download QR cards')} ({selectedRows.length})
-                    </span>
-                  </button>
-
-                  <button className="group linklike not-italic" onClick={copySelectedLinks}>
-                    <span className="motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]">
-                      {tOr('copyLink', 'Copy link')}
                     </span>
                   </button>
                 </div>
