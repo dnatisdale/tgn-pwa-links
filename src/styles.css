@@ -1,16 +1,18 @@
 /* =========================
    Thai Good News — Styles
-   Cleaned & de-duplicated
+   Clean + Tailwind-friendly
    ========================= */
-/* src/styles.css */
+
+/* --- Tailwind core directives --- */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* --- Base fonts and headings --- */
 @layer base {
   html,
   body {
-    @apply font-krub font-normal not-italic; /* ← key line */
+    @apply font-krub font-normal not-italic;
   }
   h1 {
     @apply font-bold;
@@ -22,625 +24,222 @@
     @apply font-medium;
   }
 }
-/* ───────────────── Theme: Thai flag colors ───────────────── */
+
+/* --- Thai flag colors --- */
 :root {
   --thai-red: #a51931;
   --thai-blue: #2d2a4a;
   --thai-white: #f4f5f8;
   --thai-black: #000000;
-
-  /* Global typographic base (App can adjust this) */
-  --base: 16px;
 }
 
-/* ───────────────── Base resets ───────────────── */
+/* --- Global typography base --- */
 html {
-  font-size: var(--base);
-}
-html,
-:host {
-  text-size-adjust: 100%;
+  font-size: 16px;
 }
 a {
   text-decoration: underline;
 }
 
-/* Small helper hints */
+/* --- Helper hints --- */
 .hint-under,
 .inline-hint {
   font-size: 12px;
-  color: #6b7280; /* gray-500-ish */
-}
-
-/* ───────────────── Uniform brand buttons ───────────────── */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 38px;
-  padding: 8px 14px;
-  border-radius: 10px;
-  border: none;
-  font-weight: 600;
-  line-height: 1;
-  cursor: pointer;
-  transition: filter 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
-}
-.btn-red {
-  background: var(--thai-red);
-  color: #fff;
-}
-.btn-blue {
-  background: var(--thai-blue);
-  color: #fff;
-}
-.btn:hover {
-  filter: brightness(1);
-}
-.btn:disabled {
-  opacity: 0.6;
-  pointer-events: none;
-  filter: none;
-}
-.btn:focus-visible {
-  outline: 2px solid var(--thai-blue);
-  outline-offset: 2px;
-}
-
-/* Link-look button (same row height as .btn when needed) */
-.linklike {
-  background: none;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  color: var(--thai-blue);
-  text-decoration: underline;
-  line-height: 38px;
-}
-
-/* ───────────────── Header + Banner + Overlay actions ───────────────── */
-/* Header is a positioning context so the action cluster can sit on top-right */
-.tgn-header {
-  position: relative;
-  display: block;
-  padding: 6px 10px 18px; /* room for overlay */
-  border-bottom: 1px solid #eee;
-  background: #fff;
-}
-.tgn-header-left {
-  min-width: 0;
-}
-
-.tgn-header-left {
-  height: var(--banner-height, 72px);
-}
-
-.tgn-header-right {
-  position: relative; /* keeps linter happy; safe default */
-  /* position/spacing set inline in Header.tsx */
-}
-
-/* Banner image (responsive, tidy) */
-.tgn-banner-img {
-  display: block;
-  height: 56px;
-  max-width: 100%;
-  object-fit: contain;
-}
-
-/* Absolute cluster in upper-right: [Install (red) over Logout (blue)]  +  LangPill at far right */
-.action-cluster {
-  position: absolute;
-  top: 6px;
-  right: 10px;
-  z-index: 10;
-  display: flex;
-  align-items: flex-end;
-  gap: 10px;
-}
-.action-left-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
-}
-
-@media (max-width: 480px) {
-  .action-cluster {
-    top: 4px;
-    right: 8px;
-    gap: 8px;
-  }
-  .tgn-banner-img {
-    height: 48px;
-  }
-}
-
-/* Keep InstallPWA red even if it renders its own inner <button> */
-.install-pwa button {
-  background: var(--thai-red) !important;
-  color: #fff !important;
-  border-radius: 12px !important;
-  min-height: 38px;
-}
-
-/* ───────────────── LangPill (two-tone, 14px, not bold) ─────────────────
-   Requirements:
-   - Furthest item in upper-right (placed as last child of .action-cluster)
-   - Left half Thai-blue with white “a”
-   - Right half white with black “ก”
-   - Subtle inactive fade (almost unnoticeable)
-*/
-.langpill {
-  --thai-blue: #2d2a4a;
-  --white: #ffffff;
-
-  display: inline-grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: center;
-  justify-items: center;
-  background: linear-gradient(90deg, var(--thai-blue) 50%, var(--white) 50%);
-  border: 1px solid var(--thai-blue);
-  border-radius: 999px;
-  height: 32px;
-  min-width: 64px;
-  padding: 0;
-  overflow: hidden;
-}
-.langpill .opt {
-  width: 100%;
-  height: 100%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1;
-  transition: opacity 120ms ease;
-}
-.langpill .opt-en {
-  color: #ffffff;
-} /* white “a” on blue */
-.langpill .opt-th {
-  color: #000000;
-} /* black “ก” on white */
-.langpill .inactive {
-  opacity: 0.88;
-}
-.langpill .active {
-  opacity: 1;
-}
-.langpill:focus-visible {
-  outline: 2px solid rgba(45, 42, 74, 0.35);
-  outline-offset: 2px;
-}
-
-/* ───────────────── Toast (Update available) ───────────────── */
-.toast {
-  position: fixed;
-  left: 50%;
-  bottom: 16px;
-  transform: translateX(-50%);
-  background: #111827;
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: 10px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
-  z-index: 50;
-  text-align: center;
-}
-.toast-row {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-}
-.toast-btn {
-  background: #fff;
-  color: #111827;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-.toast-btn.ghost {
-  background: transparent;
-  color: #fff;
-  border: 1px solid #fff;
-}
-
-/* ───────────────── App Shell & Footer ───────────────── */
-.app-shell {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-.app-main {
-  flex: 1;
-}
-.site-footer {
-  background: #fff;
-  color: #4b5563;
-  padding: 12px;
-  text-align: center;
-  border-top: 1px solid #e5e7eb;
-}
-
-/* ───────────────── Auth card (Login/Signup) ───────────────── */
-.auth-wrap {
-  min-height: 70vh;
-  display: grid;
-  place-items: center;
-  padding: 16px;
-}
-.auth-card {
-  width: 100%;
-  max-width: 420px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 16px;
-}
-.auth-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-.auth-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin: 0;
-}
-
-/* ───────────────── Tabs bar (under header) ───────────────── */
-.tabs-bar {
-  position: sticky;
-  top: 60px;
-  z-index: 40;
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-}
-.tabs-list {
-  justify-self: center;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.tab {
-  padding: clamp(6px, 1vw, 8px) clamp(10px, 1.7vw, 14px);
-  border-radius: 9999px;
-  border: 2px solid #e5e7eb;
-  background: #fff;
-  font-weight: 400;
-  color: #111827;
-  font-size: clamp(18px, 1vw, 14px);
-}
-.tab:hover {
-  background: #ffffff;
-}
-.tab-active {
-  background: var(--thai-blue);
-  color: #000000;
-  border-color: var(--thai-blue);
-}
-.tabs-search {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-self: end;
-}
-.searchbar {
-  border: 3px solid #a51931;
-  border-radius: 9999px;
-  padding: 8px 14px;
-  min-width: 50px;
-}
-.filter-links .linklike.active {
-  text-decoration: underline;
-  font-weight: 600;
-}
-.filter-links .sep {
-  margin: 0 6px;
   color: #6b7280;
 }
 
-@media (max-width: 900px) {
-  .tabs-bar {
-    grid-template-columns: 1fr;
+/* ==========================================================
+   COMPONENTS LAYER — custom buttons, layout, etc.
+   ========================================================== */
+@layer components {
+  /* === Unified button look (same size/font as Browse) === */
+  .btn {
+    @apply inline-flex items-center justify-center font-semibold not-italic;
+    font-size: 1rem; /* text-base */
+    line-height: 1.25rem;
+    border-radius: 9999px;
+    padding: 8px 20px;
+    border: none;
+    cursor: pointer;
+    transition: filter 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
   }
-  .tabs-list {
-    justify-content: center;
-    justify-self: center;
+
+  .btn-red {
+    background: var(--thai-red);
+    color: #fff;
+    border: 1px solid #000;
   }
-  .tabs-search {
-    justify-content: center;
-    justify-self: center;
+
+  .btn-blue {
+    background: var(--thai-blue);
+    color: #fff;
+    border: 1px solid var(--thai-blue);
+  }
+
+  .btn:hover {
+    filter: brightness(1);
+  }
+
+  .btn:disabled {
+    opacity: 0.6;
+    pointer-events: none;
+    filter: none;
+  }
+
+  .btn:focus-visible {
+    outline: 2px solid var(--thai-blue);
+    outline-offset: 2px;
+  }
+
+  /* Link-look button */
+  .linklike {
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    color: var(--thai-blue);
+    text-decoration: underline;
+    line-height: 38px;
+  }
+
+  /* InstallPWA override (make it match ADD) */
+  .add-like {
+    background: var(--thai-red);
+    color: #fff;
+    border: 1px solid #000;
+    border-radius: 12px;
+  }
+
+  /* Keep same colors on hover/focus/active for specific buttons */
+  .btn-static,
+  .btn-static:hover,
+  .btn-static:focus,
+  .btn-static:active {
+    background: inherit !important;
+    color: inherit !important;
+    border-color: inherit !important;
+    opacity: 1 !important;
+    filter: none !important;
+    box-shadow: inherit !important;
+  }
+
+  /* Inside-textarea counter */
+  .counter-inside {
+    position: absolute;
+    right: 10px;
+    bottom: 8px;
+    font-size: 0.8rem;
+    color: #6b7280;
+    pointer-events: none;
+  }
+
+  /* Simple pill */
+  .pill-red {
+    background: var(--thai-red);
+    color: #fff;
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 12px;
+    line-height: 18px;
+  }
+
+  /* LangPill */
+  .langpill {
+    display: inline-grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    justify-items: center;
+    border: 1px solid var(--thai-blue);
+    border-radius: 999px;
+    height: 32px;
+    min-width: 64px;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .langpill--en {
+    background: linear-gradient(90deg, var(--thai-blue) 50%, #fff 50%);
+  }
+  .langpill--th {
+    background: linear-gradient(90deg, #fff 50%, var(--thai-blue) 50%);
+  }
+
+  .langpill .opt {
     width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1;
+    transition: opacity 120ms ease;
   }
-}
 
-/* ───────────────── Share/QR helpers ───────────────── */
-.qr-center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.share-center {
-  display: flex;
-  justify-content: center;
-}
-.share-row {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-}
+  .langpill .inactive {
+    opacity: 0.88;
+  }
+  .langpill .active {
+    opacity: 1;
+  }
 
-/* ───────────────── Import row ───────────────── */
-.file-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-/* ───────────────── Pills & small tags ───────────────── */
-.pill-red {
-  display: inline-block;
-  background: var(--thai-red);
-  color: #fff;
-  border-radius: 999px;
-  padding: 2px 10px;
-  font-size: 12px;
-  line-height: 18px;
-}
-
-/* Positioning context for overlay */
-.tgn-header {
-  position: relative;
-}
-
-/* Upper-right overlay: Install column is rightmost */
-.action-cluster {
-  position: absolute;
-  top: 6px;
-  right: 10px;
-  z-index: 10;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-.action-right-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
-}
-
-/* LangPill: two-tone + flip */
-.langpill {
-  --thai-blue: #2d2a4a;
-  --white: #ffffff;
-  display: inline-grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: center;
-  justify-items: center;
-  border: 1px solid var(--thai-blue);
-  border-radius: 999px;
-  height: 32px;
-  min-width: 64px;
-  padding: 0;
-  overflow: hidden;
-}
-.langpill .opt {
-  width: 100%;
-  height: 100%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1;
-  transition: opacity 120ms ease;
-}
-/* EN mode: left blue/white text, right white/black text */
-.langpill--en {
-  background: linear-gradient(90deg, var(--thai-blue) 50%, var(--white) 50%);
-}
-.langpill--en .opt-en {
-  color: #ffffff;
-}
-.langpill--en .opt-th {
-  color: #000000;
-}
-/* TH mode: left white/black text, right blue/white text */
-.langpill--th {
-  background: linear-gradient(90deg, var(--white) 50%, var(--thai-blue) 50%);
-}
-.langpill--th .opt-en {
-  color: #000000;
-}
-.langpill--th .opt-th {
-  color: #ffffff;
-}
-
-.langpill .inactive {
-  opacity: 0.88;
-}
-.langpill .active {
-  opacity: 1;
-}
-
-/* Keep InstallPWA red even if its internal markup changes */
-.install-pwa button {
-  background: #a51931 !important;
-  color: #fff !important;
-  border-radius: 12px !important;
-  min-height: 38px;
-}
-
-/* === HEADER SIZING KNOBS (add me once) ===================== */
-:root {
-  --header-pad-top: 6px;
-  --header-pad-right: 10px;
-  --header-pad-bottom: 18px; /* more = extra space under the overlay */
-  --header-pad-left: 10px;
-
-  /* Banner heights by breakpoint */
-  --banner-h-desktop: 56px; /* >= 1280px */
-  --banner-h-tablet: 56px; /* 700px–1279px */
-  --banner-h-mobile: 48px; /* < 700px */
-}
-/* ========================================================== */
-
-/* Header is the positioning context for the overlay cluster */
-.tgn-header {
-  position: relative;
-  display: block;
-  padding: var(--header-pad-top) var(--header-pad-right) var(--header-pad-bottom)
-    var(--header-pad-left);
-  border-bottom: 1px solid #eee;
-  background: #fff;
-}
-
-/* Responsive banner height reads from the knobs above */
-.tgn-banner-img {
-  display: block;
-  height: var(--banner-h-tablet);
-  max-width: 100%;
-  object-fit: contain;
-}
-@media (min-width: 1280px) {
+  /* Header + banner adjustments */
+  .tgn-header {
+    position: relative;
+    display: block;
+    padding: 6px 10px 18px;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+  }
   .tgn-banner-img {
-    height: var(--banner-h-desktop);
+    display: block;
+    height: 56px;
+    max-width: 100%;
+    object-fit: contain;
+  }
+
+  /* Overlay action cluster */
+  .action-cluster {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    z-index: 10;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .action-right-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+
+  /* Toasts, footer, etc. (shortened but functional) */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    background: #111827;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 10px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+    z-index: 50;
+    text-align: center;
   }
 }
-@media (max-width: 699px) {
-  .tgn-banner-img {
-    height: var(--banner-h-mobile);
+
+/* ==========================================================
+   UTILITIES LAYER — special one-off utilities
+   ========================================================== */
+@layer utilities {
+  .btn-nohover:hover,
+  .btn-nohover:focus,
+  .btn-nohover:active {
+    background-color: inherit !important;
+    color: inherit !important;
+    border-color: inherit !important;
   }
-}
-
-/* Overlay (LangPill | Install stack) floating at the top-right */
-.action-cluster {
-  position: absolute;
-  top: var(--header-pad-top);
-  right: var(--header-pad-right);
-  z-index: 10;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px; /* space between LangPill and the Install stack */
-}
-.action-right-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px; /* gap between Install (top) and Logout (bottom) */
-}
-/* Guardrail: never italicize action controls */
-button,
-.btn,
-.btn-red,
-.btn-blue,
-.linklike,
-.share-btn {
-  font-style: normal !important;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 1px, 1px);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* a11y helper for visually hidden labels */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 1px, 1px);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* Keep same colors on hover/focus/active for specific buttons */
-.btn-static,
-.btn-static:hover,
-.btn-static:focus,
-.btn-static:active {
-  background: inherit !important;
-  color: inherit !important;
-  border-color: inherit !important;
-  opacity: 1 !important;
-  filter: none !important;
-  box-shadow: inherit !important;
-}
-
-/* === Unified button look (same text size/weight as Browse) === */
-.btn {
-  font-size: 1rem; /* ~text-base */
-  line-height: 1.25rem;
-  font-weight: 600; /* semibold */
-  border-radius: 9999px; /* pill */
-  padding: 8px 20px; /* like Browse chip */
-}
-
-/* Color helpers for Thai palette */
-.btn-red {
-  background: #a51931;
-  color: #fff;
-  border: 1px solid #000;
-}
-.btn-blue {
-  background: #2d2a4a;
-  color: #fff;
-  border: 1px solid #2d2a4a;
-}
-
-/* Keep same colors on hover/focus/active for specific buttons */
-.btn-static,
-.btn-static:hover,
-.btn-static:focus,
-.btn-static:active {
-  background: inherit !important;
-  color: inherit !important;
-  border-color: inherit !important;
-  opacity: 1 !important;
-  filter: none !important;
-  box-shadow: inherit !important;
-}
-
-/* Make Install look exactly like ADD */
-.add-like {
-  background: #a51931;
-  color: #fff;
-  border: 1px solid #000;
-  border-radius: 12px;
-}
-
-/* Inside-textarea counter */
-.counter-inside {
-  position: absolute;
-  right: 10px;
-  bottom: 8px;
-  font-size: 0.8rem;
-  color: #6b7280; /* gray-500 */
-  pointer-events: none;
 }
