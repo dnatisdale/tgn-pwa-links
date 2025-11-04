@@ -26,8 +26,6 @@ import {
 } from 'firebase/firestore';
 import { useI18n } from './i18n-provider';
 import Contact from './Contact';
-// NOTE: If AddLink is imported elsewhere too, prefer to keep only one render site.
-// If you still import it here, ensure it exists:
 import AddLink from './AddLink';
 
 type Row = { id: string; name: string; language: string; url: string };
@@ -35,7 +33,6 @@ type Row = { id: string; name: string; language: string; url: string };
 export default function App() {
   const { lang, t } = useI18n();
 
-  // --- SAFE TRANSLATION HELPER: never let UI render "undefined" ---
   const tOr = (k: string, fb: string) => {
     try {
       const v = t?.(k);
@@ -86,7 +83,7 @@ export default function App() {
     return () => window.removeEventListener('pwa:need-refresh', onNeed);
   }, []);
 
-  // set <html lang> and body font class using i18n-provider.lang
+  // set <html lang> and body font class
   useEffect(() => {
     const current = (lang || 'en').toLowerCase();
     document.documentElement.setAttribute('lang', current);
@@ -108,7 +105,6 @@ export default function App() {
   // Firestore subscription (only when signed in)
   useEffect(() => {
     if (!user) {
-      // guests (or signed-out) see empty list, but still can browse UI
       setRows([]);
       return;
     }
@@ -117,7 +113,6 @@ export default function App() {
     const off = onSnapshot(qry, (snap) => {
       const list: Row[] = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
       setRows(list);
-      // keep selection for still-visible rows
       setSelectedIds((prev) => {
         const next = new Set<string>();
         for (const id of prev) if (list.find((r) => r.id === id)) next.add(id);
@@ -223,187 +218,185 @@ export default function App() {
     });
   };
 
-  // 🚩 Show Login only when neither signed in nor in guest mode
+  // ============== LOGIN / SIGN-UP SHELL (footer sticks to bottom) ==============
   if (!user && !guestMode) {
     return (
-      <>
-        <div className="app-shell" style={{ fontSize: textPx }}>
-          <Header />
-          <main className="app-main">
-            <Login />
-          </main>
-          <UpdateToast
-            show={showUpdate}
-            onRefresh={() => {
-              (window as any).__REFRESH_SW__?.();
-              setShowUpdate(false);
-            }}
-            onSkip={() => setShowUpdate(false)}
-          />
-          <Footer />
-        </div>
-      </>
+      <div className="min-h-screen flex flex-col" style={{ fontSize: textPx }}>
+        <Header />
+        <main className="flex-1">
+          <Login />
+        </main>
+        <Footer />
+        <UpdateToast
+          show={showUpdate}
+          onRefresh={() => {
+            (window as any).__REFRESH_SW__?.();
+            setShowUpdate(false);
+          }}
+          onSkip={() => setShowUpdate(false)}
+        />
+      </div>
     );
   }
 
+  // ========================= MAIN APP SHELL =========================
   return (
-    <>
-      <div className="app-shell" style={{ fontSize: textPx }}>
-        <Header />
-        <TopTabs />
-        <main className="p-3 max-w-5xl mx-auto app-main">
-          {isAdd ? (
-            <section>
-              <h2 className="text-lg font-semibold mb-2 not-italic">{tOr('add', 'Add')}</h2>
-              <AddLink />
-            </section>
-          ) : isImport ? (
-            <section>
-              {/* Heading lives inside ImportExport.tsx */}
-              <ImportExport />
-            </section>
-          ) : isExport ? (
-            <section>
-              {/* Heading lives inside Export.tsx */}
-              <ExportPage rows={rows} />
-            </section>
-          ) : isContact ? (
-            <section>
-              {/* Heading lives inside Contact.tsx */}
-              <Contact />
-            </section>
-          ) : isAbout ? (
-            <section>
-              <h2 className="text-lg font-semibold mb-2 not-italic">{tOr('about', 'About')}</h2>
-              <p className="text-sm text-gray-700 not-italic">
-                {tOr('aboutText', 'This app helps you organize and share links.')}
-              </p>
-            </section>
-          ) : (
-            <section>
-              {/* Language filter + expanding search moved here */}
-              <BrowseToolbar
-                q={q}
-                setQ={setQ}
-                filterThai={filterThai}
-                setFilterThai={setFilterThai}
-              />
+    <div className="min-h-screen flex flex-col" style={{ fontSize: textPx }}>
+      <Header />
+      <TopTabs />
+      <main className="flex-1 p-3 max-w-5xl mx-auto app-main">
+        {isAdd ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2 not-italic">{tOr('add', 'Add')}</h2>
+            <AddLink />
+          </section>
+        ) : isImport ? (
+          <section>
+            <ImportExport />
+          </section>
+        ) : isExport ? (
+          <section>
+            <ExportPage rows={rows} />
+          </section>
+        ) : isContact ? (
+          <section>
+            <Contact />
+          </section>
+        ) : isAbout ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2 not-italic">{tOr('about', 'About')}</h2>
+            <p className="text-sm text-gray-700 not-italic">
+              {tOr('aboutText', 'This app helps you organize and share links.')}
+            </p>
+          </section>
+        ) : (
+          <section>
+            <BrowseToolbar
+              q={q}
+              setQ={setQ}
+              filterThai={filterThai}
+              setFilterThai={setFilterThai}
+            />
 
-              <div className="flex flex-wrap items-center gap-8 mb-3">
-                <label className="text-sm not-italic">
-                  <input
-                    type="checkbox"
-                    className="card-check"
-                    checked={allSelected}
-                    onChange={toggleSelectAll}
-                  />
-                  {tOr('selectAll', 'Select all')} ({selectedRows.length}/{filtered.length})
-                </label>
+            <div className="flex flex-wrap items-center gap-8 mb-3">
+              <label className="text-sm not-italic">
+                <input
+                  type="checkbox"
+                  className="card-check"
+                  checked={allSelected}
+                  onChange={toggleSelectAll}
+                />
+                {tOr('selectAll', 'Select all')} ({selectedRows.length}/{filtered.length})
+              </label>
 
-                <div className="flex items-center gap-8 not-italic">
+              <div className="flex items-center gap-8 not-italic">
+                <div className="not-italic">
                   <div className="not-italic">
-                    {/* Wrap Share in a not-italic container to defeat inherited italics */}
-                    <div className="not-italic">
-                      <Share
-                        url={firstSelected ? firstSelected.url : ''}
-                        title={firstSelected ? firstSelected.name || 'Link' : ''}
-                        qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
-                      />
-                    </div>
-                    {!firstSelected && (
-                      <span className="text-xs" style={{ color: '#6b7280', marginLeft: 8 }}>
-                        ({tOr('selectAtLeastOne', 'Select at least one')})
-                      </span>
-                    )}
+                    <Share
+                      url={firstSelected ? firstSelected.url : ''}
+                      title={firstSelected ? firstSelected.name || 'Link' : ''}
+                      qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
+                    />
                   </div>
-
-                  <button
-                    onClick={batchDownload}
-                    disabled={!selectedRows.length}
-                    className={[
-                      'group inline-flex items-center justify-center select-none not-italic',
-                      'font-semibold text-sm sm:text-base px-4 py-2',
-                      'rounded-xl border',
-                      selectedRows.length
-                        ? 'bg-[#2D2A4A] text-white border-[#2D2A4A]'
-                        : 'bg-[#2D2A4A] text-white border-[#2D2A4A] opacity-50 cursor-not-allowed',
-                    ].join(' ')}
-                  >
-                    <span className="motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]">
-                      {tOr('downloadQRCards', 'Download QR cards')} ({selectedRows.length})
+                  {!firstSelected && (
+                    <span className="text-xs" style={{ color: '#6b7280', marginLeft: 8 }}>
+                      ({tOr('selectAtLeastOne', 'Select at least one')})
                     </span>
-                  </button>
+                  )}
                 </div>
+
+                <button
+                  onClick={batchDownload}
+                  disabled={!selectedRows.length}
+                  className={[
+                    'group inline-flex items-center justify-center select-none not-italic',
+                    'font-semibold text-sm sm:text-base px-4 py-2',
+                    'rounded-xl border',
+                    selectedRows.length
+                      ? 'bg-[#2D2A4A] text-white border-[#2D2A4A]'
+                      : 'bg-[#2D2A4A] text-white border-[#2D2A4A] opacity-50 cursor-not-allowed',
+                  ].join(' ')}
+                >
+                  <span className="motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]">
+                    {tOr('downloadQRCards', 'Download QR cards')} ({selectedRows.length})
+                  </span>
+                </button>
               </div>
+            </div>
 
-              <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {filtered.map((row) => {
-                  const enlarged = qrEnlargedId === row.id;
-                  const qrSize = enlarged ? 320 : 192;
-                  const checked = selectedIds.has(row.id);
-                  return (
-                    <li key={row.id} className="card">
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-sm not-italic">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() =>
-                              setSelectedIds((prev) => {
-                                const next = new Set(prev);
-                                checked ? next.delete(row.id) : next.add(row.id);
-                                return next;
-                              })
-                            }
-                            style={{ marginRight: 8 }}
-                          />
-                          {tOr('select', 'Select')}
-                        </label>
-                      </div>
+            <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filtered.map((row) => {
+                const enlarged = qrEnlargedId === row.id;
+                const qrSize = enlarged ? 320 : 192;
+                const checked = selectedIds.has(row.id);
+                return (
+                  <li key={row.id} className="card">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm not-italic">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() =>
+                            setSelectedIds((prev) => {
+                              const next = new Set(prev);
+                              checked ? next.delete(row.id) : next.add(row.id);
+                              return next;
+                            })
+                          }
+                          style={{ marginRight: 8 }}
+                        />
+                        {tOr('select', 'Select')}
+                      </label>
+                    </div>
 
-                      <div className="text-base font-semibold text-center not-italic">
-                        {row.name}
-                      </div>
+                    <div className="text-base font-semibold text-center not-italic">{row.name}</div>
 
-                      <div
-                        role="button"
-                        onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') setQrEnlargedId(enlarged ? null : row.id);
-                        }}
-                        tabIndex={0}
-                        title={
-                          enlarged ? tOr('shrinkQR', 'Shrink QR') : tOr('enlargeQR', 'Enlarge QR')
-                        }
-                        style={{ cursor: 'pointer' }}
-                        className="qr-center not-italic"
-                      >
-                        <QR url={row.url} size={qrSize} idForDownload={`qr-${row.id}`} />
-                      </div>
+                    <div
+                      role="button"
+                      onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') setQrEnlargedId(enlarged ? null : row.id);
+                      }}
+                      tabIndex={0}
+                      title={
+                        enlarged ? tOr('shrinkQR', 'Shrink QR') : tOr('enlargeQR', 'Enlarge QR')
+                      }
+                      style={{ cursor: 'pointer' }}
+                      className="qr-center not-italic"
+                    >
+                      <QR url={row.url} size={qrSize} idForDownload={`qr-${row.id}`} />
+                    </div>
 
-                      <div className="mt-2 text-center not-italic">
-                        <a href={row.url} className="underline" target="_blank" rel="noreferrer">
-                          {row.url}
-                        </a>
-                      </div>
+                    <div className="mt-2 text-center not-italic">
+                      <a href={row.url} className="underline" target="_blank" rel="noreferrer">
+                        {row.url}
+                      </a>
+                    </div>
 
-                      <div className="mt-2 flex justify-center gap-6 text-sm not-italic">
-                        <button className="linklike not-italic" onClick={() => editRow(row)}>
-                          {tOr('edit', 'Edit')}
-                        </button>
-                        <button className="linklike not-italic" onClick={() => deleteRow(row)}>
-                          {tOr('delete', 'Delete')}
-                        </button>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          )}
-        </main>
-        <Footer />
-      </div>
-    </>
+                    <div className="mt-2 flex justify-center gap-6 text-sm not-italic">
+                      <button className="linklike not-italic" onClick={() => editRow(row)}>
+                        {tOr('edit', 'Edit')}
+                      </button>
+                      <button className="linklike not-italic" onClick={() => deleteRow(row)}>
+                        {tOr('delete', 'Delete')}
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+      </main>
+      <Footer />
+      <UpdateToast
+        show={showUpdate}
+        onRefresh={() => {
+          (window as any).__REFRESH_SW__?.();
+          setShowUpdate(false);
+        }}
+        onSkip={() => setShowUpdate(false)}
+      />
+    </div>
   );
 }
