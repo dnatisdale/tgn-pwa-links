@@ -211,6 +211,7 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={`${tOr('searchAll', 'Search all languages…')} / ค้นหา…`}
                 className={[
+                  'top-search-input',
                   'h-10 rounded-xl border-2 px-3 outline-none bg-white',
                   'border-[#A51931] focus:ring-2 focus:ring-[#A51931]',
                   'text-gray-900 placeholder-gray-400 not-italic',

@@ -243,3 +243,13 @@ a {
     border-color: inherit !important;
   }
 }
+
+/* --- TEMP: hide all legacy search bars everywhere --- */
+input[type='search'] {
+  display: none !important;
+}
+/* --- EXCEPT the TopTabs one we just marked --- */
+.top-search-input,
+.top-search input[type='search'] {
+  display: block !important;
+}
