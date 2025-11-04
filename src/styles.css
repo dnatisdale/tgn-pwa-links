@@ -133,7 +133,7 @@ a {
     color: #fff;
     border-radius: 999px;
     padding: 2px 10px;
-    font-size: 12px;
+    font-size: 14px;
     line-height: 18px;
   }
 
@@ -173,7 +173,7 @@ a {
     .langpill .opt:hover > span,
     .langpill .opt:focus-visible > span,
     .langpill .opt:active > span {
-      transform: scale(1.06);
+      transform: scale(1.5);
     }
   }
 
