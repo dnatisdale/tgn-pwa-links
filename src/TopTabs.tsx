@@ -60,9 +60,31 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
     setActiveTab?.(tab);
   };
 
-  // NEW: search toggle + query (offline, no network)
+  // 🔎 Search UI state (simple + offline)
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
+
+  // Broadcast to the app's existing filter (useAppLogic listens for "app:search")
+  React.useEffect(() => {
+    const ev = new CustomEvent('app:search', { detail: query });
+    window.dispatchEvent(ev);
+  }, [query]);
+
+  // Keyboard: "/" opens search, "Esc" closes
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === '/' && !isSearchOpen) {
+        e.preventDefault();
+        setIsSearchOpen(true);
+        setTimeout(() => {
+          (document.getElementById('main-search-input') as HTMLInputElement | null)?.focus();
+        }, 0);
+      }
+      if (e.key === 'Escape' && isSearchOpen) setIsSearchOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isSearchOpen]);
 
   // Broadcast query to the app; your list can listen for "app:search"
   React.useEffect(() => {
@@ -148,6 +170,62 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
               to="CONTACT"
             />
             <TabBtn active={currentTab === 'ABOUT'} label={tOr('about', 'About')} to="ABOUT" />
+            {/* 🔍 Search (#2 + #3 combo) */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !isSearchOpen;
+                  setIsSearchOpen(next);
+                  if (next) {
+                    setTimeout(() => {
+                      (
+                        document.getElementById('main-search-input') as HTMLInputElement | null
+                      )?.focus();
+                    }, 0);
+                  }
+                }}
+                aria-controls="main-search-input"
+                aria-expanded={isSearchOpen}
+                className={[
+                  'inline-flex items-center justify-center',
+                  'h-10 w-10 rounded-full',
+                  'bg-[#A51931] text-white border border-black shadow',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black',
+                  'active:scale-[0.98] transition',
+                ].join(' ')}
+                title={tOr('search', 'Search')}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    fill="currentColor"
+                    d="M15.5 14h-.79l-.28-.27a6.471 6.471 0 0 0 1.57-4.23A6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0 0 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0A4.5 4.5 0 1 1 14 9.5 4.505 4.505 0 0 1 9.5 14Z"
+                  />
+                </svg>
+              </button>
+
+              <input
+                id="main-search-input"
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={`${tOr('searchAll', 'Search all languages…')} / ค้นหา…`}
+                className={[
+                  'h-10 rounded-xl border-2 px-3 outline-none bg-white',
+                  'border-[#A51931] focus:ring-2 focus:ring-[#A51931]',
+                  'text-gray-900 placeholder-gray-400 not-italic',
+                  isSearchOpen ? 'w-64 md:w-72 opacity-100' : 'w-0 md:w-0 opacity-0',
+                  'transition-all duration-200',
+                  'md:pl-3 md:pr-3',
+                ].join(' ')}
+                inputMode="search"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                tabIndex={isSearchOpen ? 0 : -1}
+                aria-hidden={!isSearchOpen}
+              />
+            </div>
           </nav>
 
           {/* NEW: Search toggle sits next to About (same visual family as tabs) */}
