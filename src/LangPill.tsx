@@ -2,33 +2,26 @@
 import React from 'react';
 import { useI18n } from './i18n-provider';
 
-export type Lang = 'en' | 'th';
+export default function LangPill() {
+  const { lang, setLang } = useI18n(); // assumes your provider exposes these
 
-export default function LangPill({
-  className = '',
-  onLang,
-}: {
-  className?: string;
-  onLang?: (next: Lang) => void;
-}) {
-  const { lang, setLang } = useI18n();
-  const next: Lang = lang === 'en' ? 'th' : 'en';
-
-  const toggle = () => {
-    setLang(next);
-    onLang?.(next); // if parent passed a handler, keep it notified
-  };
-
-  return (
+  const makeBtn = (code: 'en' | 'th', label: string, aria: string) => (
     <button
       type="button"
-      onClick={toggle}
-      className={`langpill ${lang === 'en' ? 'langpill--en' : 'langpill--th'} ${className}`}
-      aria-label="Toggle language (English/Thai)"
-      title="Toggle language (English/Thai)"
+      onClick={() => setLang(code)}
+      className={`opt ${lang === code ? 'is-active' : ''}`}
+      aria-pressed={lang === code}
+      aria-label={aria}
+      title={aria}
     >
-      <span className={`opt opt-en ${lang === 'en' ? 'active' : 'inactive'}`}>a</span>
-      <span className={`opt opt-th ${lang === 'th' ? 'active' : 'inactive'}`}>ก</span>
+      <span>{label}</span>
     </button>
+  );
+
+  return (
+    <div className="langpill" role="group" aria-label="Language">
+      {makeBtn('en', 'a', 'English')}
+      {makeBtn('th', 'ก', 'ภาษาไทย')}
+    </div>
   );
 }
