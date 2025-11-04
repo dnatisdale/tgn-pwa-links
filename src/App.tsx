@@ -3,7 +3,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Banner from './Banner';
 import AppMain from './components/AppMain';
 import Header from './Header';
-import BrowseToolbar from './BrowseToolbar';
 import Footer from './Footer';
 import Login from './Login';
 import ImportExport from './ImportExport';
@@ -53,6 +52,16 @@ export default function App() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [route, setRoute] = useState<string>(window.location.hash || '#/browse');
   const [showUpdate, setShowUpdate] = useState(false);
+
+  // Right after your useState(...) lines:
+  useEffect(() => {
+    const onSearch = (e: Event) => {
+      const detail = (e as CustomEvent<string>).detail ?? '';
+      setQ(detail);
+    };
+    window.addEventListener('app:search', onSearch as EventListener);
+    return () => window.removeEventListener('app:search', onSearch as EventListener);
+  }, []);
 
   const isBrowse = route.startsWith('#/browse');
   const isAdd = route.startsWith('#/add');
@@ -271,12 +280,25 @@ export default function App() {
           </section>
         ) : (
           <section>
-            <BrowseToolbar
-              q={q}
-              setQ={setQ}
-              filterThai={filterThai}
-              setFilterThai={setFilterThai}
-            />
+            {/* REPLACE this: <BrowseToolbar q={q} setQ={setQ} filterThai={filterThai} setFilterThai={setFilterThai} /> */}
+            {/* Simple, no-search toolbar */}
+            <div className="mb-3 text-sm not-italic">
+              <button
+                className="underline mr-2"
+                onClick={() => setFilterThai(false)}
+                aria-current={!filterThai ? 'page' : undefined}
+              >
+                All
+              </button>
+              |
+              <button
+                className="underline ml-2"
+                onClick={() => setFilterThai(true)}
+                aria-current={filterThai ? 'page' : undefined}
+              >
+                Thai only
+              </button>
+            </div>
 
             <div className="flex flex-wrap items-center gap-8 mb-3">
               <label className="text-sm not-italic">

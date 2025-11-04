@@ -1,14 +1,8 @@
-/* =========================
-   Thai Good News — Styles
-   Clean + Tailwind-friendly
-   ========================= */
-
 /* --- Tailwind core directives --- */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* --- Base fonts and headings --- */
 @layer base {
   html,
   body {
@@ -251,5 +245,14 @@ input[type='search'] {
 /* --- EXCEPT the TopTabs one we just marked --- */
 .top-search-input,
 .top-search input[type='search'] {
+  display: block !important;
+}
+
+/* Hide every other search input app-wide */
+input[type='search'] {
+  display: none !important;
+}
+/* Keep ONLY the TopTabs search visible */
+.top-search-input {
   display: block !important;
 }

@@ -1,14 +1,18 @@
 {
+  // Turn off normal CSS validation because Tailwind handles it
   "css.validate": false,
   "scss.validate": false,
   "less.validate": false,
   "postcss.validate": false,
+
+  // Ignore @tailwind and @apply warnings
   "css.lint.unknownAtRules": "ignore",
   "postcss.lint.unknownAtRules": "ignore",
 
-  // 👇 Tell the Tailwind extension that your config is TypeScript
+  // Tell the Tailwind VS Code extension that your config is TypeScript
   "tailwindCSS.experimental.configFile": "tailwind.config.ts",
 
+  // Help IntelliSense know which files use Tailwind
   "tailwindCSS.includeLanguages": {
     "plaintext": "html",
     "postcss": "css",

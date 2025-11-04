@@ -32,16 +32,16 @@ const tabToHash = (t: TabKey) =>
     : '#/browse';
 
 export default function TopTabs({ activeTab, setActiveTab }: Props) {
-  // safe i18n (unchanged behavior)
-  let t = (k: string) => k;
+  // ✅ safe i18n getter that accepts any string key (avoids TS union error)
+  let t: (k: string) => string = (k: string) => k;
   try {
-    const i = useI18n();
-    if (i && typeof i.t === 'function') t = i.t;
+    const i = useI18n() as any;
+    if (i && typeof i.t === 'function') t = (k: string) => i.t(k as any);
   } catch {}
 
   const tOr = (k: string, fb: string) => {
     try {
-      const v = t?.(k);
+      const v = t(k);
       return (v ?? '').toString().trim() || fb;
     } catch {
       return fb;
@@ -60,36 +60,12 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
     setActiveTab?.(tab);
   };
 
-  // 🔎 Search UI state (simple + offline)
+  // 🔎 Search state + broadcast to the app filter
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
 
-  // Broadcast to the app's existing filter (useAppLogic listens for "app:search")
   React.useEffect(() => {
-    const ev = new CustomEvent('app:search', { detail: query });
-    window.dispatchEvent(ev);
-  }, [query]);
-
-  // Keyboard: "/" opens search, "Esc" closes
-  React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === '/' && !isSearchOpen) {
-        e.preventDefault();
-        setIsSearchOpen(true);
-        setTimeout(() => {
-          (document.getElementById('main-search-input') as HTMLInputElement | null)?.focus();
-        }, 0);
-      }
-      if (e.key === 'Escape' && isSearchOpen) setIsSearchOpen(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [isSearchOpen]);
-
-  // Broadcast query to the app; your list can listen for "app:search"
-  React.useEffect(() => {
-    const ev = new CustomEvent('app:search', { detail: query });
-    window.dispatchEvent(ev);
+    window.dispatchEvent(new CustomEvent('app:search', { detail: query }));
   }, [query]);
 
   // Keyboard: "/" opens search, "Esc" closes
@@ -114,7 +90,6 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
       className={[
         'group inline-flex items-center justify-center select-none not-italic transition-colors duration-200 border rounded-full',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black',
-        // responsive sizing
         'text-sm sm:text-base px-3 py-1.5 sm:px-5 sm:py-2',
         active
           ? 'bg-[#2D2A4A] border-[#2D2A4A] text-white shadow-sm'
@@ -136,18 +111,15 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
 
   return (
     <div className="w-full">
-      {/* Centered container, wraps nicely on phones, constrained on wide screens */}
       <div className="mx-auto max-w-5xl px-2">
         <div className="my-3 flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4">
-          {/* Keep ADD as first, Thai red style preserved */}
+          {/* ADD (Thai red) */}
           <button
             className={[
               'group inline-flex items-center justify-center select-none not-italic border rounded-xl',
               'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black',
               'text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2',
-              currentTab === 'ADD'
-                ? 'bg-[#A51931] text-white border-black'
-                : 'bg-[#A51931] text-white/95 border-black hover:text-white',
+              'bg-[#A51931] text-white border-black hover:text-white',
             ].join(' ')}
             onClick={() => go('ADD')}
           >
@@ -156,7 +128,7 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
             </span>
           </button>
 
-          {/* Primary nav (unchanged order/labels) */}
+          {/* Primary nav */}
           <nav
             className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4"
             aria-label="Primary"
@@ -170,8 +142,10 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
               to="CONTACT"
             />
             <TabBtn active={currentTab === 'ABOUT'} label={tOr('about', 'About')} to="ABOUT" />
-            {/* 🔍 Search (#2 + #3 combo) */}
+
+            {/* 🔍 Your ONE search (round button + Thai-red input) */}
             <div className="flex items-center gap-2">
+              {/* Round magnifying glass button */}
               <button
                 type="button"
                 onClick={() => {
@@ -204,6 +178,7 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
                 </svg>
               </button>
 
+              {/* Expanding input with Thai-red border */}
               <input
                 id="main-search-input"
                 type="search"
@@ -211,7 +186,7 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={`${tOr('searchAll', 'Search all languages…')} / ค้นหา…`}
                 className={[
-                  'top-search-input',
+                  'top-search-input', // <-- marks this as the one to keep visible
                   'h-10 rounded-xl border-2 px-3 outline-none bg-white',
                   'border-[#A51931] focus:ring-2 focus:ring-[#A51931]',
                   'text-gray-900 placeholder-gray-400 not-italic',
@@ -228,69 +203,6 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
               />
             </div>
           </nav>
-
-          {/* NEW: Search toggle sits next to About (same visual family as tabs) */}
-          <button
-            className={[
-              'group inline-flex items-center justify-center select-none not-italic transition-colors duration-200 border rounded-full',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black',
-              'text-sm sm:text-base px-3 py-1.5 sm:px-5 sm:py-2',
-              'bg-white border-gray-300 text-[#2D2A4A] hover:bg-gray-50',
-            ].join(' ')}
-            aria-expanded={isSearchOpen}
-            aria-controls="main-search-input"
-            onClick={() => {
-              const next = !isSearchOpen;
-              setIsSearchOpen(next);
-              if (next) {
-                setTimeout(() => {
-                  (
-                    document.getElementById('main-search-input') as HTMLInputElement | null
-                  )?.focus();
-                }, 0);
-              }
-            }}
-            title={tOr('search', 'Search')}
-          >
-            <span
-              className="motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]"
-              aria-hidden
-            >
-              🔎
-            </span>
-            <span className="ml-1.5">{tOr('search', 'Search')}</span>
-          </button>
-
-          {/* NEW: Search input (Thai-red border). Collapses on mobile when closed. */}
-          <div
-            className={[
-              'basis-full md:basis-auto transition-all duration-200',
-              isSearchOpen
-                ? 'opacity-100 max-h-20 md:max-h-none'
-                : 'opacity-0 max-h-0 overflow-hidden md:max-h-0',
-            ].join(' ')}
-          >
-            <label htmlFor="main-search-input" className="sr-only">
-              {tOr('search', 'Search')}
-            </label>
-            <input
-              id="main-search-input"
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={`${tOr('search', 'Search')}… / ค้นหา…`}
-              className={[
-                'h-10 w-full md:w-72 rounded-xl',
-                // Thai red border + focus ring
-                'border-2 border-[#A51931] px-3 outline-none focus:ring-2 focus:ring-[#A51931]',
-                'bg-white text-gray-900 placeholder-gray-400',
-              ].join(' ')}
-              inputMode="search"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-            />
-          </div>
         </div>
       </div>
     </div>
