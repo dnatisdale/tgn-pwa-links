@@ -8,21 +8,12 @@ import {
   Timestamp,
   doc,
   updateDoc,
+  deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-// if your path is "@/hooks/useAuth", change import accordingly
 import { useAuth } from '../hooks/useAuth';
 import { formatUrl } from '../utils/formatUrl';
-
-// — favicon helper —
-// turns "https://example.com/page" into "example.com"
-const hostFrom = (u: string) => {
-  try {
-    return new URL(u).hostname;
-  } catch {
-    return '';
-  }
-};
+import QRCode from 'qrcode';
 
 type LinkDoc = {
   id: string;
@@ -83,7 +74,7 @@ export default function LinksList() {
   // ------------ Helpers ------------
   const fmt = (ts?: Timestamp | null) => (ts ? new Date(ts.seconds * 1000).toLocaleString() : '');
 
-  // Use DuckDuckGo favicon service (simple, no weird redirects)
+  // Simple, reliable favicon source
   const faviconFor = (rawUrl: string) => {
     try {
       const host = new URL(rawUrl).hostname;
@@ -104,7 +95,6 @@ export default function LinksList() {
   const filtered = useMemo(() => {
     return links.filter((l) => {
       if (tagFilter && !(l.tags ?? []).includes(tagFilter)) return false;
-
       if (!rx) return true; // nothing typed → pass
 
       const title = l.title ?? '';
@@ -118,8 +108,7 @@ export default function LinksList() {
           ? url
           : scope === 'tags'
           ? tagsText
-          : // scope === 'all'
-            `${title} ${url} ${tagsText}`;
+          : `${title} ${url} ${tagsText}`;
 
       return rx.test(haystack);
     });
@@ -136,6 +125,7 @@ export default function LinksList() {
   const selectedCount = [...selectedIds].filter((id) => filtered.some((f) => f.id === id)).length;
   const allVisibleSelected = selectedCount === total && total > 0;
 
+  // Selection helpers
   const toggleOne = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -154,6 +144,8 @@ export default function LinksList() {
     filtered.forEach((l) => next.delete(l.id));
     setSelectedIds(next);
   };
+
+  // Bulk copy/delete
   const copySelected = async () => {
     try {
       const urls = links
@@ -165,6 +157,62 @@ export default function LinksList() {
       alert('Copied selected URLs to clipboard.');
     } catch (e) {
       console.error('Copy failed:', e);
+    }
+  };
+
+  const deleteSelected = async () => {
+    if (!user || selectedIds.size === 0) return;
+    if (!confirm(`Delete ${selectedIds.size} selected item(s)? This cannot be undone.`)) return;
+    try {
+      await Promise.all(
+        [...selectedIds].map((id) => deleteDoc(doc(db, 'users', user.uid, 'links', id)))
+      );
+      setSelectedIds(new Set());
+    } catch (e) {
+      console.error('Delete failed:', e);
+      alert('Some deletes failed. See console.');
+    }
+  };
+
+  // Share / copy (per item)
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert('Copied!');
+    } catch {}
+  };
+
+  const shareLink = async (url: string, title?: string) => {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: title || 'Link', url });
+      } else {
+        await copyToClipboard(url);
+      }
+    } catch {}
+  };
+
+  // Export (JSON of current filtered list)
+  const exportLinks = (rows: LinkDoc[]) => {
+    const blob = new Blob([JSON.stringify(rows, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'tgn-links-export.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // QR code (per item)
+  const openQrFor = async (url: string) => {
+    try {
+      const dataUrl = await QRCode.toDataURL(url, { width: 256, margin: 1 });
+      const w = window.open('', '_blank', 'width=320,height=340');
+      if (w) {
+        w.document.write(`<img src="${dataUrl}" alt="QR" style="display:block;margin:12px auto"/>`);
+      }
+    } catch (e) {
+      console.error('QR failed:', e);
     }
   };
 
@@ -281,6 +329,7 @@ export default function LinksList() {
               </>
             )}
           </span>
+
           <button
             type="button"
             className="border rounded px-2 py-1"
@@ -288,9 +337,11 @@ export default function LinksList() {
           >
             {allVisibleSelected ? 'Clear all (visible)' : 'Select all (visible)'}
           </button>
+
           <button type="button" className="border rounded px-2 py-1" onClick={clearVisible}>
             Clear selection (visible)
           </button>
+
           <button
             type="button"
             className="border rounded px-2 py-1"
@@ -299,6 +350,25 @@ export default function LinksList() {
             title="Copy selected URLs"
           >
             Copy selected
+          </button>
+
+          <button
+            type="button"
+            className="border rounded px-2 py-1"
+            onClick={deleteSelected}
+            disabled={selectedIds.size === 0}
+            title="Delete selected"
+          >
+            Delete selected
+          </button>
+
+          <button
+            type="button"
+            className="border rounded px-2 py-1"
+            onClick={() => exportLinks(filtered)}
+            title="Export currently shown list as JSON"
+          >
+            Export (JSON)
           </button>
         </div>
 
@@ -339,9 +409,9 @@ export default function LinksList() {
                     className="w-4 h-4 rounded-sm shrink-0"
                     loading="lazy"
                     referrerPolicy="no-referrer"
-                    onError={(e) =>
-                      ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')
-                    }
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
+                    }}
                   />
                 )}
                 <div className="font-semibold truncate">{l.title || '(no title)'}</div>
@@ -358,6 +428,30 @@ export default function LinksList() {
           >
             {l.url}
           </a>
+
+          <div className="mt-2 flex gap-2 text-sm">
+            <button
+              type="button"
+              className="border rounded px-2 py-1"
+              onClick={() => shareLink(l.url, l.title)}
+            >
+              Share
+            </button>
+            <button
+              type="button"
+              className="border rounded px-2 py-1"
+              onClick={() => copyToClipboard(l.url)}
+            >
+              Copy
+            </button>
+            <button
+              type="button"
+              className="border rounded px-2 py-1"
+              onClick={() => openQrFor(l.url)}
+            >
+              QR
+            </button>
+          </div>
 
           <div className="mt-2 text-sm flex flex-wrap gap-1">
             {(l.tags ?? []).length > 0 ? (

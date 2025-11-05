@@ -138,6 +138,21 @@ const AddLink: React.FC = () => {
           </button>
         </div>
 
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSave(); // use your existing save function
+          }}
+          className="space-y-3"
+        >
+          {/* … your inputs as-is … */}
+
+          {/* Find your Save button and make it type="submit" */}
+          <button type="submit" className="btn btn-blue">
+            Save
+          </button>
+        </form>
+
         {error && <p className="text-red-500 text-sm">{error}</p>}
         {success && <p className="text-green-500 text-sm">Link saved successfully!</p>}
       </form>
