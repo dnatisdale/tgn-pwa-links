@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { collection, onSnapshot, orderBy, query, Timestamp } from 'firebase/firestore';
+import {
+  collection,
+  onSnapshot,
+  orderBy,
+  query,
+  Timestamp,
+  doc,
+  updateDoc,
+} from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { useAuth } from '../hooks/useAuth';
+import { formatUrl } from '../utils/formatUrl';
 
 type LinkDoc = {
   id: string;
@@ -16,11 +25,12 @@ export default function LinksList() {
   const [links, setLinks] = useState<LinkDoc[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // NEW: selection + filters
+  // Selection + filters
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [textFilter, setTextFilter] = useState(''); // supports wildcard *
+  const [textFilter, setTextFilter] = useState(''); // supports *
   const [tagFilter, setTagFilter] = useState<string | null>(null);
 
+  // --- Firestore live subscription ---
   useEffect(() => {
     if (!user) {
       setLinks([]);
@@ -45,8 +55,7 @@ export default function LinksList() {
         });
         setLinks(rows);
         setLoading(false);
-        // Clear selection if items changed
-        setSelectedIds(new Set());
+        setSelectedIds(new Set()); // clear selection when data changes
       },
       (err) => {
         console.error('onSnapshot error:', err);
@@ -58,14 +67,13 @@ export default function LinksList() {
     return () => unsub();
   }, [user]);
 
-  // --- helpers ---
+  // --- Helpers ---
   const fmt = (ts?: Timestamp | null) => (ts ? new Date(ts.seconds * 1000).toLocaleString() : '');
 
-  // replace your faviconFor helper with this:
+  // Use Google favicon service to avoid 404/DNS console spam
   const faviconFor = (rawUrl: string) => {
     try {
       const u = new URL(rawUrl);
-      // Google favicon service (16px default; you can use 32 if you want bigger)
       return `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=32`;
     } catch {
       return '';
@@ -74,13 +82,10 @@ export default function LinksList() {
 
   const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const wildcardToRegex = (pattern: string) => {
-    // turn "thai*story" -> /thai.*story/i ; plain words become plain regex
     const safe = pattern.trim();
     if (!safe) return null;
-    const re = new RegExp('^.*' + safe.split('*').map(escapeRegex).join('.*') + '.*$', 'i');
-    return re;
+    return new RegExp('^.*' + safe.split('*').map(escapeRegex).join('.*') + '.*$', 'i');
   };
-
   const rx = useMemo(() => wildcardToRegex(textFilter), [textFilter]);
 
   const filtered = useMemo(() => {
@@ -92,7 +97,7 @@ export default function LinksList() {
     });
   }, [links, tagFilter, rx]);
 
-  // tag cloud (top 12)
+  // Tag cloud (top 12)
   const tagCounts = useMemo(() => {
     const m = new Map<string, number>();
     links.forEach((l) => (l.tags ?? []).forEach((t) => m.set(t, (m.get(t) ?? 0) + 1)));
@@ -101,7 +106,6 @@ export default function LinksList() {
 
   const total = filtered.length;
   const selectedCount = [...selectedIds].filter((id) => filtered.some((f) => f.id === id)).length;
-
   const allVisibleSelected = selectedCount === total && total > 0;
 
   const toggleOne = (id: string) => {
@@ -112,19 +116,16 @@ export default function LinksList() {
       return next;
     });
   };
-
   const selectAllVisible = () => {
     const next = new Set(selectedIds);
     filtered.forEach((l) => next.add(l.id));
     setSelectedIds(next);
   };
-
   const clearVisible = () => {
     const next = new Set(selectedIds);
     filtered.forEach((l) => next.delete(l.id));
     setSelectedIds(next);
   };
-
   const copySelected = async () => {
     try {
       const urls = links
@@ -139,13 +140,37 @@ export default function LinksList() {
     }
   };
 
+  // --- NEW: Find & fix malformed URLs already in Firestore ---
+  // (This is the part you couldn’t find — it lives right here in LinksList.tsx.)
+  const fixable = useMemo(() => {
+    return links.filter((l) => {
+      const next = formatUrl(l.url);
+      return next !== null && next !== l.url;
+    });
+  }, [links]);
+
+  const fixAllMalformed = async () => {
+    if (!user) return;
+    const toFix = [...fixable];
+    for (const l of toFix) {
+      const next = formatUrl(l.url);
+      if (!next || next === l.url) continue;
+      try {
+        await updateDoc(doc(db, 'users', user.uid, 'links', l.id), { url: next });
+      } catch (e) {
+        console.error('Fix URL failed:', l.url, e);
+      }
+    }
+    alert(`Fixed ${toFix.length} URL(s).`);
+  };
+
   if (!user) return <p className="text-center text-gray-500">Sign in to view links.</p>;
   if (loading) return <p className="text-center text-gray-500">Loading links…</p>;
   if (links.length === 0) return <p className="text-center text-gray-500">No links yet.</p>;
 
   return (
     <div className="max-w-xl mx-auto p-4 space-y-3">
-      {/* Controls: text search + tag filter + select all */}
+      {/* Controls: search + tags + selection */}
       <div className="flex flex-col gap-2 border rounded p-3">
         <div className="flex items-center gap-2">
           <input
@@ -195,7 +220,7 @@ export default function LinksList() {
           </div>
         )}
 
-        <div className="flex items-center gap-3 text-sm">
+        <div className="flex items-center gap-3 text-sm flex-wrap">
           <span>
             Showing <strong>{total}</strong> item(s)
             {selectedCount > 0 && (
@@ -225,6 +250,24 @@ export default function LinksList() {
             Copy selected
           </button>
         </div>
+
+        {/* NEW: Fix malformed URLs notice */}
+        {fixable.length > 0 && (
+          <div className="p-2 border rounded bg-yellow-50 text-sm flex items-center justify-between">
+            <span>
+              Found <strong>{fixable.length}</strong> malformed URL(s) (e.g.,
+              “https://Https://...”).
+            </span>
+            <button
+              type="button"
+              className="border rounded px-2 py-1 ml-3"
+              onClick={fixAllMalformed}
+              title="Normalize and save URLs"
+            >
+              Fix malformed URLs
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Cards */}
@@ -250,7 +293,6 @@ export default function LinksList() {
                     }
                   />
                 )}
-
                 <div className="font-semibold truncate">{l.title || '(no title)'}</div>
               </div>
             </label>
