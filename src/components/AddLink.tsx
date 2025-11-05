@@ -5,159 +5,161 @@ import { db } from '../firebaseConfig';
 import { useAuth } from '../hooks/useAuth';
 import { formatUrl } from '../utils/formatUrl';
 
-const AddLink: React.FC = () => {
-  // Form state (declare state only once, here)
+export default function AddLink() {
+  const { user } = useAuth();
+
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
-  const [tags, setTags] = useState(''); // comma-separated
-
-  // Operation state
-  const [isLoading, setIsLoading] = useState(false);
+  const [tagsRaw, setTagsRaw] = useState(''); // comma or space separated
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  // Auth
-  const { user, loading: authLoading } = useAuth();
+  if (!user) {
+    return <p className="text-center text-gray-500">Sign in to add links.</p>;
+  }
 
-  // Make Enter always submit the form (works even if the browser is finicky)
-  const submitOnEnter: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-    if (e.key === 'Enter') {
-      (e.currentTarget.form as HTMLFormElement | null)?.requestSubmit();
+  // Parse "tagsRaw" into a deduped array of non-empty strings
+  const parseTags = (input: string): string[] => {
+    const parts = input
+      .split(/[,\s]+/) // split by comma or whitespace
+      .map((t) => t.trim())
+      .filter(Boolean);
+    // dedupe while preserving order
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const t of parts) {
+      const lower = t.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        out.push(t);
+      }
     }
+    return out;
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    // 1) Guards / validation
-    if (!user) {
-      setError('You must be logged in to save a link.');
-      return;
-    }
-
-    const processedUrl = formatUrl(url);
-    if (!processedUrl) {
-      setError('Please enter a valid web address, e.g. https://example.com');
-      return;
-    }
-
-    // 2) Loading
-    setIsLoading(true);
+  const handleSave = async () => {
     setError(null);
-    setSuccess(false);
+    setSuccess(null);
 
+    // 1) Validate & normalize URL
+    const normalized = formatUrl(url);
+    if (!normalized) {
+      setError('Please enter a valid URL (e.g., https://example.com/page).');
+      return;
+    }
+
+    // 2) Build doc
+    const docToSave = {
+      url: normalized,
+      title: title.trim(),
+      tags: parseTags(tagsRaw),
+      createdAt: serverTimestamp(),
+    };
+
+    // 3) Write
     try {
-      // 3) Prepare data
-      const linksCollectionRef = collection(db, 'users', user.uid, 'links');
+      setSaving(true);
+      await addDoc(collection(db, 'users', user.uid, 'links'), docToSave);
+      setSuccess('Saved ✅');
 
-      // Convert comma-separated tags into a clean array
-      // (Let TS infer string[], avoids odd lints/edge typings)
-      const processedTags = tags
-        .split(',')
-        .map((t) => t.trim())
-        .filter((t) => t.length > 0);
-
-      // 4) Write once
-      await addDoc(linksCollectionRef, {
-        url: processedUrl,
-        title: title.trim(),
-        tags: processedTags,
-        createdAt: serverTimestamp(),
-        userId: user.uid,
-      });
-
-      // 5) Reset form + toast
-      setSuccess(true);
+      // 4) Clear form (keep tags if you prefer, but most folks expect a full clear)
       setUrl('');
       setTitle('');
-      setTags('');
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (err) {
-      console.error('Error adding document:', err);
-      setError('Failed to save link. Please try again.');
+      setTagsRaw('');
+    } catch (e) {
+      console.error('Save failed:', e);
+      setError('Save failed. Please try again.');
     } finally {
-      setIsLoading(false);
+      setSaving(false);
     }
   };
 
-  if (authLoading) return <p>Loading...</p>;
-  if (!user) return <p className="text-center text-gray-500">Please sign in to add links.</p>;
-
   return (
-    <div className="max-w-xl mx-auto p-4">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="url" className="block text-sm font-medium">
-            URL (Required)
-          </label>
-          <input
-            id="url"
-            type="text"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            onKeyDown={submitOnEnter}
-            placeholder="https://... (will be added automatically)"
-            className="input-style w-full"
-            required
-          />
-        </div>
+    // ✅ Enter now submits the form because onSubmit → handleSave and the button is type="submit"
+    <form
+      className="max-w-xl mx-auto p-4 space-y-3 border rounded"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!saving) handleSave();
+      }}
+    >
+      <h2 className="text-lg font-semibold">Add a new link</h2>
 
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium">
-            Title (Optional)
-          </label>
-          <input
-            id="title"
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={submitOnEnter}
-            placeholder="e.g., GRN Thai Story"
-            className="input-style w-full"
-          />
-        </div>
+      <label className="block">
+        <span className="text-sm opacity-80">URL</span>
+        <input
+          className="input-style w-full"
+          type="url"
+          placeholder="https://example.com/page"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          required
+        />
+      </label>
 
-        <div>
-          <label htmlFor="tags" className="block text-sm font-medium">
-            Tags (Optional, comma-separated)
-          </label>
-          <input
-            id="tags"
-            type="text"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            onKeyDown={submitOnEnter}
-            placeholder="e.g., thai, gospel, grn"
-            className="input-style w-full"
-          />
-        </div>
+      <label className="block">
+        <span className="text-sm opacity-80">Title (optional)</span>
+        <input
+          className="input-style w-full"
+          type="text"
+          placeholder="Readable title for this link"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+      </label>
 
-        <div className="text-right">
-          <button type="submit" disabled={isLoading} className="btn btn-blue">
-            {isLoading ? 'Saving...' : 'Save Link'}
-          </button>
-        </div>
+      <label className="block">
+        <span className="text-sm opacity-80">Tags (comma or space separated)</span>
+        <input
+          className="input-style w-full"
+          type="text"
+          placeholder="news, thai, audio"
+          value={tagsRaw}
+          onChange={(e) => setTagsRaw(e.target.value)}
+        />
+      </label>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSave(); // use your existing save function
-          }}
-          className="space-y-3"
+      {(error || success) && (
+        <div
+          className={`text-sm rounded px-3 py-2 ${
+            error
+              ? 'bg-red-50 text-red-700 border border-red-200'
+              : 'bg-green-50 text-green-700 border border-green-200'
+          }`}
         >
-          {/* … your inputs as-is … */}
+          {error || success}
+        </div>
+      )}
 
-          {/* Find your Save button and make it type="submit" */}
-          <button type="submit" className="btn btn-blue">
-            Save
-          </button>
-        </form>
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          className="btn btn-blue font-krub"
+          disabled={saving}
+          title="Save (Enter key works too)"
+        >
+          {saving ? 'Saving…' : 'Save'}
+        </button>
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        {success && <p className="text-green-500 text-sm">Link saved successfully!</p>}
-      </form>
-    </div>
+        <button
+          type="button"
+          className="border rounded px-3 py-2"
+          onClick={() => {
+            setUrl('');
+            setTitle('');
+            setTagsRaw('');
+            setError(null);
+            setSuccess(null);
+          }}
+        >
+          Clear
+        </button>
+      </div>
+
+      <p className="text-xs text-gray-500">
+        Tip: Press <kbd>Enter</kbd> in any field to save.
+      </p>
+    </form>
   );
-};
-
-export default AddLink;
+}
