@@ -61,10 +61,12 @@ export default function LinksList() {
   // --- helpers ---
   const fmt = (ts?: Timestamp | null) => (ts ? new Date(ts.seconds * 1000).toLocaleString() : '');
 
+  // replace your faviconFor helper with this:
   const faviconFor = (rawUrl: string) => {
     try {
       const u = new URL(rawUrl);
-      return `${u.origin}/favicon.ico`;
+      // Google favicon service (16px default; you can use 32 if you want bigger)
+      return `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=32`;
     } catch {
       return '';
     }
@@ -241,11 +243,14 @@ export default function LinksList() {
                     src={faviconFor(l.url)}
                     alt=""
                     className="w-4 h-4 rounded-sm shrink-0"
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
                     onError={(e) =>
                       ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')
                     }
                   />
                 )}
+
                 <div className="font-semibold truncate">{l.title || '(no title)'}</div>
               </div>
             </label>
