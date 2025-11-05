@@ -1,17 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Krub:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-
-    <link rel="stylesheet" href="/fonts/krub.css" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Thai Good News</title>
+
+    <!-- Self-hosted Krub: preload + stylesheet (offline OK) -->
+    <link
+      rel="preload"
+      href="/fonts/krub/Krub-Variable.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="/fonts/krub.css" />
+
+    <!-- PWA manifest -->
+    <link rel="manifest" href="/manifest.webmanifest?v=4" />
+
     <!-- Social preview (Open Graph + Twitter) -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Thai Good News" />
@@ -32,16 +38,8 @@
       content="Store, organize, and share secure (https) links with QR codes."
     />
     <meta name="twitter:image" content="/banners/tgn-banner-1200x300.png" />
-
-    <!-- 1 link to manifest with version query to bust cache -->
-    <link rel="manifest" href="/manifest.webmanifest?v=4" />
-    <!-- Krub font (Thai + Latin) -->
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Krub:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
   </head>
+
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

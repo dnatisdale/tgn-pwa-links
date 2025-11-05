@@ -1,8 +1,21 @@
+/* Self-hosted Krub (works offline) */
+@font-face {
+  font-family: 'Krub';
+  src: url('/fonts/krub/Krub-Variable.woff2') format('woff2-variations'),
+    url('/fonts/krub/Krub-Variable.woff2') format('woff2');
+  font-weight: 100 900; /* if using variable font */
+  font-style: normal;
+  font-display: swap;
+}
+
 /* --- Tailwind core directives --- */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* =========================
+   BASE LAYER
+   ========================= */
 @layer base {
   html,
   body {
@@ -41,17 +54,18 @@ a {
   font-size: 12px;
   color: #6b7280;
 }
+
+/* Standard + iOS text size adjust */
 html,
 :host {
-  text-size-adjust: 100%; /* standard */
-  -webkit-text-size-adjust: 100%; /* iOS Safari */
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
 }
-/* Default (fallback when no support): just a semi-opaque background */
+
+/* Fallback surface blur */
 .backdrop-surface {
   background-color: rgba(255, 255, 255, 0.85);
 }
-
-/* If the browser supports backdrop-filter, upgrade the effect */
 @supports ((backdrop-filter: blur(6px)) or (-webkit-backdrop-filter: blur(6px))) {
   .backdrop-surface {
     background-color: rgba(255, 255, 255, 0.5);
@@ -60,20 +74,32 @@ html,
   }
 }
 
-/* ==========================================================
-   COMPONENTS LAYER — custom buttons, layout, etc.
-   ========================================================== */
+/* =========================
+   COMPONENTS LAYER
+   ========================= */
 @layer components {
-  /* === Unified button look (same size/font as Browse) === */
+  /* Unified buttons */
   .btn {
     @apply inline-flex items-center justify-center font-semibold not-italic;
     font-size: 1rem; /* text-base */
     line-height: 1.25rem;
-    border-radius: 9999px;
+    border-radius: 9999px; /* full pill */
     padding: 8px 20px;
     border: none;
     cursor: pointer;
     transition: filter 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
+  }
+  .btn:hover {
+    filter: brightness(1);
+  }
+  .btn:disabled {
+    opacity: 0.6;
+    pointer-events: none;
+    filter: none;
+  }
+  .btn:focus-visible {
+    outline: 2px solid var(--thai-blue);
+    outline-offset: 2px;
   }
 
   .btn-red {
@@ -81,26 +107,10 @@ html,
     color: #fff;
     border: 1px solid #000;
   }
-
   .btn-blue {
     background: var(--thai-blue);
     color: #fff;
     border: 1px solid var(--thai-blue);
-  }
-
-  .btn:hover {
-    filter: brightness(1);
-  }
-
-  .btn:disabled {
-    opacity: 0.6;
-    pointer-events: none;
-    filter: none;
-  }
-
-  .btn:focus-visible {
-    outline: 2px solid var(--thai-blue);
-    outline-offset: 2px;
   }
 
   /* Link-look button */
@@ -114,7 +124,7 @@ html,
     line-height: 38px;
   }
 
-  /* InstallPWA override (make it match ADD) */
+  /* InstallPWA override (match ADD) */
   .add-like {
     background: var(--thai-red);
     color: #fff;
@@ -122,7 +132,7 @@ html,
     border-radius: 12px;
   }
 
-  /* Keep same colors on hover/focus/active for specific buttons */
+  /* Keep same colors on hover/focus/active */
   .btn-static,
   .btn-static:hover,
   .btn-static:focus,
@@ -155,44 +165,39 @@ html,
     line-height: 18px;
   }
 
-  @layer components {
-    /* --- LangPill: two halves, active side = Thai-blue with white text --- */
-    .langpill {
-      display: inline-flex;
-      border: 1px solid var(--thai-blue);
-      border-radius: 9999px;
-      overflow: hidden;
-      height: 32px;
-    }
-    .langpill .opt {
-      width: 40px; /* tweak if you want wider */
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      font-weight: 600;
-      line-height: 1;
-      background: #fff; /* default side */
-      color: var(--thai-blue); /* default text */
-      transition: background-color 120ms ease, color 120ms ease, transform 120ms ease;
-      user-select: none;
-    }
-    /* active side becomes Thai-blue with white text */
-    .langpill .opt.is-active {
-      background: var(--thai-blue);
-      color: #fff;
-    }
-
-    /* optional: gentle grow on hover/focus/press (text only) */
-    .langpill .opt > span {
-      transition: transform 150ms ease;
-    }
-    .langpill .opt:hover > span,
-    .langpill .opt:focus-visible > span,
-    .langpill .opt:active > span {
-      transform: scale(1.5);
-    }
+  /* --- LangPill: two halves, active side = Thai-blue with white text --- */
+  .langpill {
+    display: inline-flex;
+    border: 1px solid var(--thai-blue);
+    border-radius: 9999px;
+    overflow: hidden;
+    height: 32px;
+  }
+  .langpill .opt {
+    width: 40px; /* tweak if you want wider */
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    background: #fff; /* default side */
+    color: var(--thai-blue); /* default text */
+    transition: background-color 120ms ease, color 120ms ease, transform 120ms ease;
+    user-select: none;
+  }
+  .langpill .opt.is-active {
+    background: var(--thai-blue);
+    color: #fff;
+  }
+  .langpill .opt > span {
+    transition: transform 150ms ease;
+  }
+  .langpill .opt:hover > span,
+  .langpill .opt:focus-visible > span,
+  .langpill .opt:active > span {
+    transform: scale(1.5);
   }
 
   /* Header + banner adjustments */
@@ -227,7 +232,7 @@ html,
     gap: 6px;
   }
 
-  /* Toasts, footer, etc. (shortened but functional) */
+  /* Toast */
   .toast {
     position: fixed;
     left: 50%;
@@ -241,11 +246,16 @@ html,
     z-index: 50;
     text-align: center;
   }
+
+  /* Inputs */
+  .input-style {
+    @apply border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 w-full;
+  }
 }
 
-/* ==========================================================
-   UTILITIES LAYER — special one-off utilities
-   ========================================================== */
+/* =========================
+   UTILITIES LAYER
+   ========================= */
 @layer utilities {
   .btn-nohover:hover,
   .btn-nohover:focus,
@@ -256,33 +266,10 @@ html,
   }
 }
 
-/* Hide every other search input app-wide */
+/* === App-wide search visibility rule === */
 input[type='search'] {
   display: none !important;
 }
-
-/* Keep ONLY the TopTabs one (has this class) */
 .top-search-input {
   display: inline-block !important;
-}
-
-/* --- Global: standard + iOS text size adjust (optional, nice) --- */
-html,
-:host {
-  text-size-adjust: 100%;
-  -webkit-text-size-adjust: 100%;
-}
-
-/* --- Footer (and any panel) blur fallback --- */
-.backdrop-surface {
-  background-color: rgba(255, 255, 255, 0.85);
-  /* You can tweak the opacity above if you want it more/less see-through */
-}
-
-@supports ((backdrop-filter: blur(6px)) or (-webkit-backdrop-filter: blur(6px))) {
-  .backdrop-surface {
-    background-color: rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-  }
 }
