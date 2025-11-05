@@ -25,7 +25,7 @@ import {
 } from 'firebase/firestore';
 import { useI18n } from './i18n-provider';
 import Contact from './Contact';
-import AddLink from './AddLink';
+import AddLink from './components/AddLink';
 
 type Row = { id: string; name: string; language: string; url: string };
 

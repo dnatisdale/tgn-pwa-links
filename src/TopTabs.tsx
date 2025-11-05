@@ -142,10 +142,9 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
               to="CONTACT"
             />
             <TabBtn active={currentTab === 'ABOUT'} label={tOr('about', 'About')} to="ABOUT" />
-
-            {/* 🔍 Your ONE search (round button + Thai-red input) */}
+            {/* 🔍 Search (button + expanding input) */}
             <div className="flex items-center gap-2">
-              {/* Round magnifying glass button */}
+              {/* 1) Round magnifying glass button */}
               <button
                 type="button"
                 onClick={() => {
@@ -178,7 +177,8 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
                 </svg>
               </button>
 
-              {/* Expanding input with Thai-red border */}
+              {/* 2) The actual input (Thai-red border). 
+        IMPORTANT: has class "top-search-input" so CSS won’t hide it. */}
               <input
                 id="main-search-input"
                 type="search"
@@ -186,7 +186,7 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={`${tOr('searchAll', 'Search all languages…')} / ค้นหา…`}
                 className={[
-                  'top-search-input', // <-- marks this as the one to keep visible
+                  'top-search-input', // <-- DO NOT remove this
                   'h-10 rounded-xl border-2 px-3 outline-none bg-white',
                   'border-[#A51931] focus:ring-2 focus:ring-[#A51931]',
                   'text-gray-900 placeholder-gray-400 not-italic',

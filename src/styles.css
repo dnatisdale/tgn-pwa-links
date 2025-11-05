@@ -238,21 +238,12 @@ a {
   }
 }
 
-/* --- TEMP: hide all legacy search bars everywhere --- */
-input[type='search'] {
-  display: none !important;
-}
-/* --- EXCEPT the TopTabs one we just marked --- */
-.top-search-input,
-.top-search input[type='search'] {
-  display: block !important;
-}
-
 /* Hide every other search input app-wide */
 input[type='search'] {
   display: none !important;
 }
-/* Keep ONLY the TopTabs search visible */
+
+/* Keep ONLY the TopTabs one (has this class) */
 .top-search-input {
-  display: block !important;
+  display: inline-block !important;
 }
