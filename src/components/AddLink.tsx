@@ -1,108 +1,93 @@
+// src/components/AddLink.tsx
 import { useState } from 'react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-
-// 👇 go UP one level from /components to /src
 import { db } from '../firebaseConfig';
 import { useAuth } from '../hooks/useAuth';
 import { formatUrl } from '../utils/formatUrl';
 
 const AddLink: React.FC = () => {
-  // Form state
+  // Form state (declare state only once, here)
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
-  const [tags, setTags] = useState(''); // Comma-separated string
+  const [tags, setTags] = useState(''); // comma-separated
 
   // Operation state
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  // Get the authenticated user
+  // Auth
   const { user, loading: authLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent form from refreshing the page
+    e.preventDefault();
 
-    // --- 1. Guards and Validation ---
+    // 1) Guards / validation
     if (!user) {
       setError('You must be logged in to save a link.');
       return;
     }
     const processedUrl = formatUrl(url);
-    if (processedUrl === '') {
+    if (!processedUrl) {
       setError('A valid URL is required.');
       return;
     }
 
-    // --- 2. Set Loading State ---
+    // 2) Loading
     setIsLoading(true);
     setError(null);
     setSuccess(false);
 
     try {
-      // --- 3. Prepare Data ---
-      // We will store links in a user-specific subcollection: /users/{userId}/links
+      // 3) Prepare data
       const linksCollectionRef = collection(db, 'users', user.uid, 'links');
 
-      // Convert tag string to an array, clean up whitespace, remove empty tags
-      const processedTags = tags
+      // Convert comma-separated tags into a clean array
+      const processedTags: string[] = tags
         .split(',')
-        .map((tag) => tag.trim())
-        .filter((tag) => tag.length > 0);
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0);
 
-      // --- 4. Write to Firestore ---
+      // 4) Write once
       await addDoc(linksCollectionRef, {
         url: processedUrl,
         title: title.trim(),
         tags: processedTags,
-        createdAt: serverTimestamp(), // For sorting by date
+        createdAt: serverTimestamp(),
         userId: user.uid,
       });
 
-      // --- 5. Reset Form on Success ---
+      // 5) Reset form + toast
       setSuccess(true);
       setUrl('');
       setTitle('');
       setTags('');
-
-      // Hide success message after 3 seconds
       setTimeout(() => setSuccess(false), 3000);
-    } catch (err: any) {
-      console.error('Error adding document: ', err);
+    } catch (err) {
+      console.error('Error adding document:', err);
       setError('Failed to save link. Please try again.');
     } finally {
-      // --- 6. Unset Loading State ---
       setIsLoading(false);
     }
   };
 
-  if (authLoading) {
-    return <p>Loading...</p>; // Or a spinner
-  }
-
-  // Render nothing if user is not logged in (or show a message)
-  if (!user) {
-    return <p className="text-center text-gray-500">Please sign in to add links.</p>;
-  }
+  if (authLoading) return <p>Loading...</p>;
+  if (!user) return <p className="text-center text-gray-500">Please sign in to add links.</p>;
 
   return (
     <div className="max-w-xl mx-auto p-4">
-      {/* 
-        Using <form> and onSubmit handles both button clicks 
-        and the "Enter" key press in any input.
-      */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="url" className="block text-sm font-medium">
             URL (Required)
           </label>
           <input
-            type="text"
             id="url"
+            type="text"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://... (will be added automatically)"
-            className="input-style w-full" // Use your Tailwind @apply class
+            className="input-style w-full"
             required
           />
         </div>
@@ -112,8 +97,8 @@ const AddLink: React.FC = () => {
             Title (Optional)
           </label>
           <input
-            type="text"
             id="title"
+            type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g., GRN Thai Story"
@@ -126,26 +111,21 @@ const AddLink: React.FC = () => {
             Tags (Optional, comma-separated)
           </label>
           <input
-            type="text"
             id="tags"
+            type="text"
             value={tags}
             onChange={(e) => setTags(e.target.value)}
-            placeholder="e.g., #Bible, #Testimony, Gospel"
+            placeholder="e.g., thai, gospel, grn"
             className="input-style w-full"
           />
         </div>
 
         <div className="text-right">
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="btn btn-blue" // Use your button style
-          >
+          <button type="submit" disabled={isLoading} className="btn btn-blue">
             {isLoading ? 'Saving...' : 'Save Link'}
           </button>
         </div>
 
-        {/* --- Feedback Messages --- */}
         {error && <p className="text-red-500 text-sm">{error}</p>}
         {success && <p className="text-green-500 text-sm">Link saved successfully!</p>}
       </form>
