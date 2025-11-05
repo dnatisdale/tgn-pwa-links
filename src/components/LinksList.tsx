@@ -14,6 +14,16 @@ import { db } from '../firebaseConfig';
 import { useAuth } from '../hooks/useAuth';
 import { formatUrl } from '../utils/formatUrl';
 
+// — favicon helper —
+// turns "https://example.com/page" into "example.com"
+const hostFrom = (u: string) => {
+  try {
+    return new URL(u).hostname;
+  } catch {
+    return '';
+  }
+};
+
 type LinkDoc = {
   id: string;
   url: string;
@@ -73,11 +83,11 @@ export default function LinksList() {
   // ------------ Helpers ------------
   const fmt = (ts?: Timestamp | null) => (ts ? new Date(ts.seconds * 1000).toLocaleString() : '');
 
-  // Use Google favicon service to avoid 404/DNS console spam
+  // Use DuckDuckGo favicon service (simple, no weird redirects)
   const faviconFor = (rawUrl: string) => {
     try {
-      const u = new URL(rawUrl);
-      return `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=32`;
+      const host = new URL(rawUrl).hostname;
+      return `https://icons.duckduckgo.com/ip3/${host}.ico`;
     } catch {
       return '';
     }
