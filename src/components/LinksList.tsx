@@ -1,3 +1,4 @@
+// src/components/LinksList.tsx
 import { useEffect, useMemo, useState } from 'react';
 import {
   collection,
@@ -9,6 +10,7 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+// if your path is "@/hooks/useAuth", change import accordingly
 import { useAuth } from '../hooks/useAuth';
 import { formatUrl } from '../utils/formatUrl';
 
@@ -27,10 +29,11 @@ export default function LinksList() {
 
   // Selection + filters
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [textFilter, setTextFilter] = useState(''); // supports *
+  const [textFilter, setTextFilter] = useState(''); // supports '*'
   const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const [scope, setScope] = useState<'all' | 'title' | 'url' | 'tags'>('all');
 
-  // --- Firestore live subscription ---
+  // ------------ Firestore live subscription ------------
   useEffect(() => {
     if (!user) {
       setLinks([]);
@@ -67,7 +70,7 @@ export default function LinksList() {
     return () => unsub();
   }, [user]);
 
-  // --- Helpers ---
+  // ------------ Helpers ------------
   const fmt = (ts?: Timestamp | null) => (ts ? new Date(ts.seconds * 1000).toLocaleString() : '');
 
   // Use Google favicon service to avoid 404/DNS console spam
@@ -91,11 +94,26 @@ export default function LinksList() {
   const filtered = useMemo(() => {
     return links.filter((l) => {
       if (tagFilter && !(l.tags ?? []).includes(tagFilter)) return false;
-      if (!rx) return true;
-      const haystack = [l.title ?? '', l.url ?? '', ...(l.tags ?? [])].join(' ');
+
+      if (!rx) return true; // nothing typed → pass
+
+      const title = l.title ?? '';
+      const url = l.url ?? '';
+      const tagsText = (l.tags ?? []).join(' ');
+
+      const haystack =
+        scope === 'title'
+          ? title
+          : scope === 'url'
+          ? url
+          : scope === 'tags'
+          ? tagsText
+          : // scope === 'all'
+            `${title} ${url} ${tagsText}`;
+
       return rx.test(haystack);
     });
-  }, [links, tagFilter, rx]);
+  }, [links, tagFilter, rx, scope]);
 
   // Tag cloud (top 12)
   const tagCounts = useMemo(() => {
@@ -140,8 +158,7 @@ export default function LinksList() {
     }
   };
 
-  // --- NEW: Find & fix malformed URLs already in Firestore ---
-  // (This is the part you couldn’t find — it lives right here in LinksList.tsx.)
+  // ------------ Find & fix malformed URLs in Firestore ------------
   const fixable = useMemo(() => {
     return links.filter((l) => {
       const next = formatUrl(l.url);
@@ -164,21 +181,39 @@ export default function LinksList() {
     alert(`Fixed ${toFix.length} URL(s).`);
   };
 
+  // ------------ Render ------------
   if (!user) return <p className="text-center text-gray-500">Sign in to view links.</p>;
   if (loading) return <p className="text-center text-gray-500">Loading links…</p>;
   if (links.length === 0) return <p className="text-center text-gray-500">No links yet.</p>;
 
   return (
     <div className="max-w-xl mx-auto p-4 space-y-3">
-      {/* Controls: search + tags + selection */}
+      {/* Controls: scope + search + clear */}
       <div className="flex flex-col gap-2 border rounded p-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={scope}
+            onChange={(e) => setScope(e.target.value as 'all' | 'title' | 'url' | 'tags')}
+            className="border rounded px-2 py-1 text-sm"
+            title="Where to search"
+          >
+            <option value="all">All (title + url + tags)</option>
+            <option value="title">Title only</option>
+            <option value="url">URL only</option>
+            <option value="tags">Tags only</option>
+          </select>
+
           <input
             value={textFilter}
             onChange={(e) => setTextFilter(e.target.value)}
-            placeholder="Search title / url / tags (use * as wildcard)"
-            className="input-style flex-1"
+            placeholder={
+              scope === 'tags'
+                ? 'Search tags… (use * as wildcard)'
+                : 'Search title / url / tags (use * as wildcard)'
+            }
+            className="input-style flex-1 min-w-[220px]"
           />
+
           <button
             type="button"
             className="btn btn-blue font-krub"
@@ -193,6 +228,11 @@ export default function LinksList() {
           </button>
         </div>
 
+        <p className="text-xs text-gray-500">
+          Searching your <strong>saved links</strong> (newest first). Scope:{' '}
+          <strong>{scope}</strong>.
+        </p>
+
         {tagCounts.length > 0 && (
           <div className="flex flex-wrap gap-1">
             <button
@@ -201,6 +241,7 @@ export default function LinksList() {
                 !tagFilter ? 'bg-gray-100' : ''
               }`}
               onClick={() => setTagFilter(null)}
+              title="Show all tags"
             >
               All tags
             </button>
@@ -251,7 +292,7 @@ export default function LinksList() {
           </button>
         </div>
 
-        {/* NEW: Fix malformed URLs notice */}
+        {/* Fix malformed URLs notice */}
         {fixable.length > 0 && (
           <div className="p-2 border rounded bg-yellow-50 text-sm flex items-center justify-between">
             <span>
