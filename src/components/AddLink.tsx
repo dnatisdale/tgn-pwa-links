@@ -37,7 +37,7 @@ const AddLink: React.FC = () => {
 
     const processedUrl = formatUrl(url);
     if (!processedUrl) {
-      setError('A valid URL is required.');
+      setError('Please enter a valid web address, e.g. https://example.com');
       return;
     }
 
