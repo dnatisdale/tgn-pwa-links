@@ -27,7 +27,7 @@ export default function Footer() {
     : '';
 
   return (
-    <footer className="border-t border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+    <footer className="border-t border-gray-200 backdrop-surface">
       <div className="container mx-auto px-4 py-2 text-center text-xs text-gray-700">
         {`v${version}`}
         {pretty ? ` • ${pretty}` : ''}
