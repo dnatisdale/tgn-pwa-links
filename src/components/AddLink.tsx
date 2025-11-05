@@ -19,7 +19,14 @@ const AddLink: React.FC = () => {
   // Auth
   const { user, loading: authLoading } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Make Enter always submit the form (works even if the browser is finicky)
+  const submitOnEnter: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
+    if (e.key === 'Enter') {
+      (e.currentTarget.form as HTMLFormElement | null)?.requestSubmit();
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     // 1) Guards / validation
@@ -27,6 +34,7 @@ const AddLink: React.FC = () => {
       setError('You must be logged in to save a link.');
       return;
     }
+
     const processedUrl = formatUrl(url);
     if (!processedUrl) {
       setError('A valid URL is required.');
@@ -43,7 +51,8 @@ const AddLink: React.FC = () => {
       const linksCollectionRef = collection(db, 'users', user.uid, 'links');
 
       // Convert comma-separated tags into a clean array
-      const processedTags: string[] = tags
+      // (Let TS infer string[], avoids odd lints/edge typings)
+      const processedTags = tags
         .split(',')
         .map((t) => t.trim())
         .filter((t) => t.length > 0);
@@ -86,6 +95,7 @@ const AddLink: React.FC = () => {
             type="text"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={submitOnEnter}
             placeholder="https://... (will be added automatically)"
             className="input-style w-full"
             required
@@ -101,6 +111,7 @@ const AddLink: React.FC = () => {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={submitOnEnter}
             placeholder="e.g., GRN Thai Story"
             className="input-style w-full"
           />
@@ -115,6 +126,7 @@ const AddLink: React.FC = () => {
             type="text"
             value={tags}
             onChange={(e) => setTags(e.target.value)}
+            onKeyDown={submitOnEnter}
             placeholder="e.g., thai, gospel, grn"
             className="input-style w-full"
           />
