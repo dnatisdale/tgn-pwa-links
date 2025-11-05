@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Banner from './Banner';
 import AppMain from './components/AppMain';
+import LinksList from './components/LinksList';
 import Header from './Header';
 import Footer from './Footer';
 import Login from './Login';
@@ -248,7 +249,7 @@ export default function App() {
     );
   }
 
-  // ========================= MAIN APP SHELL =========================
+  // ===================== MAIN APP UI RENDERS or BIG RETURN ======================
   return (
     <div className="min-h-screen flex flex-col" style={{ fontSize: textPx }}>
       <Header />
@@ -326,6 +327,13 @@ export default function App() {
                     </span>
                   )}
                 </div>
+
+                {/* --- BROWSE: render the live list --- */}
+                {isBrowse && (
+                  <section aria-label="Browse list" className="mt-4">
+                    <LinksList />
+                  </section>
+                )}
 
                 <button
                   onClick={batchDownload}
