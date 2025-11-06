@@ -1,156 +1,182 @@
 // src/Login.tsx
-import React, { useState } from 'react';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from './firebaseConfig'; // if your auth export is in a different file, adjust this import
+import { useEffect, useState } from 'react';
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  type User,
+} from 'firebase/auth';
 import { useI18n } from './i18n-provider';
 
 export default function Login() {
-  // ---- i18n ----
   const { t } = useI18n();
-  const tOr = (k: string, fb: string) => {
-    try {
-      const v = (t(k) ?? '').toString().trim();
-      return v || fb;
-    } catch {
-      return fb;
-    }
-  };
+  const auth = getAuth();
 
-  // ---- tiny text grow (applied to inner <span>) ----
-  const grow =
-    'motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]';
-
-  // ---- form state ----
+  const [mode, setMode] = useState<'idle' | 'signin' | 'signup'>('idle');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isAuthed, setIsAuthed] = useState(false); // show Log Out only when signed in
 
-  // ---- actions ----
-  const signIn = async () => {
+  // 3-line auth watcher
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u: User | null) => setIsAuthed(!!u));
+    return () => unsub();
+  }, [auth]);
+
+  const handleSignIn = async () => {
+    setBusy(true);
+    setError(null);
     try {
-      setBusy(true);
       await signInWithEmailAndPassword(auth, email.trim(), password);
-      window.location.hash = '#/browse';
-    } catch (err) {
-      console.error('signin failed:', err);
-      alert(tOr('signinFailed', 'Could not sign in. Please check email/password.'));
+      setMode('idle');
+      setEmail('');
+      setPassword('');
+    } catch (e: any) {
+      setError(e.message || 'Sign in failed.');
     } finally {
       setBusy(false);
     }
   };
 
-  const signUp = async () => {
+  const handleSignUp = async () => {
+    setBusy(true);
+    setError(null);
     try {
-      setBusy(true);
       await createUserWithEmailAndPassword(auth, email.trim(), password);
-      window.location.hash = '#/browse';
-    } catch (err) {
-      console.error('signup failed:', err);
-      alert(tOr('signupFailed', 'Could not sign up. Please try again.'));
+      setMode('idle');
+      setEmail('');
+      setPassword('');
+    } catch (e: any) {
+      setError(e.message || 'Sign up failed.');
     } finally {
       setBusy(false);
     }
   };
 
-  // keep name EXACTLY "continueGuest" to match your codebase
-  const continueGuest = async () => {
+  const handleLogout = async () => {
+    setBusy(true);
     try {
-      setBusy(true);
-      localStorage.setItem('tgn.guest', '1');
-      window.dispatchEvent(new Event('guest:continue'));
-      window.location.hash = '#/browse';
+      await signOut(auth);
     } finally {
       setBusy(false);
     }
   };
 
-  // ---- Enter to submit ----
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await signIn();
+  // safe i18n helper (avoids crashes if a key is missing)
+  const S = (k: any, fallback: string) => {
+    try {
+      return t(k as any);
+    } catch {
+      return fallback;
+    }
   };
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-6 text-center">
-      {/* You can keep your Banner in Header; this page only shows the form area */}
-      <p className="mt-4 text-gray-600 italic">{tOr('pleaseSignIn', 'Please sign in.')}</p>
+    <div className="mx-auto max-w-md px-4 pt-6 pb-10 text-center">
+      <p className="text-gray-600 mb-6">{S('pleaseSignIn', 'Please sign in.')}</p>
 
-      <form onSubmit={onSubmit} noValidate className="mt-6 space-y-3 mx-auto max-w-md">
-        {/* Email */}
-        <label className="block text-left">
-          <span className="sr-only">{tOr('email', 'Email')}</span>
+      {/* Primary actions row */}
+      <div className="flex items-center justify-center gap-3 flex-wrap mb-6">
+        <button
+          onClick={() => setMode(mode === 'signin' ? 'idle' : 'signin')}
+          className="rounded-2xl px-5 py-2.5 border border-gray-300 shadow-sm hover:shadow transition"
+          type="button"
+        >
+          {S('signIn', 'Sign In')}
+        </button>
+
+        <button
+          onClick={() => setMode(mode === 'signup' ? 'idle' : 'signup')}
+          className="rounded-2xl px-5 py-2.5 border border-gray-300 shadow-sm hover:shadow transition"
+          type="button"
+        >
+          {S('signUp', 'Sign Up')}
+        </button>
+
+        {isAuthed && (
+          <button
+            onClick={handleLogout}
+            className="rounded-2xl px-5 py-2.5 border border-gray-300 shadow-sm hover:shadow transition disabled:opacity-50"
+            disabled={busy}
+            type="button"
+          >
+            {S('logout', 'Log Out')}
+          </button>
+        )}
+      </div>
+
+      {/* Continue as Guest */}
+      <div className="mb-8">
+        <a
+          href="#/browse"
+          className="inline-block rounded-2xl px-6 py-3 bg-[#2D2A4A] text-white shadow hover:shadow-md"
+        >
+          {S('continueAsGuest', 'Continue as Guest')}
+        </a>
+      </div>
+
+      {/* Collapsible auth form */}
+      {mode !== 'idle' && (
+        <div className="rounded-2xl border border-gray-200 p-5 text-left shadow-sm mx-auto max-w-sm">
+          <h3 className="text-lg font-semibold mb-3">
+            {mode === 'signin' ? S('signIn', 'Sign In') : S('signUp', 'Sign Up')}
+          </h3>
+
+          <label className="block text-sm text-gray-600 mb-1">{S('email', 'Email')}</label>
           <input
             type="email"
-            inputMode="email"
-            autoComplete="email"
-            placeholder={tOr('email', 'Email')}
-            className="w-full rounded-2xl border border-gray-300 px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-[#2D2A4A]"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            disabled={busy}
-            required
+            className="w-full rounded-xl border border-gray-300 px-3 py-2 mb-3 outline-none focus:ring focus:ring-blue-200"
+            placeholder={S('phContactEmail', 'Email')}
           />
-        </label>
 
-        {/* Password */}
-        <label className="block text-left">
-          <span className="sr-only">{tOr('password', 'Password')}</span>
+          <label className="block text-sm text-gray-600 mb-1">{S('password', 'Password')}</label>
           <input
             type="password"
-            autoComplete="current-password"
-            placeholder={tOr('password', 'Password')}
-            className="w-full rounded-2xl border border-gray-300 px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-[#2D2A4A]"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            disabled={busy}
-            required
+            className="w-full rounded-xl border border-gray-300 px-3 py-2 mb-4 outline-none focus:ring focus:ring-blue-200"
+            placeholder={S('password', 'Password')}
           />
-        </label>
 
-        {/* Buttons */}
-        <div className="mt-3 grid grid-cols-3 gap-2 md:flex md:flex-wrap md:items-center md:gap-3">
-          {/* Sign In = submit so Enter works */}
-          <button
-            type="submit"
-            className="group btn btn-blue w-full md:w-auto justify-center not-italic disabled:opacity-60"
-            disabled={busy}
-            aria-label={tOr('signIn', 'Sign In')}
-            title={tOr('signIn', 'Sign In')}
-          >
-            <span className={grow}>
-              {busy ? `${tOr('signIn', 'Sign In')}…` : tOr('signIn', 'Sign In')}
-            </span>
-          </button>
+          {error && <div className="text-red-600 text-sm mb-3">{error}</div>}
 
-          <button
-            type="button"
-            className="group btn btn-red w-full md:w-auto justify-center not-italic disabled:opacity-60"
-            onClick={signUp}
-            disabled={busy}
-            aria-label={tOr('signUp', 'Sign Up')}
-            title={tOr('signUp', 'Sign Up')}
-          >
-            <span className={grow}>
-              {busy ? `${tOr('signUp', 'Sign Up')}…` : tOr('signUp', 'Sign Up')}
-            </span>
-          </button>
+          <div className="flex items-center gap-3">
+            {mode === 'signin' ? (
+              <button
+                onClick={handleSignIn}
+                disabled={busy || !email || !password}
+                className="rounded-xl px-4 py-2 bg-[#A51931] text-white shadow hover:shadow-md disabled:opacity-50"
+                type="button"
+              >
+                {busy ? S('contactSending', 'Sending...') : S('signIn', 'Sign In')}
+              </button>
+            ) : (
+              <button
+                onClick={handleSignUp}
+                disabled={busy || !email || !password}
+                className="rounded-xl px-4 py-2 bg-[#A51931] text-white shadow hover:shadow-md disabled:opacity-50"
+                type="button"
+              >
+                {busy ? S('contactSending', 'Sending...') : S('signUp', 'Sign Up')}
+              </button>
+            )}
 
-          <button
-            type="button"
-            className="group btn btn-blue w-full md:w-auto justify-center not-italic disabled:opacity-60"
-            onClick={continueGuest}
-            disabled={busy}
-            aria-label={tOr('continueAsGuest', 'Continue as Guest')}
-            title={tOr('continueAsGuest', 'Continue as Guest')}
-          >
-            <span className={grow}>
-              {busy
-                ? `${tOr('continueAsGuest', 'Continue as Guest')}…`
-                : tOr('continueAsGuest', 'Continue as Guest')}
-            </span>
-          </button>
+            <button
+              onClick={() => setMode('idle')}
+              className="rounded-xl px-4 py-2 border border-gray-300"
+              type="button"
+            >
+              {S('cancel', 'Cancel')}
+            </button>
+          </div>
         </div>
-      </form>
-    </main>
+      )}
+    </div>
   );
 }
