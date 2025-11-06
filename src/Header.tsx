@@ -40,8 +40,6 @@ export default function Header() {
     };
   }, []);
 
-  const showLogout = isAuthed || isGuest;
-
   return (
     <header className="relative w-full">
       {/* Top-right controls */}
@@ -49,28 +47,12 @@ export default function Header() {
         <LangPill />
         <InstallPWA className="btn btn-red" label={t('install')} disabledLabel={t('install')} />
 
-        {/* If guest: show Sign in; if authed: show Log Out */}
-        {isGuest ? (
-          <button
-            type="button"
-            onClick={exitGuestAndShowLogin}
-            className="group btn btn-blue"
-            title={t('signIn')}
-            style={{ padding: '6px 12px', borderRadius: 12, fontWeight: 600 }}
-          >
-            <span className="motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]">
-              {t('signIn')}
-            </span>
-          </button>
-        ) : (
-          showLogout && <LogoutButton className="btn btn-blue">{t('logout')}</LogoutButton>
-        )}
+        {/* Only show Log Out button when user is authenticated (not guest) */}
+        {isAuthed && <LogoutButton className="btn btn-blue">{t('logout')}</LogoutButton>}
       </div>
 
-      {/* Add a bit of top padding on small screens so buttons don't overlap the banner */}
-      <div className="pt-10 md:pt-0">
-        <Banner />
-      </div>
+      <Banner />
+      {/* <TopTabs /> */}
     </header>
   );
 }

@@ -19,9 +19,9 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isAuthed, setIsAuthed] = useState(false); // show Log Out only when signed in
+  const [isAuthed, setIsAuthed] = useState(false); // controls Sign Out visibility
 
-  // 3-line auth watcher
+  // watch auth (3 lines)
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u: User | null) => setIsAuthed(!!u));
     return () => unsub();
@@ -66,7 +66,7 @@ export default function Login() {
     }
   };
 
-  // safe i18n helper (avoids crashes if a key is missing)
+  // safe i18n helper
   const S = (k: any, fallback: string) => {
     try {
       return t(k as any);
@@ -79,49 +79,9 @@ export default function Login() {
     <div className="mx-auto max-w-md px-4 pt-6 pb-10 text-center">
       <p className="text-gray-600 mb-6">{S('pleaseSignIn', 'Please sign in.')}</p>
 
-      {/* Primary actions row */}
-      <div className="flex items-center justify-center gap-3 flex-wrap mb-6">
-        <button
-          onClick={() => setMode(mode === 'signin' ? 'idle' : 'signin')}
-          className="rounded-2xl px-5 py-2.5 border border-gray-300 shadow-sm hover:shadow transition"
-          type="button"
-        >
-          {S('signIn', 'Sign In')}
-        </button>
-
-        <button
-          onClick={() => setMode(mode === 'signup' ? 'idle' : 'signup')}
-          className="rounded-2xl px-5 py-2.5 border border-gray-300 shadow-sm hover:shadow transition"
-          type="button"
-        >
-          {S('signUp', 'Sign Up')}
-        </button>
-
-        {isAuthed && (
-          <button
-            onClick={handleLogout}
-            className="rounded-2xl px-5 py-2.5 border border-gray-300 shadow-sm hover:shadow transition disabled:opacity-50"
-            disabled={busy}
-            type="button"
-          >
-            {S('logout', 'Log Out')}
-          </button>
-        )}
-      </div>
-
-      {/* Continue as Guest */}
-      <div className="mb-8">
-        <a
-          href="#/browse"
-          className="inline-block rounded-2xl px-6 py-3 bg-[#2D2A4A] text-white shadow hover:shadow-md"
-        >
-          {S('continueAsGuest', 'Continue as Guest')}
-        </a>
-      </div>
-
-      {/* Collapsible auth form */}
+      {/* ---- AUTH FORM CARD (appears when mode is 'signin' or 'signup') ---- */}
       {mode !== 'idle' && (
-        <div className="rounded-2xl border border-gray-200 p-5 text-left shadow-sm mx-auto max-w-sm">
+        <div className="rounded-2xl border border-gray-200 p-5 text-left shadow-sm mx-auto max-w-sm mb-6">
           <h3 className="text-lg font-semibold mb-3">
             {mode === 'signin' ? S('signIn', 'Sign In') : S('signUp', 'Sign Up')}
           </h3>
@@ -147,10 +107,12 @@ export default function Login() {
           {error && <div className="text-red-600 text-sm mb-3">{error}</div>}
 
           <div className="flex items-center gap-3">
+            {/* Action button: Sign In or Sign Up */}
             {mode === 'signin' ? (
               <button
                 onClick={handleSignIn}
                 disabled={busy || !email || !password}
+                // Use Thai-red for the primary action button inside the card
                 className="rounded-xl px-4 py-2 bg-[#A51931] text-white shadow hover:shadow-md disabled:opacity-50"
                 type="button"
               >
@@ -167,6 +129,7 @@ export default function Login() {
               </button>
             )}
 
+            {/* Cancel button */}
             <button
               onClick={() => setMode('idle')}
               className="rounded-xl px-4 py-2 border border-gray-300"
@@ -177,6 +140,54 @@ export default function Login() {
           </div>
         </div>
       )}
+
+      {/* ---- MAIN BUTTON ROW (Sign In/Up, Sign Out, Continue as Guest) ---- */}
+      {/* This row replaces the multiple messy blocks in your previous code. */}
+      <div className="flex items-center justify-center gap-3 flex-wrap">
+        {/* --- 1. Sign In / Log Out Section --- */}
+        {isAuthed ? (
+          // If authed, show Log Out (Thai-red, as requested)
+          <button
+            onClick={handleLogout}
+            className="rounded-2xl px-6 py-3 bg-[#A51931] text-white shadow hover:shadow-md disabled:opacity-50"
+            disabled={busy}
+            type="button"
+          >
+            {S('logout', 'Log Out')}
+          </button>
+        ) : (
+          // If NOT authed, show Sign In and Sign Up (to open the card above)
+          <>
+            {/* Sign In (Thai-blue, matches screenshot) */}
+            <button
+              onClick={() => setMode(mode === 'signin' ? 'idle' : 'signin')}
+              className="rounded-2xl px-6 py-3 bg-[#2D2A4A] text-white shadow hover:shadow-md"
+              type="button"
+            >
+              {S('signIn', 'Sign In')}
+            </button>
+
+            {/* Sign Up (Thai-red, matches screenshot) */}
+            <button
+              onClick={() => setMode(mode === 'signup' ? 'idle' : 'signup')}
+              className="rounded-2xl px-6 py-3 bg-[#A51931] text-white shadow hover:shadow-md"
+              type="button"
+            >
+              {S('signUp', 'Sign Up')}
+            </button>
+          </>
+        )}
+
+        {/* --- 2. Continue as Guest Button (Thai-blue, matches screenshot) --- */}
+        <a
+          href="#/browse"
+          // This event tells the app to set guest mode and navigate
+          onClick={() => window.dispatchEvent(new Event('guest:continue'))}
+          className="inline-block rounded-2xl px-6 py-3 bg-[#2D2A4A] text-white shadow hover:shadow-md"
+        >
+          {S('continueAsGuest', 'Continue as Guest')}
+        </a>
+      </div>
     </div>
   );
 }
