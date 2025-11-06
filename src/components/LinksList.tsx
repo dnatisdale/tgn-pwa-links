@@ -41,7 +41,6 @@ export default function LinksList() {
   const [textFilter, setTextFilter] = useState(''); // supports '*'
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [scope, setScope] = useState<'all' | 'title' | 'url' | 'tags'>('all');
-  const [qrSize, setQrSize] = useState<CardSize>('md');
   const [orientation, setOrientation] = useState<CardOrientation>('portrait');
 
   // Share Card options

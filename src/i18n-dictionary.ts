@@ -17,6 +17,7 @@ export const en = {
   continueAsGuest: 'Continue as Guest',
   email: 'Email',
   password: 'Password',
+  logoutFailed: 'Could not log out. Please try again.',
 
   // Search / filters
   search: 'Search all languages...',
@@ -107,6 +108,7 @@ export const th = {
   continueAsGuest: 'เข้าชมแบบผู้เยี่ยมชม',
   email: 'อีเมล',
   password: 'รหัสผ่าน',
+  logoutFailed: 'ออกจากระบบไม่สำเร็จ โปรดลองอีกครั้ง',
 
   // Search / filters
   search: 'ค้นหาทุกภาษา...',

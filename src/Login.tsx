@@ -99,36 +99,14 @@ export default function Login() {
 
         {/* Buttons row */}
         <div className="mt-3 grid grid-cols-3 gap-2 md:flex md:flex-wrap md:items-center md:gap-3">
-          {/* Sign In */}
-          <button
-            type="submit"
-            className="group btn btn-blue w-full md:w-auto justify-center not-italic"
-            aria-label={tOr('signIn', 'Sign In')}
-            title={tOr('signIn', 'Sign In')}
-          >
-            <span className={grow}>{tOr('signIn', 'Sign In')}</span>
+          <button className="btn btn-blue w-full md:w-auto" onClick={handleSignIn}>
+            {tOr('signIn', 'Sign In')}
           </button>
-
-          {/* Sign Up */}
-          <button
-            type="button"
-            className="group btn btn-red w-full md:w-auto justify-center not-italic"
-            onClick={signUp}
-            aria-label={tOr('signUp', 'Sign Up')}
-            title={tOr('signUp', 'Sign Up')}
-          >
-            <span className={grow}>{tOr('signUp', 'Sign Up')}</span>
+          <button className="btn btn-red w-full md:w-auto" onClick={handleSignUp}>
+            {tOr('signUp', 'Sign Up')}
           </button>
-
-          {/* Continue as Guest */}
-          <button
-            type="button"
-            className="group btn btn-blue w-full md:w-auto justify-center not-italic"
-            onClick={continueGuest}
-            aria-label={tOr('continueAsGuest', 'Continue as Guest')}
-            title={tOr('continueAsGuest', 'Continue as Guest')}
-          >
-            <span className={grow}>{tOr('continueAsGuest', 'Continue as Guest')}</span>
+          <button className="btn btn-blue w-full md:w-auto" onClick={continueAsGuest}>
+            {tOr('continueAsGuest', 'Continue as Guest')}
           </button>
         </div>
       </form>
