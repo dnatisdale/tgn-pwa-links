@@ -32,30 +32,50 @@ export default function Login() {
     return (v ?? '').toString().trim() || fb;
   };
 
+  // at top of component:
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
 
+  // sign in existing account
   const signIn = async () => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (e: any) {
-      alert(e?.message || String(e));
+      setBusy(true);
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+      window.location.hash = '#/browse';
+    } catch (err) {
+      alert(tOr('signinFailed', 'Could not sign in. Please check email/password.'));
+      console.error(err);
+    } finally {
+      setBusy(false);
     }
-  };
-  const signUp = async () => {
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      localStorage.removeItem('tgn.guest');
-    } catch (e: any) {
-      alert(e?.message || String(e));
-    }
-  };
-  const continueGuest = () => {
-    localStorage.setItem('tgn.guest', '1');
-    window.dispatchEvent(new Event('guest:continue'));
-    window.location.hash = '#/browse';
   };
 
+  // create new account
+  const signUp = async () => {
+    try {
+      setBusy(true);
+      await createUserWithEmailAndPassword(auth, email.trim(), password);
+      window.location.hash = '#/browse';
+    } catch (err) {
+      alert(tOr('signupFailed', 'Could not sign up. Please try again.'));
+      console.error(err);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // continue as guest (you already have this, name must be continueGuest)
+  const continueGuest = async () => {
+    try {
+      setBusy(true);
+      localStorage.setItem('tgn.guest', '1');
+      window.dispatchEvent(new Event('guest:continue'));
+      window.location.hash = '#/browse';
+    } finally {
+      setBusy(false);
+    }
+  };
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); // allow Enter to submit without reloading
     await signIn();
