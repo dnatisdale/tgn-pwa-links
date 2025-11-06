@@ -1,21 +1,19 @@
-/* Self-hosted Krub (works offline) */
-@font-face {
-  font-family: 'Krub';
-  src: url('/fonts/krub/Krub-Variable.woff2') format('woff2-variations'),
-    url('/fonts/krub/Krub-Variable.woff2') format('woff2');
-  font-weight: 100 900; /* if using variable font */
-  font-style: normal;
-  font-display: swap;
-}
-
-/* --- Tailwind core directives --- */
+/* src/styles.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* =========================
-   BASE LAYER
-   ========================= */
+/* Self-hosted Krub (keep outside any @layer) */
+@font-face {
+  font-family: 'Krub';
+  src: url('/fonts/krub/Krub-Variable.woff2') format('woff2-variations'),
+    url('/fonts/krub/Krub-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Base layer */
 @layer base {
   html,
   body {
@@ -29,6 +27,40 @@
   }
   h3 {
     @apply font-medium;
+  }
+}
+
+/* Components layer — put ALL your @apply classes inside here */
+@layer components {
+  .btn {
+    @apply inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-sm transition;
+  }
+  .btn-blue {
+    @apply btn bg-blue-600 text-white border-transparent hover:bg-blue-700;
+  }
+  .input-style {
+    @apply border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 w-full;
+  }
+
+  .qr-center {
+    display: flex;
+    justify-content: center;
+  }
+  .qr-media {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* Utilities (optional) */
+@layer utilities {
+  .btn-nohover:hover,
+  .btn-nohover:focus,
+  .btn-nohover:active {
+    background-color: inherit !important;
+    color: inherit !important;
+    border-color: inherit !important;
   }
 }
 
@@ -101,7 +133,6 @@ html,
     outline: 2px solid var(--thai-blue);
     outline-offset: 2px;
   }
-
   .btn-red {
     background: var(--thai-red);
     color: #fff;
@@ -253,17 +284,14 @@ html,
   }
 }
 
-/* =========================
-   UTILITIES LAYER
-   ========================= */
-@layer utilities {
-  .btn-nohover:hover,
-  .btn-nohover:focus,
-  .btn-nohover:active {
-    background-color: inherit !important;
-    color: inherit !important;
-    border-color: inherit !important;
-  }
+.qr-center {
+  display: flex;
+  justify-content: center;
+}
+.qr-media {
+  display: block;
+  max-width: 100%;
+  height: auto;
 }
 
 /* === App-wide search visibility rule === */

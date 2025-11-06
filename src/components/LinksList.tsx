@@ -8,10 +8,10 @@ import {
   Timestamp,
   doc,
   updateDoc,
-  deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { useAuth } from '../hooks/useAuth';
+import { sendEmail } from '../utils/email';
 import { formatUrl } from '../utils/formatUrl';
 import QRCode from 'qrcode';
 
@@ -28,24 +28,25 @@ export default function LinksList() {
   const [links, setLinks] = useState<LinkDoc[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Selection + filters
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // Filters
   const [textFilter, setTextFilter] = useState(''); // supports '*'
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [scope, setScope] = useState<'all' | 'title' | 'url' | 'tags'>('all');
 
-  // ------------ Firestore live subscription ------------
+  // Share Card options
+  const [includeQr, setIncludeQr] = useState<boolean>(false);
+  const [qrSize, setQrSize] = useState<'sm' | 'md' | 'lg'>('md');
+
+  // Live Firestore
   useEffect(() => {
     if (!user) {
       setLinks([]);
       setLoading(false);
       return;
     }
-
-    const q = query(collection(db, 'users', user.uid, 'links'), orderBy('createdAt', 'desc'));
-
-    const unsub = onSnapshot(
-      q,
+    const qy = query(collection(db, 'users', user.uid, 'links'), orderBy('createdAt', 'desc'));
+    const off = onSnapshot(
+      qy,
       (snap) => {
         const rows: LinkDoc[] = snap.docs.map((d) => {
           const data = d.data() as Omit<LinkDoc, 'id'>;
@@ -59,7 +60,6 @@ export default function LinksList() {
         });
         setLinks(rows);
         setLoading(false);
-        setSelectedIds(new Set()); // clear selection when data changes
       },
       (err) => {
         console.error('onSnapshot error:', err);
@@ -67,18 +67,15 @@ export default function LinksList() {
         setLoading(false);
       }
     );
-
-    return () => unsub();
+    return () => off();
   }, [user]);
 
-  // ------------ Helpers ------------
+  // Helpers
   const fmt = (ts?: Timestamp | null) => (ts ? new Date(ts.seconds * 1000).toLocaleString() : '');
 
-  // Simple, reliable favicon source
   const faviconFor = (rawUrl: string) => {
     try {
-      const host = new URL(rawUrl).hostname;
-      return `https://icons.duckduckgo.com/ip3/${host}.ico`;
+      return `https://icons.duckduckgo.com/ip3/${new URL(rawUrl).hostname}.ico`;
     } catch {
       return '';
     }
@@ -95,12 +92,10 @@ export default function LinksList() {
   const filtered = useMemo(() => {
     return links.filter((l) => {
       if (tagFilter && !(l.tags ?? []).includes(tagFilter)) return false;
-      if (!rx) return true; // nothing typed → pass
-
+      if (!rx) return true;
       const title = l.title ?? '';
       const url = l.url ?? '';
       const tagsText = (l.tags ?? []).join(' ');
-
       const haystack =
         scope === 'title'
           ? title
@@ -109,7 +104,6 @@ export default function LinksList() {
           : scope === 'tags'
           ? tagsText
           : `${title} ${url} ${tagsText}`;
-
       return rx.test(haystack);
     });
   }, [links, tagFilter, rx, scope]);
@@ -121,78 +115,7 @@ export default function LinksList() {
     return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
   }, [links]);
 
-  const total = filtered.length;
-  const selectedCount = [...selectedIds].filter((id) => filtered.some((f) => f.id === id)).length;
-  const allVisibleSelected = selectedCount === total && total > 0;
-
-  // Selection helpers
-  const toggleOne = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-  const selectAllVisible = () => {
-    const next = new Set(selectedIds);
-    filtered.forEach((l) => next.add(l.id));
-    setSelectedIds(next);
-  };
-  const clearVisible = () => {
-    const next = new Set(selectedIds);
-    filtered.forEach((l) => next.delete(l.id));
-    setSelectedIds(next);
-  };
-
-  // Bulk copy/delete
-  const copySelected = async () => {
-    try {
-      const urls = links
-        .filter((l) => selectedIds.has(l.id))
-        .map((l) => l.url)
-        .join('\n');
-      if (!urls) return;
-      await navigator.clipboard.writeText(urls);
-      alert('Copied selected URLs to clipboard.');
-    } catch (e) {
-      console.error('Copy failed:', e);
-    }
-  };
-
-  const deleteSelected = async () => {
-    if (!user || selectedIds.size === 0) return;
-    if (!confirm(`Delete ${selectedIds.size} selected item(s)? This cannot be undone.`)) return;
-    try {
-      await Promise.all(
-        [...selectedIds].map((id) => deleteDoc(doc(db, 'users', user.uid, 'links', id)))
-      );
-      setSelectedIds(new Set());
-    } catch (e) {
-      console.error('Delete failed:', e);
-      alert('Some deletes failed. See console.');
-    }
-  };
-
-  // Share / copy (per item)
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      alert('Copied!');
-    } catch {}
-  };
-
-  const shareLink = async (url: string, title?: string) => {
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: title || 'Link', url });
-      } else {
-        await copyToClipboard(url);
-      }
-    } catch {}
-  };
-
-  // Export (JSON of current filtered list)
+  // Export visible
   const exportLinks = (rows: LinkDoc[]) => {
     const blob = new Blob([JSON.stringify(rows, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -203,20 +126,89 @@ export default function LinksList() {
     URL.revokeObjectURL(url);
   };
 
-  // QR code (per item)
-  const openQrFor = async (url: string) => {
-    try {
-      const dataUrl = await QRCode.toDataURL(url, { width: 256, margin: 1 });
-      const w = window.open('', '_blank', 'width=320,height=340');
-      if (w) {
-        w.document.write(`<img src="${dataUrl}" alt="QR" style="display:block;margin:12px auto"/>`);
+  // Unified Share/Copy/Email
+  const sizePx = (s: 'sm' | 'md' | 'lg') => (s === 'sm' ? 128 : s === 'lg' ? 384 : 256);
+
+  const composeCardText = (l: LinkDoc) => {
+    const title = l.title?.trim() || '(no title)';
+    const url = l.url || '';
+    const tags = (l.tags ?? []).join(', ');
+    const when = fmt(l.createdAt);
+    return [
+      `Title: ${title}`,
+      `URL: ${url}`,
+      tags ? `Tags: ${tags}` : `Tags: —`,
+      when ? `Saved: ${when}` : undefined,
+    ]
+      .filter(Boolean)
+      .join('\n');
+  };
+
+  const makeQrBlob = async (url: string, pixels: number): Promise<Blob> => {
+    const dataUrl = await QRCode.toDataURL(url, { width: pixels, margin: 1 });
+    const res = await fetch(dataUrl);
+    return await res.blob();
+  };
+
+  const shareCard = async (
+    l: LinkDoc,
+    mode: 'share' | 'copy' | 'email',
+    withQr: boolean,
+    qrsz: 'sm' | 'md' | 'lg'
+  ) => {
+    const text = composeCardText(l);
+
+    if (mode === 'email') {
+      const to = prompt('Send to which email address?')?.trim();
+      if (!to) return;
+
+      const subj = l.title?.trim() || 'Shared link';
+      try {
+        await sendEmail({ to, subject: subj, message: text });
+        alert('Email sent ✅');
+      } catch (e) {
+        console.error(e);
+        alert('Email failed. Check console and your EmailJS keys/template.');
       }
-    } catch (e) {
-      console.error('QR failed:', e);
+      return;
+    }
+
+    if (mode === 'share' && navigator.share) {
+      try {
+        if (withQr) {
+          const blob = await makeQrBlob(l.url, sizePx(qrsz));
+          const file = new File([blob], 'qr.png', { type: 'image/png' });
+          if ((navigator as any).canShare?.({ files: [file] })) {
+            await navigator.share({ title: l.title || 'Link', text, url: l.url, files: [file] });
+            return;
+          }
+        }
+        await navigator.share({ title: l.title || 'Link', text, url: l.url });
+        return;
+      } catch {
+        /* fall through to copy */
+      }
+    }
+
+    try {
+      if (withQr && 'ClipboardItem' in window) {
+        const blob = await makeQrBlob(l.url, sizePx(qrsz));
+        const item = new (window as any).ClipboardItem({
+          'text/plain': new Blob([text], { type: 'text/plain' }),
+          'image/png': blob,
+        });
+        await (navigator.clipboard as any).write([item]);
+        alert('Card + QR copied to clipboard.');
+        return;
+      }
+      await navigator.clipboard.writeText(text);
+      alert('Card text copied to clipboard.');
+    } catch {
+      alert('Copy failed. You can select and copy manually.');
     }
   };
 
-  // ------------ Find & fix malformed URLs in Firestore ------------
+  // Fix malformed saved URLs
   const fixable = useMemo(() => {
     return links.filter((l) => {
       const next = formatUrl(l.url);
@@ -239,14 +231,14 @@ export default function LinksList() {
     alert(`Fixed ${toFix.length} URL(s).`);
   };
 
-  // ------------ Render ------------
+  // Render
   if (!user) return <p className="text-center text-gray-500">Sign in to view links.</p>;
   if (loading) return <p className="text-center text-gray-500">Loading links…</p>;
   if (links.length === 0) return <p className="text-center text-gray-500">No links yet.</p>;
 
   return (
-    <div className="max-w-xl mx-auto p-4 space-y-3">
-      {/* Controls: scope + search + clear */}
+    <div className="max-w-6xl mx-auto p-4">
+      {/* Controls */}
       <div className="flex flex-col gap-2 border rounded p-3">
         <div className="flex items-center gap-2 flex-wrap">
           <select
@@ -272,15 +264,34 @@ export default function LinksList() {
             className="input-style flex-1 min-w-[220px]"
           />
 
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={includeQr}
+              onChange={(e) => setIncludeQr(e.target.checked)}
+            />
+            Include QR
+          </label>
+
+          <select
+            value={qrSize}
+            onChange={(e) => setQrSize(e.target.value as 'sm' | 'md' | 'lg')}
+            className="border rounded px-2 py-1 text-sm"
+            title="QR size"
+          >
+            <option value="sm">QR: Small</option>
+            <option value="md">QR: Medium</option>
+            <option value="lg">QR: Large</option>
+          </select>
+
           <button
             type="button"
             className="btn btn-blue font-krub"
             onClick={() => {
               setTextFilter('');
               setTagFilter(null);
-              setSelectedIds(new Set());
             }}
-            title="Clear search, tag filter, and selection"
+            title="Clear search and tag filter"
           >
             Clear All
           </button>
@@ -319,71 +330,15 @@ export default function LinksList() {
           </div>
         )}
 
-        <div className="flex items-center gap-3 text-sm flex-wrap">
-          <span>
-            Showing <strong>{total}</strong> item(s)
-            {selectedCount > 0 && (
-              <>
-                {' '}
-                — Selected <strong>{selectedCount}</strong>
-              </>
-            )}
-          </span>
-
-          <button
-            type="button"
-            className="border rounded px-2 py-1"
-            onClick={allVisibleSelected ? clearVisible : selectAllVisible}
-          >
-            {allVisibleSelected ? 'Clear all (visible)' : 'Select all (visible)'}
-          </button>
-
-          <button type="button" className="border rounded px-2 py-1" onClick={clearVisible}>
-            Clear selection (visible)
-          </button>
-
-          <button
-            type="button"
-            className="border rounded px-2 py-1"
-            onClick={copySelected}
-            disabled={selectedIds.size === 0}
-            title="Copy selected URLs"
-          >
-            Copy selected
-          </button>
-
-          <button
-            type="button"
-            className="border rounded px-2 py-1"
-            onClick={deleteSelected}
-            disabled={selectedIds.size === 0}
-            title="Delete selected"
-          >
-            Delete selected
-          </button>
-
-          <button
-            type="button"
-            className="border rounded px-2 py-1"
-            onClick={() => exportLinks(filtered)}
-            title="Export currently shown list as JSON"
-          >
-            Export (JSON)
-          </button>
-        </div>
-
-        {/* Fix malformed URLs notice */}
         {fixable.length > 0 && (
           <div className="p-2 border rounded bg-yellow-50 text-sm flex items-center justify-between">
             <span>
-              Found <strong>{fixable.length}</strong> malformed URL(s) (e.g.,
-              “https://Https://...”).
+              Found <strong>{fixable.length}</strong> malformed URL(s).
             </span>
             <button
               type="button"
               className="border rounded px-2 py-1 ml-3"
               onClick={fixAllMalformed}
-              title="Normalize and save URLs"
             >
               Fix malformed URLs
             </button>
@@ -392,15 +347,10 @@ export default function LinksList() {
       </div>
 
       {/* Cards */}
-      {filtered.map((l) => (
-        <div key={l.id} className="border rounded p-3">
-          <div className="flex items-center justify-between gap-2">
-            <label className="flex items-center gap-2 min-w-0">
-              <input
-                type="checkbox"
-                checked={selectedIds.has(l.id)}
-                onChange={() => toggleOne(l.id)}
-              />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
+        {filtered.map((l) => (
+          <div key={l.id} className="border rounded p-3 bg-white shadow-sm h-full">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 {l.url && (
                   <img
@@ -416,62 +366,56 @@ export default function LinksList() {
                 )}
                 <div className="font-semibold truncate">{l.title || '(no title)'}</div>
               </div>
-            </label>
-            <div className="text-xs opacity-60 whitespace-nowrap">{fmt(l.createdAt)}</div>
-          </div>
+              <div className="text-xs opacity-60 whitespace-nowrap">{fmt(l.createdAt)}</div>
+            </div>
 
-          <a
-            href={l.url}
-            target="_blank"
-            rel="noreferrer"
-            className="underline break-all inline-block mt-1"
-          >
-            {l.url}
-          </a>
+            <a
+              href={l.url}
+              target="_blank"
+              rel="noreferrer"
+              className="underline break-all inline-block mt-1"
+            >
+              {l.url}
+            </a>
 
-          <div className="mt-2 flex gap-2 text-sm">
-            <button
-              type="button"
-              className="border rounded px-2 py-1"
-              onClick={() => shareLink(l.url, l.title)}
-            >
-              Share
-            </button>
-            <button
-              type="button"
-              className="border rounded px-2 py-1"
-              onClick={() => copyToClipboard(l.url)}
-            >
-              Copy
-            </button>
-            <button
-              type="button"
-              className="border rounded px-2 py-1"
-              onClick={() => openQrFor(l.url)}
-            >
-              QR
-            </button>
-          </div>
+            <div className="mt-2 flex flex-wrap gap-2 text-sm">
+              <button
+                type="button"
+                className="border rounded px-2 py-1"
+                onClick={() => shareCard(l, 'share', includeQr, qrSize)}
+              >
+                Share
+              </button>
+              <button
+                type="button"
+                className="border rounded px-2 py-1"
+                onClick={() => shareCard(l, 'copy', includeQr, qrSize)}
+              >
+                Copy
+              </button>
+              <button
+                type="button"
+                className="border rounded px-2 py-1"
+                onClick={() => shareCard(l, 'email', includeQr, qrSize)}
+              >
+                Email
+              </button>
+            </div>
 
-          <div className="mt-2 text-sm flex flex-wrap gap-1">
-            {(l.tags ?? []).length > 0 ? (
-              (l.tags ?? []).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  className="px-2 py-0.5 rounded-full border text-xs opacity-80"
-                  onClick={() => setTagFilter((cur) => (cur === t ? null : t))}
-                  title="Filter by this tag"
-                >
-                  #{t}
-                </button>
-              ))
-            ) : (
-              <span className="text-xs opacity-50">No tags</span>
-            )}
+            <div className="mt-2 text-sm flex flex-wrap gap-1">
+              {(l.tags ?? []).length > 0 ? (
+                (l.tags ?? []).map((t) => (
+                  <span key={t} className="px-2 py-0.5 rounded-full border text-xs opacity-80">
+                    #{t}
+                  </span>
+                ))
+              ) : (
+                <span className="text-xs opacity-50">No tags</span>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

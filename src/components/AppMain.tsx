@@ -135,50 +135,14 @@ function AppMain() {
                 {lang === 'th' ? 'ทั้งหมด' : 'All'}
               </button>
               &nbsp;|&nbsp;
-              <button className="linklike" onClick={() => setFilterThai(true)}>
-                {lang === 'th' ? 'เฉพาะภาษาไทย' : 'Thai only'}
-              </button>
             </div>
           </div>
 
           {/* Toolbar */}
           <div className="flex flex-wrap items-center gap-8 mb-3">
-            <label className="text-sm">
-              <input
-                type="checkbox"
-                className="card-check"
-                checked={allSelected}
-                onChange={toggleSelectAll}
-              />
-              Select all ({selectedRows.length}/{filtered.length})
-            </label>
-
-            <div className="flex items-center gap-8">
-              <div>
-                <Share
-                  url={firstSelected ? firstSelected.url : ''}
-                  title={firstSelected ? firstSelected.name || 'Link' : ''}
-                  qrCanvasId={firstSelected ? `qr-${firstSelected.id}` : undefined}
-                />
-                {!firstSelected && (
-                  <span className="text-xs" style={{ color: '#6b7280', marginLeft: 8 }}>
-                    ( Select at least one item )
-                  </span>
-                )}
-              </div>
-
-              <button
-                className="btn btn-blue"
-                onClick={batchDownload}
-                disabled={!selectedRows.length}
-              >
-                Download QR cards ({selectedRows.length})
-              </button>
-
-              <button className="linklike" onClick={copySelectedLinks}>
-                Copy link
-              </button>
-            </div>
+            <button className="linklike" onClick={copySelectedLinks}>
+              Copy link
+            </button>
           </div>
 
           {!filtered.length && <div className="text-sm text-gray-600 mb-3">{i.empty}</div>}

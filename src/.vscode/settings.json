@@ -1,21 +1,43 @@
 {
-  // Turn off normal CSS validation because Tailwind handles it
+  // ✅ Let Tailwind handle CSS; silence @tailwind/@apply warnings
   "css.validate": false,
   "scss.validate": false,
   "less.validate": false,
   "postcss.validate": false,
-
-  // Ignore @tailwind and @apply warnings
   "css.lint.unknownAtRules": "ignore",
   "postcss.lint.unknownAtRules": "ignore",
 
-  // Tell the Tailwind VS Code extension that your config is TypeScript
+  // ✅ Tell the Tailwind extension your config is TypeScript
   "tailwindCSS.experimental.configFile": "tailwind.config.ts",
 
-  // Help IntelliSense know which files use Tailwind
+  // ✅ Teach the Tailwind extension where classes appear
   "tailwindCSS.includeLanguages": {
     "plaintext": "html",
     "postcss": "css",
-    "css": "css"
-  }
+    "css": "css",
+    "javascript": "javascript",
+    "javascriptreact": "javascript",
+    "typescript": "javascript",
+    "typescriptreact": "javascript" // <-- TSX support
+  },
+
+  // ✅ Get class name suggestions inside quotes/template strings
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+
+  // ✅ Emmet-style tailwind expansions (e.g., type 'flex' -> suggestion)
+  "tailwindCSS.emmetCompletions": true,
+
+  // (Optional) Smarter detection when you build class strings with helpers
+  // Remove lines you don’t use. Safe to keep.
+  "tailwindCSS.experimental.classRegex": [
+    "clsx\\(([^)]*)\\)",
+    "cn\\(([^)]*)\\)",
+    "cva\\(([^)]*)\\)",
+    "tw`([^`]*)`"
+  ],
+
+  // (Optional) Don’t scan huge folders
+  "tailwindCSS.files.exclude": ["**/.git/**", "**/node_modules/**", "**/dist/**", "**/build/**"]
 }

@@ -180,22 +180,7 @@ export function useAppLogic() {
       return next;
     });
 
-  const copySelectedLinks = async () => {
-    const urls = selectedRows.map((r) => r.url).filter(Boolean);
-    if (!urls.length) {
-      alert('Select at least one item');
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(urls.join('\n'));
-    } catch {
-      alert('Copy failed');
-    }
-  };
 
-  const batchDownload = async () => {
-    if (!selectedRows.length) {
-      alert('Select at least one item');
       return;
     }
     const mod = await import('../qrCard');
