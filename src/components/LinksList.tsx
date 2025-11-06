@@ -14,6 +14,15 @@ import { useAuth } from '../hooks/useAuth';
 import { sendEmail } from '../utils/email';
 import { formatUrl } from '../utils/formatUrl';
 import QRCode from 'qrcode';
+import {
+  renderCardCanvas,
+  downloadCardPng,
+  copyCardToClipboard,
+  shareCardIfPossible,
+  openCardPreview,
+  type CardSize,
+  type CardOrientation,
+} from '../qrCard';
 
 type LinkDoc = {
   id: string;
@@ -32,6 +41,8 @@ export default function LinksList() {
   const [textFilter, setTextFilter] = useState(''); // supports '*'
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [scope, setScope] = useState<'all' | 'title' | 'url' | 'tags'>('all');
+  const [qrSize, setQrSize] = useState<CardSize>('md');
+  const [orientation, setOrientation] = useState<CardOrientation>('portrait');
 
   // Share Card options
   const [includeQr, setIncludeQr] = useState<boolean>(false);
@@ -263,6 +274,31 @@ export default function LinksList() {
             }
             className="input-style flex-1 min-w-[220px]"
           />
+          {/* PNG Card options */}
+          <label className="flex items-center gap-2 text-sm">
+            Size:
+            <select
+              value={qrSize}
+              onChange={(e) => setQrSize(e.target.value as CardSize)}
+              className="border rounded px-2 py-1 text-sm"
+            >
+              <option value="sm">Small</option>
+              <option value="md">Medium</option>
+              <option value="lg">Large</option>
+            </select>
+          </label>
+
+          <label className="flex items-center gap-2 text-sm">
+            Orientation:
+            <select
+              value={orientation}
+              onChange={(e) => setOrientation(e.target.value as CardOrientation)}
+              className="border rounded px-2 py-1 text-sm"
+            >
+              <option value="portrait">Portrait</option>
+              <option value="landscape">Landscape</option>
+            </select>
+          </label>
 
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -401,17 +437,72 @@ export default function LinksList() {
                 Email
               </button>
             </div>
+            <div className="mt-2 flex flex-wrap gap-2 text-sm">
+              <button
+                type="button"
+                className="border rounded px-2 py-1"
+                onClick={async () => {
+                  const c = await renderCardCanvas({
+                    title: l.title || '(no title)',
+                    url: l.url,
+                    size: qrSize,
+                    orientation,
+                    // Optional Thai theme:
+                    // bg: '#F4F5F8', titleColor: '#2D2A4A', urlColor: '#A51931',
+                  });
+                  await openCardPreview(c);
+                }}
+                title="Preview PNG card in a new tab"
+              >
+                Preview
+              </button>
 
-            <div className="mt-2 text-sm flex flex-wrap gap-1">
-              {(l.tags ?? []).length > 0 ? (
-                (l.tags ?? []).map((t) => (
-                  <span key={t} className="px-2 py-0.5 rounded-full border text-xs opacity-80">
-                    #{t}
-                  </span>
-                ))
-              ) : (
-                <span className="text-xs opacity-50">No tags</span>
-              )}
+              <button
+                type="button"
+                className="border rounded px-2 py-1"
+                onClick={async () => {
+                  const c = await renderCardCanvas({
+                    title: l.title || '(no title)',
+                    url: l.url,
+                    size: qrSize,
+                    orientation,
+                    // bg: '#F4F5F8', titleColor: '#2D2A4A', urlColor: '#A51931',
+                  });
+                  const filename = `${(l.title || 'link').slice(0, 40)}.png`;
+                  const shared = await shareCardIfPossible(filename, c);
+                  if (!shared) {
+                    await downloadCardPng(filename, c);
+                  }
+                }}
+                title="Share PNG (fallback to download if share unsupported)"
+              >
+                Share / Download
+              </button>
+
+              <button
+                type="button"
+                className="border rounded px-2 py-1"
+                onClick={async () => {
+                  const c = await renderCardCanvas({
+                    title: l.title || '(no title)',
+                    url: l.url,
+                    size: qrSize,
+                    orientation,
+                    // bg: '#F4F5F8', titleColor: '#2D2A4A', urlColor: '#A51931',
+                  });
+                  try {
+                    await copyCardToClipboard(c);
+                    alert('PNG card copied to clipboard ✅');
+                  } catch {
+                    alert(
+                      'Copying images is not supported in this browser. Try “Preview” then save.'
+                    );
+                  }
+                }}
+                title="Copy PNG to clipboard"
+              >
+                Copy PNG
+              </button>
             </div>
           </div>
         ))}
