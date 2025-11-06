@@ -30,29 +30,6 @@
   }
 }
 
-/* Components layer — put ALL your @apply classes inside here */
-@layer components {
-  .btn {
-    @apply inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-sm transition;
-  }
-  .btn-blue {
-    @apply btn bg-blue-600 text-white border-transparent hover:bg-blue-700;
-  }
-  .input-style {
-    @apply border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 w-full;
-  }
-
-  .qr-center {
-    display: flex;
-    justify-content: center;
-  }
-  .qr-media {
-    display: block;
-    max-width: 100%;
-    height: auto;
-  }
-}
-
 /* Utilities (optional) */
 @layer utilities {
   .btn-nohover:hover,
@@ -107,41 +84,38 @@ html,
 }
 
 /* =========================
-   COMPONENTS LAYER
+   COMPONENTS LAYER (All @apply classes)
    ========================= */
 @layer components {
-  /* Unified buttons */
+  /* base buttons */
   .btn {
-    @apply inline-flex items-center justify-center font-semibold not-italic;
-    font-size: 1rem; /* text-base */
-    line-height: 1.25rem;
-    border-radius: 9999px; /* full pill */
-    padding: 8px 20px;
-    border: none;
-    cursor: pointer;
-    transition: filter 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
+    /* Consolidated Tailwind base styles */
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-2xl font-semibold select-none
+         outline-none focus-visible:outline-none transition; /* Added 'transition' for hover/active effects */
   }
-  .btn:hover {
-    filter: brightness(1);
+
+  /* color variants (Thai flag palette) */
+  .btn-blue {
+    /* Tailwind/CSS variables mixed for hover/active/focus, ensuring clean overrides */
+    @apply bg-[var(--thai-blue)] text-white hover:brightness-110 active:brightness-105
+           border border-[var(--thai-blue)] focus-visible:ring-2 focus-visible:ring-offset-2
+           focus-visible:ring-[var(--thai-blue)];
   }
+  .btn-red {
+    @apply bg-[var(--thai-red)] text-white hover:brightness-110 active:brightness-105
+           border border-black focus-visible:ring-2 focus-visible:ring-offset-2
+           focus-visible:ring-[var(--thai-red)];
+  }
+  .btn-ghost {
+    @apply bg-white text-[var(--thai-blue)] border border-[#e5e7eb] hover:bg-[#f9fafb]
+           focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--thai-blue)];
+  }
+
+  /* Plain CSS overrides for non-Tailwind effects */
   .btn:disabled {
     opacity: 0.6;
     pointer-events: none;
     filter: none;
-  }
-  .btn:focus-visible {
-    outline: 2px solid var(--thai-blue);
-    outline-offset: 2px;
-  }
-  .btn-red {
-    background: var(--thai-red);
-    color: #fff;
-    border: 1px solid #000;
-  }
-  .btn-blue {
-    background: var(--thai-blue);
-    color: #fff;
-    border: 1px solid var(--thai-blue);
   }
 
   /* Link-look button */
@@ -282,16 +256,17 @@ html,
   .input-style {
     @apply border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 w-full;
   }
-}
 
-.qr-center {
-  display: flex;
-  justify-content: center;
-}
-.qr-media {
-  display: block;
-  max-width: 100%;
-  height: auto;
+  /* QR Code Styles */
+  .qr-center {
+    display: flex;
+    justify-content: center;
+  }
+  .qr-media {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
 }
 
 /* === App-wide search visibility rule === */
