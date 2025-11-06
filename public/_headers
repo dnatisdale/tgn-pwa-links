@@ -2,20 +2,7 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(), camera=()
-
-  /*
-  Content-Security-Policy: default-src 'self';
-  Content-Security-Policy: base-uri 'self';
-  Content-Security-Policy: connect-src 'self' https://firestore.googleapis.com https://www.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebase.googleapis.com https://firebaseinstallations.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com https://region1.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net;
-  Content-Security-Policy: script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com;
-  Content-Security-Policy: style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-  Content-Security-Policy: img-src 'self' data: blob: https://www.google-analytics.com https://stats.g.doubleclick.net;
-  Content-Security-Policy: font-src 'self' https://fonts.gstatic.com data:;
-  Content-Security-Policy: worker-src 'self' blob:;
-  Content-Security-Policy: frame-ancestors 'self';
-  Content-Security-Policy: frame-src 'self';
-  Content-Security-Policy: object-src 'none';
-  Content-Security-Policy: manifest-src 'self';
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; connect-src 'self' https://firestore.googleapis.com https://www.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebase.googleapis.com https://firebaseinstallations.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com https://region1.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://www.google-analytics.com https://stats.g.doubleclick.net; font-src 'self' https://fonts.gstatic.com data:; worker-src 'self' blob:; frame-ancestors 'self'; frame-src 'self'; object-src 'none'; manifest-src 'self';
 
 /manifest.webmanifest
   Content-Type: application/manifest+json; charset=utf-8
