@@ -1,71 +1,58 @@
 // src/Login.tsx
 import React, { useState } from 'react';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from './firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from './firebaseConfig'; // if your auth export is in a different file, adjust this import
 import { useI18n } from './i18n-provider';
 
-// gentle grow, text-only (respects Reduce Motion)
-const grow =
-  'motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]';
-
 export default function Login() {
-  // Safe i18n: never render "undefined" and avoid type mismatch
-  const rawT = (() => {
-    try {
-      return useI18n().t; // typed as (key: keyof Catalog) => string
-    } catch {
-      return undefined;
-    }
-  })();
-
-  // expose a lenient t: (k: string) => string
-  const t = (k: string) => {
-    try {
-      return (rawT as any)?.(k) ?? k; // call if present; else echo key
-    } catch {
-      return k;
-    }
-  };
-
+  // ---- i18n ----
+  const { t } = useI18n();
   const tOr = (k: string, fb: string) => {
-    const v = t(k);
-    return (v ?? '').toString().trim() || fb;
+    try {
+      const v = (t(k) ?? '').toString().trim();
+      return v || fb;
+    } catch {
+      return fb;
+    }
   };
 
-  // at top of component:
+  // ---- tiny text grow (applied to inner <span>) ----
+  const grow =
+    'motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]';
+
+  // ---- form state ----
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
 
-  // sign in existing account
+  // ---- actions ----
   const signIn = async () => {
     try {
       setBusy(true);
       await signInWithEmailAndPassword(auth, email.trim(), password);
       window.location.hash = '#/browse';
     } catch (err) {
+      console.error('signin failed:', err);
       alert(tOr('signinFailed', 'Could not sign in. Please check email/password.'));
-      console.error(err);
     } finally {
       setBusy(false);
     }
   };
 
-  // create new account
   const signUp = async () => {
     try {
       setBusy(true);
       await createUserWithEmailAndPassword(auth, email.trim(), password);
       window.location.hash = '#/browse';
     } catch (err) {
+      console.error('signup failed:', err);
       alert(tOr('signupFailed', 'Could not sign up. Please try again.'));
-      console.error(err);
     } finally {
       setBusy(false);
     }
   };
 
-  // continue as guest (you already have this, name must be continueGuest)
+  // keep name EXACTLY "continueGuest" to match your codebase
   const continueGuest = async () => {
     try {
       setBusy(true);
@@ -76,80 +63,94 @@ export default function Login() {
       setBusy(false);
     }
   };
+
+  // ---- Enter to submit ----
   const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // allow Enter to submit without reloading
+    e.preventDefault();
     await signIn();
   };
 
   return (
-    <div className="card" style={{ maxWidth: 480, margin: '24px auto', padding: 16 }}>
-      <form onSubmit={onSubmit} noValidate>
+    <main className="max-w-3xl mx-auto px-4 py-6 text-center">
+      {/* You can keep your Banner in Header; this page only shows the form area */}
+      <p className="mt-4 text-gray-600 italic">{tOr('pleaseSignIn', 'Please sign in.')}</p>
+
+      <form onSubmit={onSubmit} noValidate className="mt-6 space-y-3 mx-auto max-w-md">
         {/* Email */}
-        <label htmlFor="email" className="block text-sm font-semibold mb-1 not-italic">
-          {tOr('email', 'Email')}
+        <label className="block text-left">
+          <span className="sr-only">{tOr('email', 'Email')}</span>
+          <input
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            placeholder={tOr('email', 'Email')}
+            className="w-full rounded-2xl border border-gray-300 px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-[#2D2A4A]"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={busy}
+            required
+          />
         </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder={tOr('email', 'Email')}
-          autoComplete="username email"
-          className="w-full border rounded px-3 py-2 mb-3 not-italic"
-          inputMode="email"
-          required
-        />
 
         {/* Password */}
-        <label htmlFor="password" className="block text-sm font-semibold mb-1 not-italic">
-          {tOr('password', 'Password')}
+        <label className="block text-left">
+          <span className="sr-only">{tOr('password', 'Password')}</span>
+          <input
+            type="password"
+            autoComplete="current-password"
+            placeholder={tOr('password', 'Password')}
+            className="w-full rounded-2xl border border-gray-300 px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-[#2D2A4A]"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={busy}
+            required
+          />
         </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder={tOr('password', 'Password')}
-          autoComplete="current-password"
-          className="w-full border rounded px-3 py-2 mb-3 not-italic"
-          required
-        />
 
-        {/* Buttons row */}
+        {/* Buttons */}
         <div className="mt-3 grid grid-cols-3 gap-2 md:flex md:flex-wrap md:items-center md:gap-3">
+          {/* Sign In = submit so Enter works */}
           <button
-            type="button"
-            className="group btn btn-blue w-full md:w-auto justify-center not-italic"
-            onClick={signIn}
+            type="submit"
+            className="group btn btn-blue w-full md:w-auto justify-center not-italic disabled:opacity-60"
+            disabled={busy}
             aria-label={tOr('signIn', 'Sign In')}
             title={tOr('signIn', 'Sign In')}
           >
-            <span className={grow}>{tOr('signIn', 'Sign In')}</span>
+            <span className={grow}>
+              {busy ? `${tOr('signIn', 'Sign In')}…` : tOr('signIn', 'Sign In')}
+            </span>
           </button>
 
           <button
             type="button"
-            className="group btn btn-red w-full md:w-auto justify-center not-italic"
+            className="group btn btn-red w-full md:w-auto justify-center not-italic disabled:opacity-60"
             onClick={signUp}
+            disabled={busy}
             aria-label={tOr('signUp', 'Sign Up')}
             title={tOr('signUp', 'Sign Up')}
           >
-            <span className={grow}>{tOr('signUp', 'Sign Up')}</span>
+            <span className={grow}>
+              {busy ? `${tOr('signUp', 'Sign Up')}…` : tOr('signUp', 'Sign Up')}
+            </span>
           </button>
 
           <button
             type="button"
-            className="group btn btn-blue w-full md:w-auto justify-center not-italic"
+            className="group btn btn-blue w-full md:w-auto justify-center not-italic disabled:opacity-60"
             onClick={continueGuest}
+            disabled={busy}
             aria-label={tOr('continueAsGuest', 'Continue as Guest')}
             title={tOr('continueAsGuest', 'Continue as Guest')}
           >
-            <span className={grow}>{tOr('continueAsGuest', 'Continue as Guest')}</span>
+            <span className={grow}>
+              {busy
+                ? `${tOr('continueAsGuest', 'Continue as Guest')}…`
+                : tOr('continueAsGuest', 'Continue as Guest')}
+            </span>
           </button>
         </div>
       </form>
-    </div>
+    </main>
   );
 }
