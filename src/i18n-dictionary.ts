@@ -1,29 +1,31 @@
 // src/i18n-dictionary.ts
 // One source of truth for all UI strings. Keys must be UNIQUE.
 
-export const en = {
+const en = {
+  // --- Application / Navigation ---
   appName: 'Thai Good News',
-  add: 'ADD',
-  browse: 'Browse',
-  import: 'Import',
-  export: 'Export',
-  contact: 'Contact',
   about: 'About',
   aboutText: 'Thai Good News — a simple PWA for saving, sharing, and printing QR link cards.',
+  browse: 'Browse',
+  contact: 'Contact',
   install: 'Install',
-  logout: 'Log Out',
+
+  // --- Authentication ---
   signIn: 'Sign In',
   signUp: 'Sign Up',
+  logout: 'Log Out',
   continueAsGuest: 'Continue as Guest',
   email: 'Email',
   password: 'Password',
+  logoutFailed: 'Could not log out. Please try again.',
 
-  // Search / filters
+  // --- Search / Filters ---
   search: 'Search all languages...',
   all: 'All',
   thai: 'Thai only',
 
-  // Common actions
+  // --- Common Actions ---
+  add: 'ADD',
   save: 'Save',
   saving: 'Saving…',
   saved: 'Saved',
@@ -32,28 +34,12 @@ export const en = {
   close: 'Close',
   refresh: 'Refresh',
   print: 'Print',
+
+  // --- Import / Export ---
+  import: 'Import',
+  export: 'Export',
   exportCsv: 'Export CSV',
   exportJson: 'Export JSON',
-
-  // List/selection
-  select: 'Select',
-  selectAll: 'Select all',
-  selectAtLeastOne: 'Select at least one item',
-  downloadQRCards: 'Download QR cards',
-
-  // Share
-  share: 'Share',
-  copyLink: 'Copy link',
-  urlCopied: 'Link copied!',
-
-  // Fields / validation
-  title: 'Title',
-  languageOfContent: 'Language',
-  url: 'URL',
-  invalidUrl: 'URL must be secure (https). You can type it with or without https://',
-  mustBeHttps: 'URL must be https (or leave off scheme to auto-https)',
-
-  // Import/Export screens
   chooseFile: 'Choose file',
   file: 'File',
   preview: 'Preview',
@@ -64,8 +50,25 @@ export const en = {
   importComplete: 'Import complete',
   tipExportsFiltered: 'Tip: Exports include only what’s currently in your list.',
 
-  // Contact screen
+  // --- List / Selection ---
+  select: 'Select',
+  selectAll: 'Select all',
+  selectAtLeastOne: 'Select at least one item',
+  downloadQRCards: 'Download QR cards',
 
+  // --- Share ---
+  share: 'Share',
+  copyLink: 'Copy link',
+  urlCopied: 'Link copied!',
+
+  // --- Fields / Validation ---
+  title: 'Title',
+  languageOfContent: 'Language',
+  url: 'URL',
+  invalidUrl: 'URL must be secure (https). You can type it with or without https://',
+  mustBeHttps: 'URL must be https (or leave off scheme to auto-https)',
+
+  // --- Contact Screen ---
   contactTitle: 'Contact',
   contactName: 'Name',
   contactEmail: 'Email',
@@ -83,37 +86,39 @@ export const en = {
   phContactEmail: 'Email',
   phContactMessage: 'Message',
 
-  // QR
+  // --- QR ---
   enlargeQR: 'Enlarge QR',
   shrinkQR: 'Shrink QR',
 
-  // Update / PWA
+  // --- Update / PWA ---
   updateAvailable: 'New Version',
 } as const;
 
-export const th = {
+const th = {
+  // --- Application / Navigation ---
   appName: 'Thai Good News',
-  add: 'เพิ่ม',
-  browse: 'เรียกดู',
-  import: 'นำเข้า',
-  export: 'ส่งออก',
-  contact: 'ติดต่อ',
   about: 'เกี่ยวกับ',
   aboutText: 'Thai Good News — แอปสำหรับบันทึก แบ่งปัน และพิมพ์การ์ด QR ของลิงก์ได้อย่างง่ายดาย',
+  browse: 'เรียกดู',
+  contact: 'ติดต่อ',
   install: 'ติดตั้ง',
-  logout: 'ออกจากระบบ',
+
+  // --- Authentication ---
   signIn: 'เข้าสู่ระบบ',
   signUp: 'สมัครสมาชิก',
+  logout: 'ออกจากระบบ',
   continueAsGuest: 'เข้าชมแบบผู้เยี่ยมชม',
   email: 'อีเมล',
   password: 'รหัสผ่าน',
+  logoutFailed: 'ออกจากระบบไม่สำเร็จ โปรดลองอีกครั้ง',
 
-  // Search / filters
+  // --- Search / Filters ---
   search: 'ค้นหาทุกภาษา...',
   all: 'ทั้งหมด',
   thai: 'เฉพาะภาษาไทย',
 
-  // Common actions
+  // --- Common Actions ---
+  add: 'เพิ่ม',
   save: 'บันทึก',
   saving: 'กำลังบันทึก…',
   saved: 'บันทึกแล้ว',
@@ -122,28 +127,12 @@ export const th = {
   close: 'ปิด',
   refresh: 'รีเฟรช',
   print: 'พิมพ์',
+
+  // --- Import / Export ---
+  import: 'นำเข้า',
+  export: 'ส่งออก',
   exportCsv: 'ส่งออก CSV',
   exportJson: 'ส่งออก JSON',
-
-  // List/selection
-  select: 'เลือก',
-  selectAll: 'เลือกทั้งหมด',
-  selectAtLeastOne: 'เลือกอย่างน้อยหนึ่งรายการ',
-  downloadQRCards: 'ดาวน์โหลดการ์ด QR',
-
-  // Share
-  share: 'แชร์',
-  copyLink: 'คัดลอกลิงก์',
-  urlCopied: 'คัดลอกลิงก์แล้ว',
-
-  // Fields / validation
-  title: 'ชื่อเรื่อง',
-  languageOfContent: 'ภาษา',
-  url: 'ลิงก์',
-  invalidUrl: 'ลิงก์ต้องเป็น https เท่านั้น หรือพิมพ์โดยไม่ต้องใส่ https://',
-  mustBeHttps: 'ลิงก์ต้องเป็น https (หรือเว้นไม่ใส่คำนำหน้าเพื่อให้เพิ่ม https อัตโนมัติ)',
-
-  // Import/Export screens
   chooseFile: 'เลือกไฟล์',
   file: 'ไฟล์',
   preview: 'พรีวิว',
@@ -154,7 +143,25 @@ export const th = {
   importComplete: 'นำเข้าสำเร็จ',
   tipExportsFiltered: 'เคล็ดลับ: การส่งออกจะรวมเฉพาะรายการที่อยู่ในรายการของคุณตอนนี้เท่านั้น',
 
-  // Contact Screen
+  // --- List / Selection ---
+  select: 'เลือก',
+  selectAll: 'เลือกทั้งหมด',
+  selectAtLeastOne: 'เลือกอย่างน้อยหนึ่งรายการ',
+  downloadQRCards: 'ดาวน์โหลดการ์ด QR',
+
+  // --- Share ---
+  share: 'แชร์',
+  copyLink: 'คัดลอกลิงก์',
+  urlCopied: 'คัดลอกลิงก์แล้ว',
+
+  // --- Fields / Validation ---
+  title: 'ชื่อเรื่อง',
+  languageOfContent: 'ภาษา',
+  url: 'ลิงก์',
+  invalidUrl: 'ลิงก์ต้องเป็น https เท่านั้น หรือพิมพ์โดยไม่ต้องใส่ https://',
+  mustBeHttps: 'ลิงก์ต้องเป็น https (หรือเว้นไม่ใส่คำนำหน้าเพื่อให้เพิ่ม https อัตโนมัติ)',
+
+  // --- Contact Screen ---
   contactTitle: 'ติดต่อ',
   contactName: 'ชื่อ',
   contactEmail: 'อีเมล',
@@ -172,10 +179,19 @@ export const th = {
   phContactEmail: 'อีเมล',
   phContactMessage: 'ข้อความ',
 
-  // QR
+  // --- QR ---
   enlargeQR: 'ขยาย QR',
   shrinkQR: 'ย่อ QR',
 
-  // Update / PWA
+  // --- Update / PWA ---
   updateAvailable: 'มีเวอร์ชันใหม่',
 } as const;
+
+// Single named export
+export const dictionary = { en, th } as const;
+
+// Helpful types (optional but recommended)
+export type I18nKey = keyof typeof en;
+export function isI18nKey(k: string): k is I18nKey {
+  return k in en;
+}

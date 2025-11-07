@@ -1,103 +1,295 @@
 // src/qrCard.ts
+import QRCode from 'qrcode';
+
+// ---------- Public Types ----------
+export type CardOrientation = 'portrait' | 'landscape';
+export type CardSize = 'sm' | 'md' | 'lg';
+
+// ---------- Utilities you already had ----------
 export function sanitizeFilename(s: string) {
   return s.replace(/[^\w\d\-_.]+/g, '_').slice(0, 120);
 }
 
+// ---------- Internal helpers ----------
+const SIZE_MAP: Record<CardSize, { w: number; h: number }> = {
+  sm: { w: 600, h: 900 }, // portrait base
+  md: { w: 900, h: 1350 },
+  lg: { w: 1200, h: 1800 },
+};
+
+function dimsFor(size: CardSize, orientation: CardOrientation) {
+  const base = SIZE_MAP[size];
+  return orientation === 'portrait' ? { w: base.w, h: base.h } : { w: base.h, h: base.w }; // swap for landscape
+}
+
+function withDpr(canvas: HTMLCanvasElement, w: number, h: number) {
+  const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2)); // cap at 2x to keep files reasonable
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  // For offscreen canvases we don’t set style.width/height.
+  const ctx = canvas.getContext('2d')!;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number) {
+  const words = (text || '').split(/\s+/);
+  const lines: string[] = [];
+  let line = '';
+  for (const word of words) {
+    const test = line ? line + ' ' + word : word;
+    if (ctx.measureText(test).width <= maxWidth) line = test;
+    else {
+      if (line) lines.push(line);
+      line = word;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+async function makeQrCanvas(url: string, px: number) {
+  const c = document.createElement('canvas');
+  await QRCode.toCanvas(c, url, {
+    width: px,
+    margin: 2,
+    errorCorrectionLevel: 'M',
+    color: { dark: '#000000', light: '#ffffff' },
+  });
+  return c;
+}
+
+async function cardToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+  return await new Promise((resolve) => canvas.toBlob((b) => resolve(b!), 'image/png', 0.92));
+}
+
+// ---------- New, primary entry: render a business-card PNG on canvas ----------
+export async function renderCardCanvas(opts: {
+  title: string;
+  url: string;
+  size?: CardSize; // 'sm' | 'md' | 'lg'
+  orientation?: CardOrientation; // 'portrait' | 'landscape'
+  bg?: string; // background color
+  titleColor?: string;
+  urlColor?: string;
+  fontFamily?: string; // defaults to Krub → system fallbacks
+}) {
+  const {
+    title,
+    url,
+    size = 'md',
+    orientation = 'portrait',
+    bg = '#ffffff',
+    titleColor = '#111111',
+    urlColor = '#111111',
+    fontFamily = '"Krub", system-ui, "Segoe UI", "Noto Sans Thai", Arial, sans-serif',
+  } = opts;
+
+  const { w, h } = dimsFor(size, orientation);
+  const canvas = document.createElement('canvas');
+  const ctx = withDpr(canvas, w, h);
+  ctx.imageSmoothingQuality = 'high';
+
+  // Ensure fonts render before measuring
+  try {
+    await (document as any).fonts?.ready;
+    await (document as any).fonts?.load(`600 ${Math.round(h * 0.06)}px ${fontFamily}`);
+  } catch {}
+
+  // Background
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+
+  // Layout metrics
+  const pad = Math.round(h * 0.06);
+  const gap = Math.round(h * 0.03);
+  const titleSize = Math.round(h * 0.06);
+  const urlSize = Math.round(h * 0.038);
+  const qrBox = Math.min(w - pad * 2, Math.round(h * 0.46)); // square
+
+  // Title
+  ctx.fillStyle = titleColor;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `600 ${titleSize}px ${fontFamily}`;
+  const titleLines = wrapText(ctx, title || '(no title)', w - pad * 2);
+  const titleBlockH = titleLines.length * (titleSize * 1.2);
+  titleLines.forEach((line, i) => {
+    const y = pad + i * (titleSize * 1.2) + titleSize / 2;
+    ctx.fillText(line, w / 2, y);
+  });
+
+  // QR
+  const qrTop = pad + titleBlockH + gap;
+  const qrCanvas = await makeQrCanvas(url, qrBox - 32);
+  const qrX = (w - qrCanvas.width) / 2;
+  ctx.drawImage(qrCanvas, qrX, qrTop);
+
+  // URL
+  const urlTop = qrTop + qrCanvas.height + gap;
+  ctx.fillStyle = urlColor;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `500 ${urlSize}px ${fontFamily}`;
+  const pretty = url.replace(/^https?:\/\//i, ''); // cleaner
+  const urlLines = wrapText(ctx, pretty, w - pad * 2);
+  urlLines.forEach((line, i) => {
+    const y = urlTop + i * (urlSize * 1.25) + urlSize / 2;
+    ctx.fillText(line, w / 2, y);
+  });
+
+  return canvas;
+}
+
+// ---------- One-click actions (PNG) ----------
+export async function downloadCardPng(filenameBase: string, canvas: HTMLCanvasElement) {
+  const blob = await cardToBlob(canvas);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filenameBase?.endsWith('.png') ? filenameBase : `${filenameBase || 'card'}.png`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export async function copyCardToClipboard(canvas: HTMLCanvasElement) {
+  const blob = await cardToBlob(canvas);
+  if ('ClipboardItem' in window) {
+    const item = new (window as any).ClipboardItem({ 'image/png': blob });
+    await (navigator.clipboard as any).write([item]);
+  } else {
+    throw new Error('Clipboard images not supported in this browser.');
+  }
+}
+
+export async function shareCardIfPossible(
+  filenameBase: string,
+  canvas: HTMLCanvasElement
+): Promise<boolean> {
+  try {
+    const blob = await cardToBlob(canvas);
+    const name = filenameBase?.endsWith('.png') ? filenameBase : `${filenameBase || 'card'}.png`;
+    const file = new File([blob], name, { type: 'image/png' });
+    if ((navigator as any).canShare?.({ files: [file] })) {
+      await (navigator as any).share({ files: [file], title: name, text: '' });
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+export async function openCardPreview(canvas: HTMLCanvasElement) {
+  const dataUrl = canvas.toDataURL('image/png');
+  const w = window.open('', '_blank');
+  if (w) {
+    w.document.write(
+      `<img src="${dataUrl}" style="display:block;margin:24px auto;max-width:95%;height:auto;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.15)" />`
+    );
+  }
+}
+
+// ---------- Back-compat: your old API name (now QR optional) ----------
+/**
+ * Legacy-style helper (keeps your old call site working).
+ * If qrCanvasId is provided and exists, we’ll draw that QR.
+ * Otherwise, we generate the QR ourselves.
+ * Exports a PNG (not JPEG) per your new requirement.
+ */
 export async function downloadQrCard(opts: {
-  qrCanvasId: string; // the <canvas id="..."> from the QR
+  qrCanvasId?: string; // optional now
   title?: string;
-  name?: string;
+  name?: string; // unused visually, but used to build filename if present
   url: string;
   bg?: string;
   textColor?: string;
+  size?: CardSize;
+  orientation?: CardOrientation;
 }) {
   const {
     qrCanvasId,
     title = 'Thai Good News',
-    name = '',
+    name,
     url,
     bg = '#ffffff',
     textColor = '#111111',
+    size = 'md',
+    orientation = 'portrait',
   } = opts;
 
-  const qrCanvas = document.getElementById(qrCanvasId) as HTMLCanvasElement | null;
-  if (!qrCanvas) {
-    alert('QR not ready yet');
-    return;
-  }
-
-  // card size + layout
-  const CARD_W = 800;
-  const CARD_H = 1000;
-  const PADDING = 40;
-  const QR_TARGET = 640; // final QR size
-
   const canvas = document.createElement('canvas');
-  canvas.width = CARD_W;
-  canvas.height = CARD_H;
-  const ctx = canvas.getContext('2d')!;
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, CARD_W, CARD_H);
+  const { w, h } = dimsFor(size, orientation);
+  const ctx = withDpr(canvas, w, h);
+  ctx.imageSmoothingQuality = 'high';
 
-  // title
-  ctx.fillStyle = textColor;
-  ctx.font = 'bold 20px system-ui, -apple-system, Segoe UI, Roboto, Arial';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
-  ctx.fillText(title, PADDING, PADDING);
-
-  // name
-  ctx.font = 'bold 36px system-ui, -apple-system, Segoe UI, Roboto, Arial';
-  wrapText(ctx, name || url, PADDING, PADDING + 34, CARD_W - PADDING * 2, 40);
-
-  // QR centered
-  const qrX = (CARD_W - QR_TARGET) / 2;
-  const qrY = 260;
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(qrCanvas, qrX, qrY, QR_TARGET, QR_TARGET);
-
-  // URL under QR
-  ctx.imageSmoothingEnabled = true;
-  ctx.font = 'bold 22px system-ui, -apple-system, Segoe UI, Roboto, Arial';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.fillText(url, CARD_W / 2, qrY + QR_TARGET + 24);
-
-  // save as JPEG (keeps ~300–400 KB)
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-  const a = document.createElement('a');
+  // Fonts
+  const fontFamily = '"Krub", system-ui, "Segoe UI", "Noto Sans Thai", Arial, sans-serif';
   try {
-    const u = new URL(url);
-    const base = sanitizeFilename(`${u.hostname}${u.pathname}`.replace(/\/$/, '') || 'qr');
-    a.download = `${base}.jpg`;
-  } catch {
-    a.download = `${sanitizeFilename(url)}.jpg`;
-  }
-  a.href = dataUrl;
-  a.click();
-}
+    await (document as any).fonts?.ready;
+    await (document as any).fonts?.load(`600 ${Math.round(h * 0.06)}px ${fontFamily}`);
+  } catch {}
 
-function wrapText(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  x: number,
-  y: number,
-  maxWidth: number,
-  lineHeight: number
-) {
-  if (!text) return;
-  const words = text.split(/\s+/);
-  let line = '';
-  for (let n = 0; n < words.length; n++) {
-    const testLine = line ? line + ' ' + words[n] : words[n];
-    const { width } = ctx.measureText(testLine);
-    if (width > maxWidth && n > 0) {
-      ctx.fillText(line, x, y);
-      line = words[n];
-      y += lineHeight;
-    } else {
-      line = testLine;
-    }
+  // BG
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+
+  // Layout
+  const pad = Math.round(h * 0.06);
+  const gap = Math.round(h * 0.03);
+  const titleSize = Math.round(h * 0.06);
+  const urlSize = Math.round(h * 0.038);
+  const qrBox = Math.min(w - pad * 2, Math.round(h * 0.46));
+
+  // Title
+  ctx.fillStyle = textColor;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `600 ${titleSize}px ${fontFamily}`;
+  const titleLines = wrapText(ctx, title, w - pad * 2);
+  const titleBlockH = titleLines.length * (titleSize * 1.2);
+  titleLines.forEach((line, i) => {
+    const y = pad + i * (titleSize * 1.2) + titleSize / 2;
+    ctx.fillText(line, w / 2, y);
+  });
+
+  // QR (use provided canvas if found, else generate)
+  const qrTop = pad + titleBlockH + gap;
+  let qrCanvas: HTMLCanvasElement | null = null;
+  if (qrCanvasId) {
+    const el = document.getElementById(qrCanvasId) as HTMLCanvasElement | null;
+    if (el && el.toDataURL) qrCanvas = el;
   }
-  if (line) ctx.fillText(line, x, y);
+  if (!qrCanvas) {
+    qrCanvas = await makeQrCanvas(url, qrBox - 32);
+  }
+  const qrX = (w - qrCanvas.width) / 2;
+  ctx.drawImage(qrCanvas, qrX, qrTop);
+
+  // URL
+  ctx.fillStyle = textColor;
+  ctx.font = `500 ${urlSize}px ${fontFamily}`;
+  const pretty = url.replace(/^https?:\/\//i, '');
+  const urlTop = qrTop + qrCanvas.height + gap;
+  const urlLines = wrapText(ctx, pretty, w - pad * 2);
+  urlLines.forEach((line, i) => {
+    const y = urlTop + i * (urlSize * 1.25) + urlSize / 2;
+    ctx.fillText(line, w / 2, y);
+  });
+
+  // Download PNG
+  const baseName =
+    sanitizeFilename(
+      name?.trim() ||
+        (() => {
+          try {
+            const u = new URL(url);
+            return `${u.hostname}${u.pathname}`.replace(/\/$/, '');
+          } catch {
+            return 'card';
+          }
+        })()
+    ) || 'card';
+
+  await downloadCardPng(baseName, canvas);
 }

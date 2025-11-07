@@ -1,137 +1,202 @@
 // src/Login.tsx
-import React, { useState } from 'react';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from './firebase';
+import { useEffect, useState } from 'react';
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  type User,
+} from 'firebase/auth';
 import { useI18n } from './i18n-provider';
 
-// gentle grow, text-only (respects Reduce Motion)
-const grow =
-  'motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]';
-
 export default function Login() {
-  // Safe i18n: never render "undefined" and avoid type mismatch
-  const rawT = (() => {
-    try {
-      return useI18n().t; // typed as (key: keyof Catalog) => string
-    } catch {
-      return undefined;
-    }
-  })();
+  const { t } = useI18n();
+  const auth = getAuth();
 
-  // expose a lenient t: (k: string) => string
-  const t = (k: string) => {
-    try {
-      return (rawT as any)?.(k) ?? k; // call if present; else echo key
-    } catch {
-      return k;
-    }
-  };
-
-  const tOr = (k: string, fb: string) => {
-    const v = t(k);
-    return (v ?? '').toString().trim() || fb;
-  };
-
+  const [mode, setMode] = useState<'idle' | 'signin' | 'signup'>('idle');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isAuthed, setIsAuthed] = useState(false); // show Log Out only when signed in
 
-  const signIn = async () => {
+  // 3-line auth watcher
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u: User | null) => setIsAuthed(!!u));
+    return () => unsub();
+  }, [auth]);
+
+  const handleSignIn = async () => {
+    setBusy(true);
+    setError(null);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+      setMode('idle');
+      setEmail('');
+      setPassword('');
+      // Dispatch event to update state in other components (like Header)
+      window.dispatchEvent(new Event('auth:login'));
     } catch (e: any) {
-      alert(e?.message || String(e));
+      setError(e.message || 'Sign in failed.');
+    } finally {
+      setBusy(false);
     }
   };
-  const signUp = async () => {
+
+  const handleSignUp = async () => {
+    setBusy(true);
+    setError(null);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      localStorage.removeItem('tgn.guest');
+      await createUserWithEmailAndPassword(auth, email.trim(), password);
+      setMode('idle');
+      setEmail('');
+      setPassword('');
+      // Dispatch event to update state in other components (like Header)
+      window.dispatchEvent(new Event('auth:login'));
     } catch (e: any) {
-      alert(e?.message || String(e));
+      setError(e.message || 'Sign up failed.');
+    } finally {
+      setBusy(false);
     }
   };
-  const continueGuest = () => {
-    localStorage.setItem('tgn.guest', '1');
-    window.dispatchEvent(new Event('guest:continue'));
-    window.location.hash = '#/browse';
+
+  const handleLogout = async () => {
+    setBusy(true);
+    try {
+      await signOut(auth);
+      setMode('idle'); // Ensure form collapses after logging out
+      // Dispatch event to update state in other components (like Header)
+      window.dispatchEvent(new Event('auth:logout'));
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // allow Enter to submit without reloading
-    await signIn();
+  // safe i18n helper (avoids crashes if a key is missing)
+  const S = (k: any, fallback: string) => {
+    try {
+      return t(k as any);
+    } catch {
+      return fallback;
+    }
   };
+
+  // The Sign In button action when clicked *outside* the form
+  const handleSignInClick = () => setMode(mode === 'signin' ? 'idle' : 'signin');
+  // The Sign Up button action when clicked *outside* the form
+  const handleSignUpClick = () => setMode(mode === 'signup' ? 'idle' : 'signup');
 
   return (
-    <div className="card" style={{ maxWidth: 480, margin: '24px auto', padding: 16 }}>
-      <form onSubmit={onSubmit} noValidate>
-        {/* Email */}
-        <label htmlFor="email" className="block text-sm font-semibold mb-1 not-italic">
-          {tOr('email', 'Email')}
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder={tOr('email', 'Email')}
-          autoComplete="username email"
-          className="w-full border rounded px-3 py-2 mb-3 not-italic"
-          inputMode="email"
-          required
-        />
+    <div className="mx-auto max-w-md px-4 pt-6 pb-10 text-center">
+      <p className="text-gray-600 mb-6">{S('pleaseSignIn', 'Please sign in.')}</p>
 
-        {/* Password */}
-        <label htmlFor="password" className="block text-sm font-semibold mb-1 not-italic">
-          {tOr('password', 'Password')}
-        </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder={tOr('password', 'Password')}
-          autoComplete="current-password"
-          className="w-full border rounded px-3 py-2 mb-3 not-italic"
-          required
-        />
-
-        {/* Buttons row */}
-        <div className="mt-3 grid grid-cols-3 gap-2 md:flex md:flex-wrap md:items-center md:gap-3">
-          {/* Sign In */}
+      {/* ---- MAIN BUTTON ROW (Sign In/Up, Sign Out, Continue as Guest) ---- */}
+      <div className="flex items-center justify-center gap-3 flex-wrap mb-8">
+        {/* If authed, show Log Out (Thai-red) */}
+        {isAuthed ? (
           <button
-            type="submit"
-            className="group btn btn-blue w-full md:w-auto justify-center not-italic"
-            aria-label={tOr('signIn', 'Sign In')}
-            title={tOr('signIn', 'Sign In')}
-          >
-            <span className={grow}>{tOr('signIn', 'Sign In')}</span>
-          </button>
-
-          {/* Sign Up */}
-          <button
+            onClick={handleLogout}
+            className="rounded-2xl px-6 py-3 bg-[#A51931] text-white shadow hover:shadow-md disabled:opacity-50"
+            disabled={busy}
             type="button"
-            className="group btn btn-red w-full md:w-auto justify-center not-italic"
-            onClick={signUp}
-            aria-label={tOr('signUp', 'Sign Up')}
-            title={tOr('signUp', 'Sign Up')}
           >
-            <span className={grow}>{tOr('signUp', 'Sign Up')}</span>
+            {S('logout', 'Sign Out')}
           </button>
+        ) : (
+          // If NOT authed, show Sign In (Thai-blue) and Sign Up (Thai-red) to open the form
+          <>
+            {/* 1. Sign In (Thai-blue) */}
+            <button
+              onClick={handleSignInClick}
+              className="rounded-2xl px-6 py-3 bg-[#2D2A4A] text-white shadow hover:shadow-md"
+              type="button"
+            >
+              {S('signIn', 'Sign In')}
+            </button>
 
-          {/* Continue as Guest */}
-          <button
-            type="button"
-            className="group btn btn-blue w-full md:w-auto justify-center not-italic"
-            onClick={continueGuest}
-            aria-label={tOr('continueAsGuest', 'Continue as Guest')}
-            title={tOr('continueAsGuest', 'Continue as Guest')}
-          >
-            <span className={grow}>{tOr('continueAsGuest', 'Continue as Guest')}</span>
-          </button>
+            {/* 2. Sign Up (Thai-red) */}
+            <button
+              onClick={handleSignUpClick}
+              className="rounded-2xl px-6 py-3 bg-[#A51931] text-white shadow hover:shadow-md"
+              type="button"
+            >
+              {S('signUp', 'Sign Up')}
+            </button>
+          </>
+        )}
+
+        {/* 3. Continue as Guest (Thai-blue) */}
+        {/* NOTE: This button should always show if a user is not officially logged in */}
+        <a
+          href="#/browse"
+          // Dispatch event to continue as guest
+          onClick={() => window.dispatchEvent(new Event('guest:continue'))}
+          className="inline-block rounded-2xl px-6 py-3 bg-[#2D2A4A] text-white shadow hover:shadow-md"
+        >
+          {S('continueAsGuest', 'Continue as Guest')}
+        </a>
+      </div>
+
+      {/* ---- COLLAPSIBLE AUTH FORM (appears when Sign In or Sign Up clicked) ---- */}
+      {mode !== 'idle' && !isAuthed && (
+        <div className="rounded-2xl border border-gray-200 p-5 text-left shadow-sm mx-auto max-w-sm mb-6">
+          <h3 className="text-lg font-semibold mb-3">
+            {mode === 'signin' ? S('signIn', 'Sign In') : S('signUp', 'Sign Up')}
+          </h3>
+
+          <label className="block text-sm text-gray-600 mb-1">{S('email', 'Email')}</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-xl border border-gray-300 px-3 py-2 mb-3 outline-none focus:ring focus:ring-blue-200"
+            placeholder={S('phContactEmail', 'Email')}
+          />
+
+          <label className="block text-sm text-gray-600 mb-1">{S('password', 'Password')}</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full rounded-xl border border-gray-300 px-3 py-2 mb-4 outline-none focus:ring focus:ring-blue-200"
+            placeholder={S('password', 'Password')}
+          />
+
+          {error && <div className="text-red-600 text-sm mb-3">{error}</div>}
+
+          <div className="flex items-center gap-3">
+            {/* Primary action button inside the form */}
+            {mode === 'signin' ? (
+              <button
+                onClick={handleSignIn}
+                disabled={busy || !email || !password}
+                className="rounded-xl px-4 py-2 bg-[#A51931] text-white shadow hover:shadow-md disabled:opacity-50"
+                type="button"
+              >
+                {busy ? S('contactSending', 'Sending...') : S('signIn', 'Sign In')}
+              </button>
+            ) : (
+              <button
+                onClick={handleSignUp}
+                disabled={busy || !email || !password}
+                className="rounded-xl px-4 py-2 bg-[#A51931] text-white shadow hover:shadow-md disabled:opacity-50"
+                type="button"
+              >
+                {busy ? S('contactSending', 'Sending...') : S('signUp', 'Sign Up')}
+              </button>
+            )}
+
+            <button
+              onClick={() => setMode('idle')}
+              className="rounded-xl px-4 py-2 border border-gray-300"
+              type="button"
+            >
+              {S('cancel', 'Cancel')}
+            </button>
+          </div>
         </div>
-      </form>
+      )}
     </div>
   );
 }

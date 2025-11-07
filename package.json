@@ -1,7 +1,7 @@
 {
   "name": "tgn-pwa-links",
   "type": "module",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "private": true,
   "scripts": {
     "postinstall": "rimraf node_modules/html2canvas/tsconfig.json",

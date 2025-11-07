@@ -25,23 +25,35 @@ export default function Header() {
     typeof localStorage !== 'undefined' && localStorage.getItem('tgn.guest') === '1'
   );
 
+  // Inside src/Header.tsx, around line 30
+
   React.useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setIsAuthed(!!u);
+      // We don't want to change isGuest here, as it's separate state
       setIsGuest(localStorage.getItem('tgn.guest') === '1');
     });
 
     const onGuest = () => setIsGuest(true);
+    const onAuthEvent = () => {
+      // Re-run the auth check immediately when a login/logout/guest event happens
+      onAuthStateChanged(auth, (u) => {
+        setIsAuthed(!!u);
+        setIsGuest(localStorage.getItem('tgn.guest') === '1');
+      });
+    };
+
     window.addEventListener('guest:continue', onGuest);
+    window.addEventListener('auth:login', onAuthEvent); // Added this listener
+    window.addEventListener('auth:logout', onAuthEvent); // Added this listener
 
     return () => {
       unsub();
       window.removeEventListener('guest:continue', onGuest);
+      window.removeEventListener('auth:login', onAuthEvent);
+      window.removeEventListener('auth:logout', onAuthEvent);
     };
   }, []);
-
-  const showLogout = isAuthed || isGuest;
-
   return (
     <header className="relative w-full">
       {/* Top-right controls */}
@@ -49,28 +61,11 @@ export default function Header() {
         <LangPill />
         <InstallPWA className="btn btn-red" label={t('install')} disabledLabel={t('install')} />
 
-        {/* If guest: show Sign in; if authed: show Log Out */}
-        {isGuest ? (
-          <button
-            type="button"
-            onClick={exitGuestAndShowLogin}
-            className="group btn btn-blue"
-            title={t('signIn')}
-            style={{ padding: '6px 12px', borderRadius: 12, fontWeight: 600 }}
-          >
-            <span className="motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-[1.06] group-focus-visible:scale-[1.06] active:scale-[1.06]">
-              {t('signIn')}
-            </span>
-          </button>
-        ) : (
-          showLogout && <LogoutButton className="btn btn-blue">{t('logout')}</LogoutButton>
-        )}
+        {/* If authed: show Log Out; If guest: nothing (Sign In button is in Login.tsx) */}
+        {isAuthed && <LogoutButton className="btn btn-blue">{t('logout')}</LogoutButton>}
       </div>
-
-      {/* Add a bit of top padding on small screens so buttons don't overlap the banner */}
-      <div className="pt-10 md:pt-0">
-        <Banner />
-      </div>
+      <Banner />
+      {/* <TopTabs /> */}
     </header>
   );
 }

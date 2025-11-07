@@ -1,15 +1,15 @@
+// src/i18n-provider.tsx  (Option B version)
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { en, th } from './i18n-dictionary';
+import { dictionary, type I18nKey } from './i18n-dictionary';
 
-export type Lang = 'en' | 'th';
-type Catalog = typeof en;
+type Lang = keyof typeof dictionary; // 'en' | 'th'
+type Catalog = typeof dictionary.en; // shape of one language bundle
 
-// Single source of truth (no duplicate "catalog" anymore)
-const catalogs: Record<Lang, Catalog> = { en, th };
+const catalogs: Record<Lang, Catalog> = dictionary;
 
 type I18nCtx = {
   lang: Lang;
-  t: (key: keyof Catalog) => string;
+  t: (key: I18nKey) => string;
   setLang: (lang: Lang) => void;
 };
 

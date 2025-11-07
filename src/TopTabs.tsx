@@ -144,39 +144,6 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
             <TabBtn active={currentTab === 'ABOUT'} label={tOr('about', 'About')} to="ABOUT" />
             {/* 🔍 Search (button + expanding input) */}
             <div className="flex items-center gap-2">
-              {/* 1) Round magnifying glass button */}
-              <button
-                type="button"
-                onClick={() => {
-                  const next = !isSearchOpen;
-                  setIsSearchOpen(next);
-                  if (next) {
-                    setTimeout(() => {
-                      (
-                        document.getElementById('main-search-input') as HTMLInputElement | null
-                      )?.focus();
-                    }, 0);
-                  }
-                }}
-                aria-controls="main-search-input"
-                aria-expanded={isSearchOpen}
-                className={[
-                  'inline-flex items-center justify-center',
-                  'h-10 w-10 rounded-full',
-                  'bg-[#A51931] text-white border border-black shadow',
-                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black',
-                  'active:scale-[0.98] transition',
-                ].join(' ')}
-                title={tOr('search', 'Search')}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    fill="currentColor"
-                    d="M15.5 14h-.79l-.28-.27a6.471 6.471 0 0 0 1.57-4.23A6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0 0 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0A4.5 4.5 0 1 1 14 9.5 4.505 4.505 0 0 1 9.5 14Z"
-                  />
-                </svg>
-              </button>
-
               {/* 2) The actual input (Thai-red border). 
         IMPORTANT: has class "top-search-input" so CSS won’t hide it. */}
               <input
