@@ -7,7 +7,7 @@ import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getAnalytics, isSupported, type Analytics } from 'firebase/analytics';
 
 // Vite envs (must start with VITE_)
-const firebaseConfig = {
+const firebase = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
@@ -19,7 +19,7 @@ const firebaseConfig = {
 };
 
 // ✅ Single app instance no matter how many times this file is imported
-export const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+export const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebase);
 
 // ✅ Shared instances (always import these from './firebase')
 export const auth: Auth = getAuth(app);

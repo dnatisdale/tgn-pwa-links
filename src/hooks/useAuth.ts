@@ -1,20 +1,56 @@
+// src/hooks/useAuth.ts
 import { useState, useEffect } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '../firebaseConfig'; // Adjust path as needed
+import { onAuthStateChanged, type User } from 'firebase/auth';
+import { auth } from '../firebase'; // or '../firebase' if that's your actual file
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    if (localStorage.getItem('tgn.guest') === '1') {
+      setIsGuest(true);
+    }
+
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+
+      if (firebaseUser) {
+        setIsGuest(false);
+        localStorage.removeItem('tgn.guest');
+      }
+
       setLoading(false);
     });
 
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
-  return { user, loading };
+  useEffect(() => {
+    const handleGuest = () => {
+      setIsGuest(true);
+      localStorage.setItem('tgn.guest', '1');
+    };
+    const handleLogout = () => {
+      setIsGuest(false);
+      localStorage.removeItem('tgn.guest');
+    };
+    const handleLogin = () => {
+      setIsGuest(false);
+      localStorage.removeItem('tgn.guest');
+    };
+
+    window.addEventListener('guest:continue', handleGuest);
+    window.addEventListener('auth:logout', handleLogout);
+    window.addEventListener('auth:login', handleLogin);
+
+    return () => {
+      window.removeEventListener('guest:continue', handleGuest);
+      window.removeEventListener('auth:logout', handleLogout);
+      window.removeEventListener('auth:login', handleLogin);
+    };
+  }, []);
+
+  return { user, isGuest, loading };
 };

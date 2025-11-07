@@ -9,7 +9,7 @@ import {
   doc,
   updateDoc,
 } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
+import { db } from '../firebase';
 import { useAuth } from '../hooks/useAuth';
 import { sendEmail } from '../utils/email';
 import { formatUrl } from '../utils/formatUrl';
@@ -33,7 +33,7 @@ type LinkDoc = {
 };
 
 export default function LinksList() {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [links, setLinks] = useState<LinkDoc[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -242,7 +242,18 @@ export default function LinksList() {
   };
 
   // Render
-  if (!user) return <p className="text-center text-gray-500">Sign in to view links.</p>;
+  if (!user && !isGuest) {
+    return <p className="text-center text-gray-500">Sign in to view links.</p>;
+  }
+
+  if (isGuest && !user) {
+    return (
+      <p className="text-center text-gray-500">
+        Browsing as guest. Sign in to sync and save your own links.
+      </p>
+    );
+  }
+
   if (loading) return <p className="text-center text-gray-500">Loading links…</p>;
   if (links.length === 0) return <p className="text-center text-gray-500">No links yet.</p>;
 

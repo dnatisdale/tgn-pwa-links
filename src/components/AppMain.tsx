@@ -1,219 +1,65 @@
-// src/components/AppMain.tsx — main body (if you keep this component)
-import AddLink from '../AddLink';
-import ImportExport from '../ImportExport';
-import ExportPage from '../Export';
+import { useState } from 'react';
+import AddLink from './AddLink';
+import LinksList from './LinksList';
 import UpdateToast from '../UpdateToast';
-import Share from '../Share';
-import QR from '../QR';
-import { useAppLogic } from '../hooks/useAppLogic';
-import { Row } from '../hooks/useAppLogic';
-import { toHttpsOrNull as toHttps } from '../url';
-import { auth, db } from '../firebase';
-import { doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { useAuth } from '../hooks/useAuth';
 
-// tell TypeScript that we may set this on window in main.tsx
+// From vite.config.ts
+declare const __APP_VERSION__: string | undefined;
+declare const __BUILD_PRETTY__: string | undefined;
+
 declare global {
   interface Window {
     __REFRESH_SW__?: (reload?: boolean) => void;
   }
 }
 
-// Build constants
-declare const __APP_VERSION__: string | undefined;
-declare const __BUILD_PRETTY__: string | undefined;
-
 function AppMain() {
-  const {
-    lang,
-    setLang,
-    user,
-    rows,
-    q,
-    setQ,
-    filterThai,
-    setFilterThai,
-    textPx,
-    setTextPx,
-    qrEnlargedId,
-    setQrEnlargedId,
-    selectedIds,
-    setSelectedIds,
-    lastLogin,
-    route,
-    setRoute,
-    showUpdate,
-    setShowUpdate,
-    isBrowse,
-    isAdd,
-    isImport,
-    isExport,
-    isAbout,
-    filtered,
-    selectedRows,
-    firstSelected,
-    allSelected,
-    toggleSelect,
-    toggleSelectAll,
-    copySelectedLinks,
-    batchDownload,
-  } = useAppLogic();
+  const { user, isGuest } = useAuth();
+  const [showUpdate, setShowUpdate] = useState(false);
 
-  const i =
-    lang === 'th'
-      ? { add: 'เพิ่ม', empty: 'ไม่มีรายการ', logout: 'ออกจากระบบ' }
-      : { add: 'Add', empty: 'No items', logout: 'Logout' };
-
-  const editRow = async (r: Row) => {
-    const name = prompt('Name', r.name ?? '');
-    if (name === null) return;
-    const language = prompt('Language', r.language ?? '') ?? '';
-    const url = prompt('URL (https only)', r.url ?? '');
-    if (url === null) return;
-    const https = toHttps(url);
-    if (!https) {
-      alert('Please enter a valid https:// URL');
-      return;
-    }
-    await updateDoc(doc(db, 'users', user.uid, 'links', r.id), {
-      name: name.trim(),
-      language: language.trim(),
-      url: https,
-    });
-  };
-
-  const deleteRow = async (r: Row) => {
-    if (!confirm(`Delete "${r.name || r.url}"?`)) return;
-    await deleteDoc(doc(db, 'users', user.uid, 'links', r.id));
-    setSelectedIds((prev) => {
-      const n = new Set(prev);
-      n.delete(r.id);
-      return n;
-    });
-  };
-
-  // SAFE build text for footer
   const buildText =
     (__APP_VERSION__ ? `v${__APP_VERSION__}` : 'dev') +
     (__BUILD_PRETTY__ ? ` • ${__BUILD_PRETTY__}` : '');
 
+  const canBrowse = !!user || isGuest;
+
   return (
-    <main className="p-3 max-w-5xl mx-auto app-main">
-      {isAdd ? (
-        <section>
-          <h2 className="text-lg font-semibold mb-2">{i.add}</h2>
-          <AddLink />
-        </section>
-      ) : isImport ? (
-        <section>
-          <h2 className="text-lg font-semibold mb-2">Import</h2>
-          <ImportExport />
-        </section>
-      ) : isExport ? (
-        <section>
-          <h2 className="text-lg font-semibold mb-2">Export</h2>
-          <ExportPage rows={rows} />
-        </section>
-      ) : isAbout ? (
-        <section>
-          <h2 className="text-lg font-semibold mb-2">About</h2>
-          <p className="text-sm text-gray-700">
-            Thai Good News — a simple PWA for saving, sharing, and printing QR link cards.
+    <main className="p-3 max-w-6xl mx-auto app-main">
+      {/* Message only when truly locked out */}
+      {!canBrowse && (
+        <section className="mb-6">
+          <p className="text-center text-gray-600">
+            Please sign in to add, view, and manage your Thai Good News links.
           </p>
-        </section>
-      ) : (
-        <section>
-          {/* Search + filter */}
-          <div className="flex flex-wrap gap-4 items-center mb-3">
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder={lang === 'th' ? 'ค้นหาทุกภาษา...' : 'Search all languages...'}
-              className="border rounded px-2 py-1 min-w-[260px]"
-            />
-            <div className="text-sm">
-              <button className="linklike" onClick={() => setFilterThai(false)}>
-                {lang === 'th' ? 'ทั้งหมด' : 'All'}
-              </button>
-              &nbsp;|&nbsp;
-            </div>
-          </div>
-
-          {/* Toolbar */}
-          <div className="flex flex-wrap items-center gap-8 mb-3">
-            <button className="linklike" onClick={copySelectedLinks}>
-              Copy link
-            </button>
-          </div>
-
-          {!filtered.length && <div className="text-sm text-gray-600 mb-3">{i.empty}</div>}
-
-          {/* Cards */}
-          <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {filtered.map((row) => {
-              const enlarged = qrEnlargedId === row.id;
-              const qrSize = enlarged ? 320 : 192;
-              const checked = selectedIds.has(row.id);
-              return (
-                <li key={row.id} className="card">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => toggleSelect(row.id)}
-                        style={{ marginRight: 8 }}
-                      />
-                      Select
-                    </label>
-                  </div>
-
-                  <div className="text-base font-semibold text-center">{row.name}</div>
-
-                  <div
-                    role="button"
-                    onClick={() => setQrEnlargedId(enlarged ? null : row.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') setQrEnlargedId(enlarged ? null : row.id);
-                    }}
-                    tabIndex={0}
-                    title={enlarged ? 'Shrink QR' : 'Enlarge QR'}
-                    style={{ cursor: 'pointer' }}
-                    className="qr-center"
-                  >
-                    <QR url={row.url} size={qrSize} idForDownload={`qr-${row.id}`} />
-                  </div>
-
-                  <div className="mt-2 text-center">
-                    <a href={row.url} className="underline" target="_blank" rel="noreferrer">
-                      {row.url}
-                    </a>
-                  </div>
-
-                  <div className="mt-2 flex justify-center gap-6 text-sm">
-                    <button className="linklike" onClick={() => editRow(row)}>
-                      Edit
-                    </button>
-                    <button className="linklike" onClick={() => deleteRow(row)}>
-                      Delete
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
         </section>
       )}
 
-      {/* FOOTER */}
-      <footer className="site-footer">
+      {/* ADD tab content: only real users can add */}
+      {user && (
+        <section className="mb-6">
+          <h2 className="text-lg font-semibold mb-2">Add</h2>
+          <AddLink />
+        </section>
+      )}
+
+      {/* BROWSE tab content: signed-in or guest can see the list area */}
+      {canBrowse && (
+        <section className="mb-6">
+          <h2 className="text-lg font-semibold mb-2">Browse</h2>
+          <LinksList />
+        </section>
+      )}
+
+      <footer className="site-footer mt-8 pt-3 border-t text-xs text-gray-500 flex justify-between gap-3 flex-wrap">
+        <div>Thai Good News PWA</div>
         <div>{buildText}</div>
       </footer>
 
-      {/* UPDATE TOAST */}
       <UpdateToast
         show={showUpdate}
         onRefresh={() => {
-          (window as any).__REFRESH_SW__?.();
+          window.__REFRESH_SW__?.();
           setShowUpdate(false);
         }}
         onSkip={() => setShowUpdate(false)}

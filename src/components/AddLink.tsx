@@ -1,7 +1,8 @@
 // src/components/AddLink.tsx
+// src/components/AddLink.tsx
 import { useState } from 'react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
+import { db } from '../firebase';
 import { useAuth } from '../hooks/useAuth';
 import { formatUrl } from '../utils/formatUrl';
 
