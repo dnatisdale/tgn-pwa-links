@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from './Header';
 import Footer from './Footer';
 import TopTabs from './TopTabs';
@@ -8,60 +8,74 @@ import ExportPage from './Export';
 import Contact from './Contact';
 import AddLink from './components/AddLink';
 import LinksList from './components/LinksList';
-
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from './firebase';
+import Login from './Login';
+import { db } from './firebase';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { useI18n } from './i18n-provider';
+import { useAuth } from './hooks/useAuth';
 
-type Row = { id: string; name?: string; language?: string; url: string };
+// A row shape compatible with ExportPage
+type ExportRow = {
+  id: string;
+  name: string;
+  url: string;
+  language?: string;
+};
+
+const [rows, setRows] = useState<ExportRow[]>([]);
 
 export default function App() {
   const { t, lang } = useI18n();
+  const { user, isGuest, loading } = useAuth();
 
-  // safe translate helper
-  const tOr = (k: string, fb: string) => {
+  const tOr = (k: any, fb: string) => {
     try {
-      const v = t?.(k);
-      return (v ?? '').toString().trim() || fb;
+      const v = t?.(k as any);
+      const s = (v ?? '').toString().trim();
+      return s || fb;
     } catch {
       return fb;
     }
   };
 
-  const [user, setUser] = useState<any>(null);
-  const [guestMode, setGuestMode] = useState(localStorage.getItem('tgn.guest') === '1');
-
   const [rows, setRows] = useState<Row[]>([]);
   const [route, setRoute] = useState<string>(window.location.hash || '#/browse');
 
-  // auth
-  useEffect(() => onAuthStateChanged(auth, (u) => setUser(u)), []);
-
-  // hash routing
+  // Hash routing
   useEffect(() => {
     const onHash = () => setRoute(window.location.hash || '#/browse');
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  // language attribute
+  // <html lang="...">
   useEffect(() => {
     const current = (lang || 'en').toLowerCase();
     document.documentElement.setAttribute('lang', current);
   }, [lang]);
 
-  // live rows (if you still use them in ExportPage, etc.)
+  // Live rows for Export page – only when signed in
   useEffect(() => {
     if (!user) {
       setRows([]);
       return;
     }
+
     const qy = query(collection(db, 'users', user.uid, 'links'), orderBy('url'));
+
     const off = onSnapshot(qy, (snap) => {
-      const list: Row[] = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+      const list: ExportRow[] = snap.docs.map((d) => {
+        const data = d.data() as any;
+        return {
+          id: d.id,
+          name: data.name ?? '',
+          url: data.url ?? '',
+          language: data.language,
+        };
+      });
       setRows(list);
     });
+
     return () => off();
   }, [user]);
 
@@ -72,41 +86,45 @@ export default function App() {
   const isAbout = route.startsWith('#/about');
   const isContact = route.startsWith('#/contact');
 
-  // show sign-in or main
-  if (!user && !guestMode) {
+  // While auth state is loading
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center text-gray-500">Loading…</main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Not signed in and not guest → show full Login UI
+  if (!user && !isGuest) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 p-4">
-          {/* Your Login component here if you want gating; or temporary guest link */}
-          <p className="text-center text-gray-600">Please sign in.</p>
-          <div className="text-center mt-4">
-            <button
-              className="btn btn-blue"
-              onClick={() => {
-                localStorage.setItem('tgn.guest', '1');
-                setGuestMode(true);
-              }}
-            >
-              Continue as Guest
-            </button>
-          </div>
+          <Login />
         </main>
         <Footer />
       </div>
     );
   }
 
+  // Signed in OR guest → main app shell
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <TopTabs />
       <main className="flex-1 p-3 max-w-6xl mx-auto">
         {isAdd ? (
-          <section>
-            <h2 className="text-lg font-semibold mb-2 not-italic">{tOr('add', 'Add')}</h2>
-            <AddLink />
-          </section>
+          user ? (
+            <section>
+              <h2 className="text-lg font-semibold mb-2 not-italic">{tOr('add', 'Add')}</h2>
+              <AddLink />
+            </section>
+          ) : (
+            <p className="text-center text-gray-500">Sign in to add links.</p>
+          )
         ) : isImport ? (
           <section>
             <ImportExport />
@@ -127,6 +145,7 @@ export default function App() {
             </p>
           </section>
         ) : (
+          // Default: Browse
           <section aria-label="Browse list" className="mt-4">
             <LinksList />
           </section>
