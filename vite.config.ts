@@ -1,4 +1,5 @@
-// vite.config.ts
+/// <reference types="node" />
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -21,7 +22,9 @@ export default defineConfig({
       // devOptions: { enabled: true },
 
       includeAssets: ['fonts/krub/Krub-Variable.woff2', 'fonts/krub.css'],
-      workbox: { globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'] },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'],
+      },
 
       manifest: {
         name: 'Thai Good News',
@@ -30,11 +33,22 @@ export default defineConfig({
         theme_color: '#2D2A4A',
         background_color: '#FFFFFF',
         display: 'standalone',
-        start_url: './',
-        scope: './',
+
+        // For Netlify root deployment this is correct:
+        start_url: '/',
+        scope: '/',
+
         icons: [
-          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+          {
+            src: '/icons/icon-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: '/icons/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+          },
           {
             src: '/icons/maskable-512.png',
             sizes: '512x512',
@@ -45,9 +59,8 @@ export default defineConfig({
       },
     }),
   ],
+
   server: {
-    // Let Vite pick the next free port automatically
-    // (remove "port" to be fully flexible, or keep it as a preference)
     port: 5173,
     strictPort: false,
     fs: { strict: false },
