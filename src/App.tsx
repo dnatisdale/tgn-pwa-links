@@ -1,4 +1,5 @@
 // src/App.tsx
+
 import React, { useEffect, useState } from 'react';
 import Header from './Header';
 import Footer from './Footer';
@@ -9,20 +10,19 @@ import Contact from './Contact';
 import AddLink from './components/AddLink';
 import LinksList from './components/LinksList';
 import Login from './Login';
+
 import { db } from './firebase';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { useI18n } from './i18n-provider';
 import { useAuth } from './hooks/useAuth';
 
-// A row shape compatible with ExportPage
+// Shape for rows passed into ExportPage
 type ExportRow = {
   id: string;
   name: string;
   url: string;
-  language?: string;
+  language: string; // required
 };
-
-const [rows, setRows] = useState<ExportRow[]>([]);
 
 export default function App() {
   const { t, lang } = useI18n();
@@ -38,23 +38,25 @@ export default function App() {
     }
   };
 
-  const [rows, setRows] = useState<Row[]>([]);
+  const [rows, setRows] = useState<ExportRow[]>([]);
   const [route, setRoute] = useState<string>(window.location.hash || '#/browse');
 
-  // Hash routing
+  // Hash routing for tabs (#/add, #/browse, etc.)
   useEffect(() => {
-    const onHash = () => setRoute(window.location.hash || '#/browse');
+    const onHash = () => {
+      setRoute(window.location.hash || '#/browse');
+    };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  // <html lang="...">
+  // Keep <html lang="..."> in sync
   useEffect(() => {
     const current = (lang || 'en').toLowerCase();
     document.documentElement.setAttribute('lang', current);
   }, [lang]);
 
-  // Live rows for Export page – only when signed in
+  // Load rows for Export page (only when logged in)
   useEffect(() => {
     if (!user) {
       setRows([]);
@@ -63,20 +65,20 @@ export default function App() {
 
     const qy = query(collection(db, 'users', user.uid, 'links'), orderBy('url'));
 
-    const off = onSnapshot(qy, (snap) => {
-      const list: ExportRow[] = snap.docs.map((d) => {
-        const data = d.data() as any;
+    const unsub = onSnapshot(qy, (snap) => {
+      const list: ExportRow[] = snap.docs.map((doc) => {
+        const data = doc.data() as any;
         return {
-          id: d.id,
+          id: doc.id,
           name: data.name ?? '',
           url: data.url ?? '',
-          language: data.language,
+          language: data.language ?? '', // <= always a string
         };
       });
       setRows(list);
     });
 
-    return () => off();
+    return () => unsub();
   }, [user]);
 
   const isBrowse = route.startsWith('#/browse');
@@ -86,7 +88,7 @@ export default function App() {
   const isAbout = route.startsWith('#/about');
   const isContact = route.startsWith('#/contact');
 
-  // While auth state is loading
+  // While we don't yet know auth state
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -97,7 +99,7 @@ export default function App() {
     );
   }
 
-  // Not signed in and not guest → show full Login UI
+  // Not logged in and not guest → show full login UI
   if (!user && !isGuest) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -110,7 +112,7 @@ export default function App() {
     );
   }
 
-  // Signed in OR guest → main app shell
+  // Logged in OR guest → main shell
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
