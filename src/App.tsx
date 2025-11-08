@@ -120,7 +120,7 @@ export default function App() {
         {isAdd ? (
           user ? (
             <section>
-              <h2 className="text-lg font-semibold mb-2 not-italic">{tOr('add', 'Add')}</h2>
+              {/* No extra "Add" heading; TopTabs already says ADD */}
               <AddLink />
             </section>
           ) : (
@@ -128,19 +128,22 @@ export default function App() {
           )
         ) : isImport ? (
           <section>
+            {/* No "Import" heading; TopTabs label is enough */}
             <ImportExport />
           </section>
         ) : isExport ? (
           <section>
+            {/* No "Export" heading; TopTabs label is enough */}
             <ExportPage rows={rows} />
           </section>
         ) : isContact ? (
           <section>
+            {/* No "Contact" heading; TopTabs label is enough */}
             <Contact />
           </section>
         ) : isAbout ? (
           <section>
-            <h2 className="text-lg font-semibold mb-2 not-italic">{tOr('about', 'About')}</h2>
+            {/* No "About" heading; keep the helpful description only */}
             <p className="text-sm text-gray-700 not-italic">
               {tOr('aboutText', 'This app helps you organize and share links.')}
             </p>
