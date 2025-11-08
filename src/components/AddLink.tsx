@@ -1,82 +1,129 @@
 // src/components/AddLink.tsx
+
 import { useState } from 'react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../hooks/useAuth';
-import { formatUrl } from '../utils/formatUrl';
+import { useI18n } from '../i18n-provider';
+
+// Normalize to https:// when possible, with a small typo check.
+const normalizeUrlToHttps = (raw: string): string | null => {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  let candidate = trimmed;
+
+  // If no scheme, assume https://
+  if (!/^https?:\/\//i.test(candidate)) {
+    candidate = `https://${candidate}`;
+  }
+
+  try {
+    const u = new URL(candidate);
+
+    // If http, upgrade to https
+    if (u.protocol === 'http:') {
+      u.protocol = 'https:';
+    }
+
+    // Only accept https in the end
+    if (u.protocol !== 'https:') return null;
+
+    const host = u.hostname.toLowerCase();
+
+    // Require something that looks like a real host (has a dot, unless localhost)
+    if (host !== 'localhost' && !host.includes('.')) {
+      return null;
+    }
+
+    // Catch common typo like "http5fi.sh" (starts with "http" followed by a digit)
+    if (/^http\d/i.test(host)) {
+      return null;
+    }
+
+    return u.toString();
+  } catch {
+    return null;
+  }
+};
+
+// Split tags by commas/spaces, strip "#", dedupe case-insensitively
+const parseTags = (input: string): string[] => {
+  const parts = input
+    .split(/[,\s]+/)
+    .map((t) => t.trim().replace(/^#/, ''))
+    .filter(Boolean);
+
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const t of parts) {
+    const key = t.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      out.push(t);
+    }
+  }
+  return out;
+};
 
 export default function AddLink() {
   const { user } = useAuth();
+  const { t } = useI18n();
 
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
-  const [tagsRaw, setTagsRaw] = useState(''); // comma or space separated
+  const [tagsRaw, setTagsRaw] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  // Extra safety; App.tsx already gates this route
   if (!user) {
     return <p className="text-center text-gray-500">Sign in to add links.</p>;
   }
-
-  // Parse "tagsRaw" into a deduped array of non-empty strings
-  const parseTags = (input: string): string[] => {
-    const parts = input
-      .split(/[,\s]+/) // split by comma or whitespace
-      .map((t) => t.trim())
-      .filter(Boolean);
-    // dedupe while preserving order
-    const seen = new Set<string>();
-    const out: string[] = [];
-    for (const t of parts) {
-      const lower = t.toLowerCase();
-      if (!seen.has(lower)) {
-        seen.add(lower);
-        out.push(t);
-      }
-    }
-    return out;
-  };
 
   const handleSave = async () => {
     setError(null);
     setSuccess(null);
 
-    // 1) Validate & normalize URL
-    const normalized = formatUrl(url);
+    const normalized = normalizeUrlToHttps(url);
     if (!normalized) {
-      setError('Please enter a valid URL (e.g., https://example.com/page).');
+      setError(
+        t?.('invalidUrl', 'Please enter a valid link (we will use secure https://).') ??
+          'Please enter a valid link (we will use secure https://).'
+      );
       return;
     }
 
-    // 2) Build doc
+    const tags = parseTags(tagsRaw);
+    const cleanTitle = title.trim();
+
     const docToSave = {
       url: normalized,
-      title: title.trim(),
-      tags: parseTags(tagsRaw),
+      title: cleanTitle || normalized,
+      tags,
       createdAt: serverTimestamp(),
     };
 
-    // 3) Write
     try {
       setSaving(true);
       await addDoc(collection(db, 'users', user.uid, 'links'), docToSave);
-      setSuccess('Saved ✅');
+      setSuccess(t?.('addLinkSaved', 'Saved ✅') ?? 'Saved ✅');
 
-      // 4) Clear form (keep tags if you prefer, but most folks expect a full clear)
       setUrl('');
       setTitle('');
       setTagsRaw('');
     } catch (e) {
       console.error('Save failed:', e);
-      setError('Save failed. Please try again.');
+      setError(
+        t?.('saveFailed', 'Save failed. Please try again.') ?? 'Save failed. Please try again.'
+      );
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    // ✅ Enter now submits the form because onSubmit → handleSave and the button is type="submit"
     <form
       className="max-w-xl mx-auto p-4 space-y-3 border rounded"
       onSubmit={(e) => {
@@ -84,41 +131,45 @@ export default function AddLink() {
         if (!saving) handleSave();
       }}
     >
-      <h2 className="text-lg font-semibold">Add a new link</h2>
+      {/* URL input – no external label */}
+      <input
+        className="input-style w-full"
+        type="text"
+        inputMode="url"
+        autoCorrect="off"
+        autoCapitalize="none"
+        spellCheck={false}
+        placeholder={
+          t?.('phAddUrl', 'Paste or type your link here') ?? 'Paste or type your link here'
+        }
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        required
+      />
 
-      <label className="block">
-        <span className="text-sm opacity-80">URL</span>
-        <input
-          className="input-style w-full"
-          type="url"
-          placeholder="https://example.com/page"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          required
-        />
-      </label>
+      {/* Title input – optional */}
+      <input
+        className="input-style w-full"
+        type="text"
+        placeholder={
+          t?.('phAddTitle', 'Give it a short title (optional)') ??
+          'Give it a short title (optional)'
+        }
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+      />
 
-      <label className="block">
-        <span className="text-sm opacity-80">Title (optional)</span>
-        <input
-          className="input-style w-full"
-          type="text"
-          placeholder="Readable title for this link"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-      </label>
-
-      <label className="block">
-        <span className="text-sm opacity-80">Tags (comma or space separated)</span>
-        <input
-          className="input-style w-full"
-          type="text"
-          placeholder="news, thai, audio"
-          value={tagsRaw}
-          onChange={(e) => setTagsRaw(e.target.value)}
-        />
-      </label>
+      {/* Tags input – # optional, spaces/commas allowed */}
+      <input
+        className="input-style w-full"
+        type="text"
+        placeholder={
+          t?.('phAddTags', 'Add keywords separated by spaces or commas') ??
+          'Add keywords separated by spaces or commas'
+        }
+        value={tagsRaw}
+        onChange={(e) => setTagsRaw(e.target.value)}
+      />
 
       {(error || success) && (
         <div
@@ -139,7 +190,9 @@ export default function AddLink() {
           disabled={saving}
           title="Save (Enter key works too)"
         >
-          {saving ? 'Saving…' : 'Save'}
+          {saving
+            ? t?.('saving', 'Saving…') ?? 'Saving…'
+            : t?.('addLink', 'Add link') ?? 'Add link'}
         </button>
 
         <button
@@ -153,12 +206,13 @@ export default function AddLink() {
             setSuccess(null);
           }}
         >
-          Clear
+          {t?.('clear', 'Clear') ?? 'Clear'}
         </button>
       </div>
 
       <p className="text-xs text-gray-500">
-        Tip: Press <kbd>Enter</kbd> in any field to save.
+        {t?.('tipEnterToSave', 'Tip: Press Enter in any field to save.') ??
+          'Tip: Press Enter in any field to save.'}
       </p>
     </form>
   );

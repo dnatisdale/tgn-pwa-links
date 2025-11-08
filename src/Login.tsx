@@ -23,7 +23,6 @@ export default function Login() {
   const [busy, setBusy] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
 
-  // Watch auth state so we can show Sign Out if already logged in
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u: User | null) => {
       setIsAuthed(!!u);
@@ -31,11 +30,11 @@ export default function Login() {
     return () => unsub();
   }, [auth]);
 
-  const S = (k: any, fallback: string) => {
+  const S = (k: string, fb: string) => {
     try {
-      return t(k as any) || fallback;
+      return t?.(k, fb) ?? fb;
     } catch {
-      return fallback;
+      return fb;
     }
   };
 
@@ -49,7 +48,7 @@ export default function Login() {
       setPassword('');
       window.dispatchEvent(new Event('auth:login'));
     } catch (e: any) {
-      setError(e?.message || 'Sign in failed.');
+      setError(e?.message || S('signInFailed', 'Sign in failed. Please check your details.'));
     } finally {
       setBusy(false);
     }
@@ -60,14 +59,13 @@ export default function Login() {
     setError(null);
     try {
       await createUserWithEmailAndPassword(auth, email.trim(), password);
-      // you can later attach displayName via updateProfile if needed
       setMode('idle');
       setEmail('');
       setPassword('');
       setDisplayName('');
       window.dispatchEvent(new Event('auth:login'));
     } catch (e: any) {
-      setError(e?.message || 'Sign up failed.');
+      setError(e?.message || S('signUpFailed', 'Sign up failed. Please try again.'));
     } finally {
       setBusy(false);
     }
@@ -87,17 +85,17 @@ export default function Login() {
   };
 
   const toggleSignIn = () => setMode((m) => (m === 'signin' ? 'idle' : 'signin'));
-
   const toggleSignUp = () => setMode((m) => (m === 'signup' ? 'idle' : 'signup'));
 
   return (
-    <div className="mx-auto max-w-md px-4 pt-6 pb-10 text-center">
-      <p className="text-gray-600 mb-6">
-        {S('pleaseSignIn', 'Please sign in to use Thai Good News.')}
+    <div className="mx-auto max-w-md px-4 pt-2 pb-6 text-center">
+      {/* Message closer to header */}
+      <p className="text-gray-600 mb-3">
+        {S('pleaseSignIn', 'Please sign in to use the Thai Good News app.')}
       </p>
 
-      {/* Main button row */}
-      <div className="flex items-center justify-center gap-3 flex-wrap mb-8">
+      {/* Sign In / Sign Up buttons snug under message */}
+      <div className="flex items-center justify-center gap-3 flex-wrap mb-3">
         {isAuthed ? (
           <button
             onClick={handleLogout}
@@ -127,45 +125,41 @@ export default function Login() {
         )}
       </div>
 
-      {/* Collapsible form */}
+      {/* Card pulled up closer to buttons */}
       {!isAuthed && mode !== 'idle' && (
-        <div className="rounded-2xl border border-gray-200 p-5 text-left shadow-sm mx-auto max-w-sm mb-6">
-          <h3 className="text-lg font-semibold mb-3">
-            {mode === 'signin' ? S('signIn', 'Sign In') : S('signUp', 'Sign Up')}
-          </h3>
-
-          {/* Name (signup only, optional) */}
+        <div className="rounded-2xl border border-gray-200 p-5 pt-4 text-left shadow-sm mx-auto max-w-sm mt-1">
+          {/* Name (signup only) */}
           {mode === 'signup' && (
-            <>
-              <label className="block text-sm text-gray-600 mb-1">{S('name', 'Name')}</label>
-              <input
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full rounded-xl border border-gray-300 px-3 py-2 mb-3 outline-none focus:ring focus:ring-blue-200"
-                placeholder={S('name', 'Name')}
-              />
-            </>
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              className="w-full rounded-xl border border-gray-300 px-3 py-2 mb-3 outline-none focus:ring focus:ring-blue-200"
+              placeholder={S('phNameOptional', 'Name (optional)')}
+              autoComplete="name"
+            />
           )}
 
           {/* Email */}
-          <label className="block text-sm text-gray-600 mb-1">{S('email', 'Email')}</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-xl border border-gray-300 px-3 py-2 mb-3 outline-none focus:ring focus:ring-blue-200"
-            placeholder={S('phContactEmail', 'Email')}
+            placeholder={S('phEmail', 'Email')}
+            autoComplete="email"
+            required
           />
 
           {/* Password */}
-          <label className="block text-sm text-gray-600 mb-1">{S('password', 'Password')}</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl border border-gray-300 px-3 py-2 mb-4 outline-none focus:ring focus:ring-blue-200"
-            placeholder={S('password', 'Password')}
+            className="w-full rounded-xl border border-gray-300 px-3 py-2 mb-3 outline-none focus:ring focus:ring-blue-200"
+            placeholder={S('phPassword', 'Password')}
+            autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+            required
           />
 
           {error && <div className="text-red-600 text-sm mb-3">{error}</div>}
@@ -192,7 +186,10 @@ export default function Login() {
             )}
 
             <button
-              onClick={() => setMode('idle')}
+              onClick={() => {
+                setMode('idle');
+                setError(null);
+              }}
               className="rounded-xl px-4 py-2 border border-gray-300"
               type="button"
             >

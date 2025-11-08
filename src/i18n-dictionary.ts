@@ -9,6 +9,7 @@ const en = {
   browse: 'Browse',
   contact: 'Contact',
   install: 'Install',
+  cancel: 'Cancel',
 
   // --- Authentication ---
   signIn: 'Sign In',
@@ -18,6 +19,7 @@ const en = {
   email: 'Email',
   password: 'Password',
   logoutFailed: 'Could not log out. Please try again.',
+  pleaseSignIn: 'Please sign in to use the Thai Good News app.',
 
   // --- Search / Filters ---
   search: 'Search all languages...',
@@ -65,8 +67,6 @@ const en = {
   title: 'Title',
   languageOfContent: 'Language',
   url: 'URL',
-  invalidUrl: 'URL must be secure (https). You can type it with or without https://',
-  mustBeHttps: 'URL must be https (or leave off scheme to auto-https)',
 
   // --- Contact Screen ---
   contactTitle: 'Contact',
@@ -86,6 +86,18 @@ const en = {
   phContactEmail: 'Email',
   phContactMessage: 'Message',
 
+  // --- ADD Screen ---
+  phAddUrl: 'Paste or type your link here',
+  phAddTitle: 'Give it a short title (optional)',
+  phAddTags: 'Add keywords separated by spaces or commas',
+  addLink: 'Add link',
+  addLinkSaved: 'Saved ✅',
+  saveFailed: 'Save failed. Please try again.',
+  invalidUrl:
+    'Please enter a secure web address. (This app accepts https links only to protect your information.)',
+  clear: 'Clear',
+  tipEnterToSave: 'Tip: Press Enter in any field to save.',
+
   // --- QR ---
   enlargeQR: 'Enlarge QR',
   shrinkQR: 'Shrink QR',
@@ -102,6 +114,7 @@ const th = {
   browse: 'เรียกดู',
   contact: 'ติดต่อ',
   install: 'ติดตั้ง',
+  cancel: 'ยกเลิก',
 
   // --- Authentication ---
   signIn: 'เข้าสู่ระบบ',
@@ -111,6 +124,7 @@ const th = {
   email: 'อีเมล',
   password: 'รหัสผ่าน',
   logoutFailed: 'ออกจากระบบไม่สำเร็จ โปรดลองอีกครั้ง',
+  pleaseSignIn: 'กรุณาเข้าสู่ระบบเพื่อใช้งานแอป Thai Good News',
 
   // --- Search / Filters ---
   search: 'ค้นหาทุกภาษา...',
@@ -158,8 +172,6 @@ const th = {
   title: 'ชื่อเรื่อง',
   languageOfContent: 'ภาษา',
   url: 'ลิงก์',
-  invalidUrl: 'ลิงก์ต้องเป็น https เท่านั้น หรือพิมพ์โดยไม่ต้องใส่ https://',
-  mustBeHttps: 'ลิงก์ต้องเป็น https (หรือเว้นไม่ใส่คำนำหน้าเพื่อให้เพิ่ม https อัตโนมัติ)',
 
   // --- Contact Screen ---
   contactTitle: 'ติดต่อ',
@@ -179,6 +191,18 @@ const th = {
   phContactEmail: 'อีเมล',
   phContactMessage: 'ข้อความ',
 
+  // --- ADD Screen ---
+  phAddUrl: 'วางหรือลิงก์ของคุณที่นี่',
+  phAddTitle: 'ตั้งชื่อสั้นๆ เพื่อจำง่าย (ไม่ใส่ก็ได้)',
+  phAddTags: 'เพิ่มคำค้น คั่นด้วยช่องว่างหรือจุลภาค',
+  addLink: 'บันทึกลิงก์',
+  addLinkSaved: 'บันทึกแล้ว ✅',
+  saveFailed: 'บันทึกล้มเหลว โปรดลองอีกครั้ง',
+  invalidUrl:
+    'กรุณาใส่ที่อยู่เว็บไซต์ที่ปลอดภัย (แอปนี้รองรับเฉพาะลิงก์แบบ https เพื่อปกป้องข้อมูลของคุณ)',
+  clear: 'ล้างข้อมูล',
+  tipEnterToSave: 'ทิป: กด Enter ในช่องใดก็ได้เพื่อบันทึก',
+
   // --- QR ---
   enlargeQR: 'ขยาย QR',
   shrinkQR: 'ย่อ QR',
@@ -189,9 +213,3 @@ const th = {
 
 // Single named export
 export const dictionary = { en, th } as const;
-
-// Helpful types (optional but recommended)
-export type I18nKey = keyof typeof en;
-export function isI18nKey(k: string): k is I18nKey {
-  return k in en;
-}

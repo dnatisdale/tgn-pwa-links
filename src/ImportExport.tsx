@@ -89,7 +89,12 @@ export default function ImportExport() {
             language,
             urlRaw,
             urlHttps,
-            reason: urlHttps ? undefined : tOr('mustBeHttps', 'Must be an HTTPS link'),
+            reason: urlHttps
+              ? undefined
+              : tOr(
+                  'invalidUrl',
+                  'URL must be secure (https). You can type it with or without https://'
+                ),
           };
         });
       } else {
