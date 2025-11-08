@@ -33,7 +33,7 @@ type LinkDoc = {
 };
 
 export default function LinksList() {
-  const { user, isGuest } = useAuth();
+  const { user } = useAuth();
   const [links, setLinks] = useState<LinkDoc[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -242,11 +242,11 @@ export default function LinksList() {
   };
 
   // Render
-  if (!user && !isGuest) {
+  if (!user) {
     return <p className="text-center text-gray-500">Sign in to view links.</p>;
   }
 
-  if (isGuest && !user) {
+  if (!user) {
     return (
       <p className="text-center text-gray-500">
         Browsing as guest. Sign in to sync and save your own links.

@@ -112,7 +112,7 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
   return (
     <div className="w-full">
       <div className="mx-auto max-w-5xl px-2">
-        <div className="my-3 flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4">
+        <div className="my-3 flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4 top-tabs">
           {/* ADD (Thai red) */}
           <button
             className={[
@@ -120,6 +120,7 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
               'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black',
               'text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2',
               'bg-[#A51931] text-white border-black hover:text-white',
+              'top-add-tab', // 👈 add this
             ].join(' ')}
             onClick={() => go('ADD')}
           >

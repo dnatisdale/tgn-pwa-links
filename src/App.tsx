@@ -26,7 +26,7 @@ type ExportRow = {
 
 export default function App() {
   const { t, lang } = useI18n();
-  const { user, isGuest, loading } = useAuth();
+  const { user, loading } = useAuth();
 
   const tOr = (k: any, fb: string) => {
     try {
@@ -99,8 +99,7 @@ export default function App() {
     );
   }
 
-  // Not logged in and not guest → show full login UI
-  if (!user && !isGuest) {
+  if (!user) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -112,7 +111,7 @@ export default function App() {
     );
   }
 
-  // Logged in OR guest → main shell
+  // Logged in → main shell
   return (
     <div className="min-h-screen flex flex-col">
       <Header />

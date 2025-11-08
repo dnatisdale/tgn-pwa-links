@@ -276,3 +276,15 @@ input[type='search'] {
 .top-search-input {
   display: inline-block !important;
 }
+/* Make ADD tab stretch full-width on small screens */
+@media (max-width: 640px) {
+  .top-tabs {
+    justify-content: center;
+  }
+
+  .top-tabs .top-add-tab {
+    flex: 1 1 100%;
+    max-width: 100%;
+    text-align: center;
+  }
+}

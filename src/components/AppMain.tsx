@@ -15,14 +15,14 @@ declare global {
 }
 
 function AppMain() {
-  const { user, isGuest } = useAuth();
+  const { user } = useAuth();
   const [showUpdate, setShowUpdate] = useState(false);
 
   const buildText =
     (__APP_VERSION__ ? `v${__APP_VERSION__}` : 'dev') +
     (__BUILD_PRETTY__ ? ` • ${__BUILD_PRETTY__}` : '');
 
-  const canBrowse = !!user || isGuest;
+  const canBrowse = !!user;
 
   return (
     <main className="p-3 max-w-6xl mx-auto app-main">
