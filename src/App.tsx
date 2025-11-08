@@ -7,6 +7,7 @@ import TopTabs from './TopTabs';
 import ImportExport from './ImportExport';
 import ExportPage from './Export';
 import Contact from './Contact';
+import About from './About';
 import AddLink from './components/AddLink';
 import LinksList from './components/LinksList';
 import Login from './Login';
@@ -143,10 +144,7 @@ export default function App() {
           </section>
         ) : isAbout ? (
           <section>
-            {/* No "About" heading; keep the helpful description only */}
-            <p className="text-sm text-gray-700 not-italic">
-              {tOr('aboutText', 'This app helps you organize and share links.')}
-            </p>
+            <About />
           </section>
         ) : (
           // Default: Browse

@@ -1,3 +1,4 @@
+// src/Export.tsx
 import React from 'react';
 import { useI18n } from './i18n-provider';
 
@@ -26,13 +27,15 @@ export default function ExportPage({ rows }: { rows: Row[] }) {
       .join('\n');
     download('tgn-links.csv', head + body, 'text/csv');
   };
+
   const toJSON = () =>
     download('tgn-links.json', JSON.stringify(rows, null, 2), 'application/json');
+
   const doPrint = () => window.print();
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-lg font-semibold mb-3">{t('export')}</h2>
+      {/* No extra Export title; TopTabs already labels the page */}
       <div className="flex items-center gap-3 mb-3">
         <button className="btn btn-blue" onClick={toCSV}>
           {t('exportCsv')}

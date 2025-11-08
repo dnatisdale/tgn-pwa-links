@@ -15,7 +15,7 @@ type PreviewItem = {
 function toHttpsOrNull(input: string): string | null {
   const raw = (input || '').trim();
   if (!raw) return null;
-  if (/^http:\/\//i.test(raw)) return null; // disallow plain http
+  if (/^http:\/\//i.test(raw)) return null;
   const withScheme = /^(https?:)?\/\//i.test(raw) ? raw : `https://${raw}`;
   try {
     const u = new URL(withScheme);
@@ -43,9 +43,7 @@ function asArray(x: any): any[] {
   return [];
 }
 
-// ✅ Restored component wrapper and moved hooks/i18n inside
 export default function ImportExport() {
-  // --- safe i18n so the UI never shows "undefined" ---
   type I18nLike = { t?: (k: string) => string };
   const i18n = (useI18n?.() as I18nLike) ?? {};
   const rawT = i18n.t;
@@ -59,7 +57,7 @@ export default function ImportExport() {
   };
 
   const [file, setFile] = useState<File | null>(null);
-  const [pasteText, setPasteText] = useState<string>(''); // new: paste area
+  const [pasteText, setPasteText] = useState<string>('');
   const [parsing, setParsing] = useState(false);
   const [preview, setPreview] = useState<PreviewItem[] | null>(null);
   const [msg, setMsg] = useState<string>('');
@@ -150,7 +148,7 @@ export default function ImportExport() {
   }
 
   async function parseFromPaste() {
-    setFile(null); // clear file if using paste
+    setFile(null);
     setPreview(null);
     setMsg('');
     const text = pasteText.trim();
@@ -158,7 +156,6 @@ export default function ImportExport() {
       setMsg(tOr('noRows', 'No rows found.'));
       return;
     }
-    // Heuristic: if starts with '{' or '[' treat as JSON
     const hint =
       text.trim().startsWith('{') || text.trim().startsWith('[') ? 'data.json' : 'data.csv';
     await parseFromText(text, hint);
@@ -202,11 +199,10 @@ export default function ImportExport() {
 
   return (
     <section>
-      <h2 className="text-lg font-semibold mb-3 not-italic">{tOr('import', 'Import')}</h2>
+      {/* No extra "Import" page title; TopTabs handles labeling */}
 
       {/* File picker row */}
       <div className="file-row flex items-center gap-3 mb-3">
-        {/* Accessible label tied to the hidden input */}
         <label
           htmlFor="tgn-import-file"
           className="btn btn-red not-italic"
@@ -222,7 +218,7 @@ export default function ImportExport() {
           accept=".csv,.tsv,.json,text/csv,text/tab-separated-values,application/json"
           className="w-full border rounded px-3 py-2 not-italic"
           onChange={onPickFile}
-          style={{ display: 'none' }} // label acts as the visible trigger
+          style={{ display: 'none' }}
         />
 
         <span className="pill-red not-italic">(CSV / TSV / JSON)</span>
@@ -238,7 +234,6 @@ export default function ImportExport() {
         )}
       </div>
 
-      {/* Show selected file name, if any */}
       {file && (
         <div className="hint-under not-italic mb-2">
           {tOr('file', 'File')}: {file.name}
@@ -278,14 +273,12 @@ export default function ImportExport() {
         </div>
       </div>
 
-      {/* Status / errors */}
       {msg && (
         <div className="mb-3 not-italic" style={{ color: '#a51931' }}>
           {msg}
         </div>
       )}
 
-      {/* Preview table */}
       {preview && (
         <div className="card" style={{ padding: 12 }}>
           <div className="mb-2 not-italic" style={{ fontSize: 14 }}>

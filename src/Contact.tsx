@@ -16,7 +16,6 @@ const MAX_MESSAGE_LEN = 500;
 const RATE_LIMIT_MS = 8000;
 
 export default function Contact() {
-  // translator (safe)
   let t: TFunc = (k) => k;
   try {
     const i = (useI18n?.() as any) || null;
@@ -25,13 +24,11 @@ export default function Contact() {
 
   const tt = tOr(t);
 
-  // fields
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
 
-  // hardening
-  const [website, setWebsite] = useState(''); // honeypot
+  const [website, setWebsite] = useState('');
   const [sending, setSending] = useState(false);
   const [cooldown, setCooldown] = useState(false);
   const [status, setStatus] = useState<'idle' | 'sent' | 'error'>('idle');
@@ -59,7 +56,6 @@ export default function Contact() {
     }
 
     if (website.trim()) {
-      // honeypot tripped
       setStatus('error');
       setErrorMsg(tt('contactErrorGeneric', 'Send failed. Try again.'));
       return;
@@ -106,15 +102,10 @@ export default function Contact() {
     }
   };
 
-  const charsUsed = message.length;
   const disableSend = sending || cooldown;
 
   return (
     <section className="w-full max-w-3xl mx-auto px-4 sm:px-6">
-      {/* Title: bold, not italic, minimal text */}
-      <h2 className="text-lg font-semibold mb-2">{tt('contactTitle', 'Contact Us')}</h2>
-
-      {/* Compact vertical spacing between fields */}
       <form ref={formRef} onSubmit={onSubmit} className="space-y-2" noValidate>
         <input
           id="contactName"
@@ -140,7 +131,7 @@ export default function Contact() {
           required
         />
 
-        {/* Honeypot (hidden) */}
+        {/* Honeypot */}
         <div className="hidden" aria-hidden="true">
           <label htmlFor="website">Website</label>
           <input
@@ -154,12 +145,10 @@ export default function Contact() {
           />
         </div>
 
-        {/* Message */}
         <div className="relative">
           <textarea
             id="message"
             name="message"
-            type="text"
             aria-label={tt('phContactMessage', 'Message')}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -169,7 +158,6 @@ export default function Contact() {
             rows={6}
             required
           />
-          {/* counter INSIDE the textarea area */}
           <span className="counter-inside">{message.length}/500</span>
         </div>
 
@@ -180,7 +168,6 @@ export default function Contact() {
           </p>
         )}
 
-        {/* Your exact Send button style */}
         <button
           type="submit"
           className="btn btn-red"
