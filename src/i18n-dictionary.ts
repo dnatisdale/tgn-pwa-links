@@ -67,6 +67,9 @@ const en = {
   title: 'Title',
   languageOfContent: 'Language',
   url: 'URL',
+  languages: 'Languages',
+  searchLanguage: 'Search language…',
+  noLanguagesMatch: 'No languages match.',
 
   // --- Contact Screen ---
   contactTitle: 'Contact',
@@ -172,6 +175,9 @@ const th = {
   title: 'ชื่อเรื่อง',
   languageOfContent: 'ภาษา',
   url: 'ลิงก์',
+  languages: 'ภาษา',
+  searchLanguage: 'ค้นหาภาษา…',
+  noLanguagesMatch: 'ไม่พบภาษาที่ค้นหา',
 
   // --- Contact Screen ---
   contactTitle: 'ติดต่อ',

@@ -1,5 +1,6 @@
 // src/components/LanguageSidebar.tsx
 import React from 'react';
+import { useI18n } from '../i18n-provider';
 
 type LinkLike = {
   id: string;
@@ -21,15 +22,16 @@ type Props = {
   onToggleLang: (code: string) => void;
 };
 
-const languageLabel = (code: string): LanguageInfo['nameEn'] => {
-  // Minimal fallback; you can expand this mapping
-  switch (code.toLowerCase()) {
+// TODO: Replace/extend with your real 120-language map
+const guessLabel = (code: string): { en: string; th: string } => {
+  const c = code.toLowerCase();
+  switch (c) {
     case 'th':
-      return 'Thai';
+      return { en: 'Thai', th: 'ภาษาไทย' };
     case 'en':
-      return 'English';
+      return { en: 'English', th: 'อังกฤษ' };
     default:
-      return code;
+      return { en: code, th: code };
   }
 };
 
@@ -40,27 +42,40 @@ export default function LanguageSidebar({
   activeLangs,
   onToggleLang,
 }: Props) {
+  const { t } = useI18n();
+
+  const S = (key: string, fb: string) => {
+    try {
+      return t?.(key, fb) ?? fb;
+    } catch {
+      return fb;
+    }
+  };
+
   const [showThaiNames, setShowThaiNames] = React.useState(false);
   const [query, setQuery] = React.useState('');
 
   // Build language list from links
   const languages: LanguageInfo[] = React.useMemo(() => {
     const map = new Map<string, LanguageInfo>();
+
     for (const l of links) {
-      const code = (l.language || '').trim();
-      if (!code) continue;
-      const key = code.toLowerCase();
-      if (!map.has(key)) {
-        map.set(key, {
-          code: key,
-          nameEn: languageLabel(key),
-          nameTh: languageLabel(key), // later swap to real Thai names
+      const raw = (l.language || '').trim();
+      if (!raw) continue;
+      const code = raw.toLowerCase();
+      if (!map.has(code)) {
+        const label = guessLabel(code);
+        map.set(code, {
+          code,
+          nameEn: label.en,
+          nameTh: label.th,
           count: 1,
         });
       } else {
-        map.get(key)!.count += 1;
+        map.get(code)!.count += 1;
       }
     }
+
     return Array.from(map.values()).sort((a, b) => a.nameEn.localeCompare(b.nameEn));
   }, [links]);
 
@@ -74,7 +89,6 @@ export default function LanguageSidebar({
     );
   });
 
-  // Shared styles: desktop = static; mobile = overlay
   const basePanel = 'flex flex-col h-full w-64 bg-white border-r shadow-sm';
 
   return (
@@ -92,7 +106,7 @@ export default function LanguageSidebar({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-3 py-2 border-b">
-          <span className="font-semibold text-sm not-italic">Languages</span>
+          <span className="font-semibold text-sm not-italic">{S('languages', 'Languages')}</span>
           <div className="flex items-center gap-1">
             <button
               className={
@@ -128,7 +142,7 @@ export default function LanguageSidebar({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search language / ค้นหาภาษา…"
+            placeholder={S('searchLanguage', 'Search language / ค้นหาภาษา…')}
             className="w-full px-2 py-1.5 text-xs border rounded-full outline-none focus:ring-1 focus:ring-[#A51931]"
           />
         </div>
@@ -136,7 +150,9 @@ export default function LanguageSidebar({
         {/* Language list */}
         <div className="flex-1 overflow-y-auto px-1 pb-3">
           {filtered.length === 0 && (
-            <div className="px-3 py-2 text-xs text-gray-400">No languages match.</div>
+            <div className="px-3 py-2 text-xs text-gray-400">
+              {S('noLanguagesMatch', 'No languages match.')}
+            </div>
           )}
 
           <ul className="space-y-0.5">
