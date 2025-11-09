@@ -92,8 +92,20 @@ export default function LinksList() {
 
   const faviconFor = (rawUrl: string) => {
     try {
-      return `https://icons.duckduckgo.com/ip3/${new URL(rawUrl).hostname}.ico`;
+      // Ensure we have a proper URL object, add https:// if missing
+      const hasScheme = /^https?:\/\//i.test(rawUrl);
+      const urlObj = new URL(hasScheme ? rawUrl : `https://${rawUrl}`);
+
+      const host = urlObj.hostname.toLowerCase();
+
+      // Basic sanity: must contain a dot and not be just "http" / "https"
+      if (!host.includes('.') || host === 'http' || host === 'https') {
+        return '';
+      }
+
+      return `https://icons.duckduckgo.com/ip3/${host}.ico`;
     } catch {
+      // Any parsing problem → no favicon request
       return '';
     }
   };
