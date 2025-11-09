@@ -481,126 +481,258 @@ export default function LinksList() {
 
         {/* Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
-          {filtered.map((l) => (
-            <div key={l.id} className="border rounded p-3 bg-white shadow-sm h-full">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  {l.url && (
-                    <img
-                      src={faviconFor(l.url)}
-                      alt=""
-                      className="w-4 h-4 rounded-sm shrink-0"
-                      loading="lazy"
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
-                      }}
-                    />
-                  )}
-                  <div className="font-semibold truncate">{l.title || '(no title)'}</div>
+          {filtered.map((l) => {
+            const icon = faviconFor(l.url);
+
+            return (
+              <div key={l.id} className="border rounded p-3 bg-white shadow-sm h-full">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {icon && (
+                      <img
+                        src={icon}
+                        alt=""
+                        className="w-4 h-4 rounded-sm shrink-0"
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    )}
+                    <div className="font-semibold truncate">{l.title || '(no title)'}</div>
+                  </div>
+                  <div className="text-xs opacity-60 whitespace-nowrap">{fmt(l.createdAt)}</div>
                 </div>
-                <div className="text-xs opacity-60 whitespace-nowrap">{fmt(l.createdAt)}</div>
+
+                <a
+                  href={l.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline break-all inline-block mt-1"
+                >
+                  {l.url}
+                </a>
+
+                {/* Actions */}
+                <div className="mt-2 flex flex-wrap gap-2 text-sm">
+                  <button
+                    type="button"
+                    className="border rounded px-2 py-1"
+                    onClick={() => shareCard(l, 'share', includeQr, qrSize)}
+                  >
+                    Share
+                  </button>
+                  <button
+                    type="button"
+                    className="border rounded px-2 py-1"
+                    onClick={() => shareCard(l, 'copy', includeQr, qrSize)}
+                  >
+                    Copy
+                  </button>
+                  <button
+                    type="button"
+                    className="border rounded px-2 py-1"
+                    onClick={() => shareCard(l, 'email', includeQr, qrSize)}
+                  >
+                    Email
+                  </button>
+                </div>
+
+                <div className="mt-2 flex flex-wrap gap-2 text-sm">
+                  <button
+                    type="button"
+                    className="border rounded px-2 py-1"
+                    onClick={async () => {
+                      const c = await renderCardCanvas({
+                        title: l.title || '(no title)',
+                        url: l.url,
+                        size: qrSize,
+                        orientation,
+                      });
+                      await openCardPreview(c);
+                    }}
+                    title="Preview PNG card in a new tab"
+                  >
+                    Preview
+                  </button>
+
+                  <button
+                    type="button"
+                    className="border rounded px-2 py-1"
+                    onClick={async () => {
+                      const c = await renderCardCanvas({
+                        title: l.title || '(no title)',
+                        url: l.url,
+                        size: qrSize,
+                        orientation,
+                      });
+                      const filename = `${(l.title || 'link').slice(0, 40)}.png`;
+                      const shared = await shareCardIfPossible(filename, c);
+                      if (!shared) {
+                        await downloadCardPng(filename, c);
+                      }
+                    }}
+                    title="Share PNG (fallback to download if share unsupported)"
+                  >
+                    Share / Download
+                  </button>
+
+                  <button
+                    type="button"
+                    className="border rounded px-2 py-1"
+                    onClick={async () => {
+                      const c = await renderCardCanvas({
+                        title: l.title || '(no title)',
+                        url: l.url,
+                        size: qrSize,
+                        orientation,
+                      });
+                      try {
+                        await copyCardToClipboard(c);
+                        alert('PNG card copied to clipboard ✅');
+                      } catch {
+                        alert(
+                          'Copying images is not supported in this browser. Try “Preview” then save.'
+                        );
+                      }
+                    }}
+                    title="Copy PNG to clipboard"
+                  >
+                    Copy PNG
+                  </button>
+                </div>
               </div>
+            );
+          })}
+        </div>
 
-              <a
-                href={l.url}
-                target="_blank"
-                rel="noreferrer"
-                className="underline break-all inline-block mt-1"
-              >
-                {l.url}
-              </a>
+        {/* Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
+          {filtered.map((l) => {
+            const icon = faviconFor(l.url);
 
-              {/* Actions */}
-              <div className="mt-2 flex flex-wrap gap-2 text-sm">
-                <button
-                  type="button"
-                  className="border rounded px-2 py-1"
-                  onClick={() => shareCard(l, 'share', includeQr, qrSize)}
+            return (
+              <div key={l.id} className="border rounded p-3 bg-white shadow-sm h-full">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {icon && (
+                      <img
+                        src={icon}
+                        alt=""
+                        className="w-4 h-4 rounded-sm shrink-0"
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    )}
+                    <div className="font-semibold truncate">{l.title || '(no title)'}</div>
+                  </div>
+                  <div className="text-xs opacity-60 whitespace-nowrap">{fmt(l.createdAt)}</div>
+                </div>
+
+                <a
+                  href={l.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline break-all inline-block mt-1"
                 >
-                  Share
-                </button>
-                <button
-                  type="button"
-                  className="border rounded px-2 py-1"
-                  onClick={() => shareCard(l, 'copy', includeQr, qrSize)}
-                >
-                  Copy
-                </button>
-                <button
-                  type="button"
-                  className="border rounded px-2 py-1"
-                  onClick={() => shareCard(l, 'email', includeQr, qrSize)}
-                >
-                  Email
-                </button>
+                  {l.url}
+                </a>
+
+                {/* Actions */}
+                <div className="mt-2 flex flex-wrap gap-2 text-sm">
+                  <button
+                    type="button"
+                    className="border rounded px-2 py-1"
+                    onClick={() => shareCard(l, 'share', includeQr, qrSize)}
+                  >
+                    Share
+                  </button>
+                  <button
+                    type="button"
+                    className="border rounded px-2 py-1"
+                    onClick={() => shareCard(l, 'copy', includeQr, qrSize)}
+                  >
+                    Copy
+                  </button>
+                  <button
+                    type="button"
+                    className="border rounded px-2 py-1"
+                    onClick={() => shareCard(l, 'email', includeQr, qrSize)}
+                  >
+                    Email
+                  </button>
+                </div>
+
+                <div className="mt-2 flex flex-wrap gap-2 text-sm">
+                  <button
+                    type="button"
+                    className="border rounded px-2 py-1"
+                    onClick={async () => {
+                      const c = await renderCardCanvas({
+                        title: l.title || '(no title)',
+                        url: l.url,
+                        size: qrSize,
+                        orientation,
+                      });
+                      await openCardPreview(c);
+                    }}
+                    title="Preview PNG card in a new tab"
+                  >
+                    Preview
+                  </button>
+
+                  <button
+                    type="button"
+                    className="border rounded px-2 py-1"
+                    onClick={async () => {
+                      const c = await renderCardCanvas({
+                        title: l.title || '(no title)',
+                        url: l.url,
+                        size: qrSize,
+                        orientation,
+                      });
+                      const filename = `${(l.title || 'link').slice(0, 40)}.png`;
+                      const shared = await shareCardIfPossible(filename, c);
+                      if (!shared) {
+                        await downloadCardPng(filename, c);
+                      }
+                    }}
+                    title="Share PNG (fallback to download if share unsupported)"
+                  >
+                    Share / Download
+                  </button>
+
+                  <button
+                    type="button"
+                    className="border rounded px-2 py-1"
+                    onClick={async () => {
+                      const c = await renderCardCanvas({
+                        title: l.title || '(no title)',
+                        url: l.url,
+                        size: qrSize,
+                        orientation,
+                      });
+                      try {
+                        await copyCardToClipboard(c);
+                        alert('PNG card copied to clipboard ✅');
+                      } catch {
+                        alert(
+                          'Copying images is not supported in this browser. Try “Preview” then save.'
+                        );
+                      }
+                    }}
+                    title="Copy PNG to clipboard"
+                  >
+                    Copy PNG
+                  </button>
+                </div>
               </div>
-
-              <div className="mt-2 flex flex-wrap gap-2 text-sm">
-                <button
-                  type="button"
-                  className="border rounded px-2 py-1"
-                  onClick={async () => {
-                    const c = await renderCardCanvas({
-                      title: l.title || '(no title)',
-                      url: l.url,
-                      size: qrSize,
-                      orientation,
-                    });
-                    await openCardPreview(c);
-                  }}
-                  title="Preview PNG card in a new tab"
-                >
-                  Preview
-                </button>
-
-                <button
-                  type="button"
-                  className="border rounded px-2 py-1"
-                  onClick={async () => {
-                    const c = await renderCardCanvas({
-                      title: l.title || '(no title)',
-                      url: l.url,
-                      size: qrSize,
-                      orientation,
-                    });
-                    const filename = `${(l.title || 'link').slice(0, 40)}.png`;
-                    const shared = await shareCardIfPossible(filename, c);
-                    if (!shared) {
-                      await downloadCardPng(filename, c);
-                    }
-                  }}
-                  title="Share PNG (fallback to download if share unsupported)"
-                >
-                  Share / Download
-                </button>
-
-                <button
-                  type="button"
-                  className="border rounded px-2 py-1"
-                  onClick={async () => {
-                    const c = await renderCardCanvas({
-                      title: l.title || '(no title)',
-                      url: l.url,
-                      size: qrSize,
-                      orientation,
-                    });
-                    try {
-                      await copyCardToClipboard(c);
-                      alert('PNG card copied to clipboard ✅');
-                    } catch {
-                      alert(
-                        'Copying images is not supported in this browser. Try “Preview” then save.'
-                      );
-                    }
-                  }}
-                  title="Copy PNG to clipboard"
-                >
-                  Copy PNG
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
