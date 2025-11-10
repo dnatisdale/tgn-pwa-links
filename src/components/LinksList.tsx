@@ -37,7 +37,6 @@ type LinkDoc = {
   createdAt?: Timestamp | null;
 };
 
-// Format Firestore Timestamp safely for display
 const fmt = (ts?: { seconds?: number } | null): string => {
   if (!ts || typeof ts.seconds !== 'number') return '';
   try {
@@ -140,7 +139,6 @@ export default function LinksList() {
 
   const rx = useMemo(() => wildcardToRegex(textFilter), [textFilter]);
 
-  // Sidebar language toggle
   const toggleLang = (code: string) => {
     const key = code.toLowerCase();
     setActiveLangs((prev) => (prev.includes(key) ? prev.filter((c) => c !== key) : [...prev, key]));
@@ -152,7 +150,6 @@ export default function LinksList() {
   const filtered = useMemo(() => {
     let rows = links;
 
-    // Filter by selected languages (from sidebar)
     if (activeLangs.length > 0) {
       rows = rows.filter((l) => {
         const lang = (l.language || '').toLowerCase();
@@ -160,12 +157,10 @@ export default function LinksList() {
       });
     }
 
-    // Filter by tag
     if (tagFilter) {
       rows = rows.filter((l) => (l.tags ?? []).includes(tagFilter));
     }
 
-    // Text search
     if (rx) {
       rows = rows.filter((l) => {
         const title = l.title ?? '';
@@ -211,48 +206,6 @@ export default function LinksList() {
     if (!user) return;
     if (!selectedIds.length) return;
 
-    // Inline edit helpers
-    const startEdit = (l: LinkDoc) => {
-      setEditingId(l.id);
-      setEditTitle(l.title ?? '');
-      setEditUrl(l.url ?? '');
-      setEditTags((l.tags ?? []).join(', '));
-    };
-
-    const cancelEdit = () => {
-      setEditingId(null);
-      setEditTitle('');
-      setEditUrl('');
-      setEditTags('');
-    };
-
-    const saveEdit = async (id: string) => {
-      if (!user) return;
-
-      const trimmedUrl = editUrl.trim();
-      if (!trimmedUrl) {
-        alert('URL is required.');
-        return;
-      }
-
-      const tags = editTags
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean);
-
-      try {
-        await updateDoc(doc(db, 'users', user.uid, 'links', id), {
-          title: editTitle.trim(),
-          url: trimmedUrl,
-          tags,
-        });
-        cancelEdit();
-      } catch (e) {
-        console.error('Failed to update link', e);
-        alert('Could not save changes.');
-      }
-    };
-
     const count = selectedIds.length;
     const ok = window.confirm(
       `Delete ${count} selected link${count > 1 ? 's' : ''}? This cannot be undone.`
@@ -270,18 +223,56 @@ export default function LinksList() {
     }
   };
 
-  // =========================
+  // Inline edit helpers
+  const startEdit = (l: LinkDoc) => {
+    setEditingId(l.id);
+    setEditTitle(l.title ?? '');
+    setEditUrl(l.url ?? '');
+    setEditTags((l.tags ?? []).join(', '));
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditTitle('');
+    setEditUrl('');
+    setEditTags('');
+  };
+
+  const saveEdit = async (id: string) => {
+    if (!user) return;
+
+    const trimmedUrl = editUrl.trim();
+    if (!trimmedUrl) {
+      alert('URL is required.');
+      return;
+    }
+
+    const tags = editTags
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    try {
+      await updateDoc(doc(db, 'users', user.uid, 'links', id), {
+        title: editTitle.trim(),
+        url: trimmedUrl,
+        tags,
+      });
+      cancelEdit();
+    } catch (e) {
+      console.error('Failed to update link', e);
+      alert('Could not save changes.');
+    }
+  };
+
   // Tags cloud
-  // =========================
   const tagCounts = useMemo(() => {
     const m = new Map<string, number>();
     links.forEach((l) => (l.tags ?? []).forEach((t) => m.set(t, (m.get(t) ?? 0) + 1)));
     return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
   }, [links]);
 
-  // =========================
   // Export helpers
-  // =========================
   const exportLinks = (rows: LinkDoc[]) => {
     const blob = new Blob([JSON.stringify(rows, null, 2)], {
       type: 'application/json',
@@ -294,10 +285,7 @@ export default function LinksList() {
     URL.revokeObjectURL(url);
   };
 
-  // =========================
   // Share / email / QR helpers
-  // =========================
-
   const sizePx = (s: CardSize) => (s === 'sm' ? 128 : s === 'lg' ? 384 : 256);
 
   const composeCardText = (l: LinkDoc) => {
@@ -337,7 +325,11 @@ export default function LinksList() {
       if (!to) return;
       const subj = l.title?.trim() || 'Shared link';
       try {
-        await sendEmail({ to, subject: subj, message: text });
+        await sendEmail({
+          to,
+          subject: subj,
+          message: text,
+        });
         alert('Email sent ✅');
       } catch (e) {
         console.error(e);
@@ -346,13 +338,18 @@ export default function LinksList() {
       return;
     }
 
-    // Web Share API path
     if (mode === 'share' && navigator.share) {
       try {
         if (withQr) {
           const blob = await makeQrBlob(l.url, sizePx(qrsz));
-          const file = new File([blob], 'qr.png', { type: 'image/png' });
-          if ((navigator as any).canShare?.({ files: [file] })) {
+          const file = new File([blob], 'qr.png', {
+            type: 'image/png',
+          });
+          if (
+            (navigator as any).canShare?.({
+              files: [file],
+            })
+          ) {
             await navigator.share({
               title: l.title || 'Link',
               text,
@@ -373,12 +370,13 @@ export default function LinksList() {
       }
     }
 
-    // Clipboard fallback
     try {
       if (withQr && 'ClipboardItem' in window) {
         const blob = await makeQrBlob(l.url, sizePx(qrsz));
         const item = new (window as any).ClipboardItem({
-          'text/plain': new Blob([text], { type: 'text/plain' }),
+          'text/plain': new Blob([text], {
+            type: 'text/plain',
+          }),
           'image/png': blob,
         });
         await (navigator.clipboard as any).write([item]);
@@ -393,9 +391,7 @@ export default function LinksList() {
     }
   };
 
-  // =========================
-  // Malformed URL fixer (https)
-  // =========================
+  // Malformed URL fixer
   const fixable = useMemo(
     () =>
       links.filter((l) => {
@@ -440,7 +436,7 @@ export default function LinksList() {
   // =========================
   return (
     <div className="flex max-w-6xl mx-auto">
-      {/* Sidebar: always on desktop, slide-in on mobile */}
+      {/* Sidebar */}
       <LanguageSidebar
         links={links}
         open={sidebarOpen}
@@ -449,7 +445,7 @@ export default function LinksList() {
         onToggleLang={toggleLang}
       />
 
-      {/* Right side: controls + cards */}
+      {/* Right side */}
       <div className="flex-1 p-4 lg:ml-2">
         {/* Mobile sidebar toggle */}
         <div className="mb-2 lg:hidden flex justify-start">
@@ -462,7 +458,7 @@ export default function LinksList() {
           </button>
         </div>
 
-        {/* Filters / Controls (Choices box) */}
+        {/* Choices box */}
         <div className="flex flex-col gap-2 border rounded-xl p-3 bg-gray-50">
           <div className="flex items-center gap-2 flex-wrap">
             <select
@@ -488,7 +484,6 @@ export default function LinksList() {
               className="input-style flex-1 min-w-[220px]"
             />
 
-            {/* QR / card options */}
             <label className="flex items-center gap-1 text-sm">
               Size:
               <select
@@ -554,7 +549,6 @@ export default function LinksList() {
             )}
           </p>
 
-          {/* Tag chips */}
           {tagCounts.length > 0 && (
             <div className="flex flex-wrap gap-1">
               <button
@@ -582,7 +576,6 @@ export default function LinksList() {
             </div>
           )}
 
-          {/* URL fix notice */}
           {fixable.length > 0 && (
             <div className="p-2 border rounded bg-yellow-50 text-sm flex items-center justify-between">
               <span>
@@ -599,7 +592,7 @@ export default function LinksList() {
           )}
         </div>
 
-        {/* Bulk actions bar (gray, stacked, with Delete) */}
+        {/* Bulk actions bar */}
         {selectedIds.length > 0 && (
           <div className="mt-3 mb-2 px-3 py-2 border rounded-xl bg-gray-100 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-xs">
             <div className="font-semibold text-gray-800">{selectedIds.length} selected</div>
@@ -660,11 +653,8 @@ export default function LinksList() {
             const isEditing = editingId === l.id;
 
             return (
-              <div
-                key={l.id}
-                className="border rounded p-3 bg-white shadow-sm h-full"
-              >
-                {/* Header row: favicon + title + checkbox */}
+              <div key={l.id} className="border rounded p-3 bg-white shadow-sm h-full">
+                {/* Header row */}
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     {icon && (
@@ -675,8 +665,7 @@ export default function LinksList() {
                         loading="lazy"
                         referrerPolicy="no-referrer"
                         onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.display =
-                            'none';
+                          (e.currentTarget as HTMLImageElement).style.display = 'none';
                         }}
                       />
                     )}
@@ -689,16 +678,12 @@ export default function LinksList() {
                         placeholder="Title"
                       />
                     ) : (
-                      <div className="font-semibold truncate">
-                        {l.title || '(no title)'}
-                      </div>
+                      <div className="font-semibold truncate">{l.title || '(no title)'}</div>
                     )}
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <div className="text-xs opacity-60 whitespace-nowrap">
-                      {fmt(l.createdAt)}
-                    </div>
+                    <div className="text-xs opacity-60 whitespace-nowrap">{fmt(l.createdAt)}</div>
                     <input
                       type="checkbox"
                       className="w-3.5 h-3.5"
@@ -708,7 +693,7 @@ export default function LinksList() {
                   </div>
                 </div>
 
-                {/* URL line (view or edit) */}
+                {/* URL line */}
                 {isEditing ? (
                   <input
                     value={editUrl}
@@ -727,7 +712,7 @@ export default function LinksList() {
                   </a>
                 )}
 
-                {/* Tags input (only when editing) */}
+                {/* Tags input when editing */}
                 {isEditing && (
                   <input
                     value={editTags}
@@ -737,7 +722,7 @@ export default function LinksList() {
                   />
                 )}
 
-                {/* Per-card actions: edit / save / cancel / share / copy / email */}
+                {/* Per-card actions */}
                 <div className="mt-2 flex flex-wrap gap-2 text-sm">
                   {isEditing ? (
                     <>
@@ -768,27 +753,21 @@ export default function LinksList() {
                       <button
                         type="button"
                         className="border rounded px-2 py-1"
-                        onClick={() =>
-                          shareCard(l, 'share', includeQr, qrSize)
-                        }
+                        onClick={() => shareCard(l, 'share', includeQr, qrSize)}
                       >
                         Share
                       </button>
                       <button
                         type="button"
                         className="border rounded px-2 py-1"
-                        onClick={() =>
-                          shareCard(l, 'copy', includeQr, qrSize)
-                        }
+                        onClick={() => shareCard(l, 'copy', includeQr, qrSize)}
                       >
                         Copy
                       </button>
                       <button
                         type="button"
                         className="border rounded px-2 py-1"
-                        onClick={() =>
-                          shareCard(l, 'email', includeQr, qrSize)
-                        }
+                        onClick={() => shareCard(l, 'email', includeQr, qrSize)}
                       >
                         Email
                       </button>
@@ -796,7 +775,7 @@ export default function LinksList() {
                   )}
                 </div>
 
-                {/* Second row: PNG / QR actions */}
+                {/* PNG / QR actions */}
                 <div className="mt-2 flex flex-wrap gap-2 text-sm">
                   <button
                     type="button"
@@ -850,9 +829,7 @@ export default function LinksList() {
                         await copyCardToClipboard(c);
                         alert('PNG card copied to clipboard ✅');
                       } catch {
-                        alert(
-                          'Copying images not supported here. Try Preview then save.'
-                        );
+                        alert('Copying images not supported here. Try Preview then save.');
                       }
                     }}
                     title="Copy PNG card to clipboard"
@@ -863,70 +840,6 @@ export default function LinksList() {
               </div>
             );
           })}
-        </div>
-
-          {/* Second row: PNG options (unchanged) */}
-          <div className="mt-2 flex flex-wrap gap-2 text-sm">
-            <button
-              type="button"
-              className="border rounded px-2 py-1"
-              onClick={async () => {
-                const c = await renderCardCanvas({
-                  title: l.title || '(no title)',
-                  url: l.url,
-                  size: qrSize,
-                  orientation,
-                });
-                await openCardPreview(c);
-              }}
-              title="Preview PNG card"
-            >
-              Preview
-            </button>
-
-            <button
-              type="button"
-              className="border rounded px-2 py-1"
-              onClick={async () => {
-                const c = await renderCardCanvas({
-                  title: l.title || '(no title)',
-                  url: l.url,
-                  size: qrSize,
-                  orientation,
-                });
-                const filename = `${(l.title || 'link').slice(0, 40)}.png`;
-                const shared = await shareCardIfPossible(filename, c);
-                if (!shared) {
-                  await downloadCardPng(filename, c);
-                }
-              }}
-              title="Share or download PNG card"
-            >
-              Share / Download
-            </button>
-
-            <button
-              type="button"
-              className="border rounded px-2 py-1"
-              onClick={async () => {
-                const c = await renderCardCanvas({
-                  title: l.title || '(no title)',
-                  url: l.url,
-                  size: qrSize,
-                  orientation,
-                });
-                try {
-                  await copyCardToClipboard(c);
-                  alert('PNG card copied to clipboard ✅');
-                } catch {
-                  alert('Copying images not supported here. Try Preview then save.');
-                }
-              }}
-              title="Copy PNG card to clipboard"
-            >
-              Copy PNG
-            </button>
-          </div>
         </div>
       </div>
     </div>
