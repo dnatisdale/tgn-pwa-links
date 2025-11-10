@@ -35,6 +35,16 @@ type LinkDoc = {
   createdAt?: Timestamp | null;
 };
 
+// Format Firestore Timestamp (or similar) safely for display
+const fmt = (ts?: { seconds?: number } | null): string => {
+  if (!ts || typeof ts.seconds !== 'number') return '';
+  try {
+    return new Date(ts.seconds * 1000).toLocaleString();
+  } catch {
+    return '';
+  }
+};
+
 export default function LinksList() {
   const { user } = useAuth();
 
@@ -100,8 +110,6 @@ export default function LinksList() {
   // =========================
   // Helpers
   // =========================
-
-  const fmt = (ts?: Timestamp | null) => (ts ? new Date(ts.seconds * 1000).toLocaleString() : '');
 
   const faviconFor = (rawUrl: string) => {
     try {
