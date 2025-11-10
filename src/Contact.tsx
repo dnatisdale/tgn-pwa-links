@@ -1,9 +1,10 @@
 // src/Contact.tsx
 import React, { useRef, useState } from 'react';
-import emailjs from '@emailjs/browser';
 import { useI18n } from './i18n-provider';
+import { sendEmail } from './email';
 
 type TFunc = (k: string) => string;
+
 const tOr = (t?: TFunc) => (k: string, fb: string) => {
   try {
     return t && typeof t === 'function' ? t(k) : fb;
@@ -15,30 +16,31 @@ const tOr = (t?: TFunc) => (k: string, fb: string) => {
 const MAX_MESSAGE_LEN = 500;
 const RATE_LIMIT_MS = 8000;
 
+// 👇 change this to the address where you want to receive messages
+const ADMIN_CONTACT_EMAIL = 'dant.grnt@gmail.com';
+
 export default function Contact() {
   let t: TFunc = (k) => k;
   try {
     const i = (useI18n?.() as any) || null;
     if (i && typeof i.t === 'function') t = i.t as TFunc;
-  } catch {}
+  } catch {
+    // fall back to identity
+  }
 
   const tt = tOr(t);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
+  const [website, setWebsite] = useState(''); // honeypot
 
-  const [website, setWebsite] = useState('');
   const [sending, setSending] = useState(false);
   const [cooldown, setCooldown] = useState(false);
   const [status, setStatus] = useState<'idle' | 'sent' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
   const formRef = useRef<HTMLFormElement>(null);
-
-  const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID as string;
-  const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID as string;
-  const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY as string;
 
   const resetStatus = () => {
     setStatus('idle');
@@ -55,37 +57,44 @@ export default function Contact() {
       return;
     }
 
+    // simple spam trap: if this has content, abort
     if (website.trim()) {
       setStatus('error');
       setErrorMsg(tt('contactErrorGeneric', 'Send failed. Try again.'));
       return;
     }
 
+    const fromEmail = email.trim();
     const msg = message.trim();
-    if (!email.trim() || !msg) {
+
+    if (!fromEmail || !msg) {
       setStatus('error');
       setErrorMsg(tt('contactErrorMissing', 'Email + message required.'));
       return;
     }
+
     if (msg.length > MAX_MESSAGE_LEN) {
       setStatus('error');
-      setErrorMsg(tt('contactErrorTooLong', `Max ${MAX_MESSAGE_LEN} chars.`));
+      setErrorMsg(tt('contactErrorTooLong', `Max ${MAX_MESSAGE_LEN} characters.`));
+      return;
+    }
+
+    if (!ADMIN_CONTACT_EMAIL) {
+      setStatus('error');
+      setErrorMsg('Contact email is not configured.');
       return;
     }
 
     setSending(true);
+
     try {
-      await emailjs.send(
-        SERVICE_ID,
-        TEMPLATE_ID,
-        {
-          from_name: name || 'Unknown',
-          from_email: email,
-          message: msg,
-          app_name: 'Thai Good News PWA',
-        },
-        { publicKey: PUBLIC_KEY }
-      );
+      const body = `From: ${name || 'Unknown'}\n` + `Email: ${fromEmail}\n\n` + msg;
+
+      await sendEmail({
+        to: ADMIN_CONTACT_EMAIL,
+        subject: 'Thai Good News contact message',
+        message: body,
+      });
 
       setStatus('sent');
       setName('');
@@ -94,7 +103,8 @@ export default function Contact() {
       setWebsite('');
       setCooldown(true);
       setTimeout(() => setCooldown(false), RATE_LIMIT_MS);
-    } catch {
+    } catch (err) {
+      console.error(err);
       setStatus('error');
       setErrorMsg(tt('contactErrorGeneric', 'Send failed. Try again.'));
     } finally {
@@ -131,7 +141,7 @@ export default function Contact() {
           required
         />
 
-        {/* Honeypot */}
+        {/* Honeypot field (hidden from humans) */}
         <div className="hidden" aria-hidden="true">
           <label htmlFor="website">Website</label>
           <input
@@ -152,18 +162,24 @@ export default function Contact() {
             aria-label={tt('phContactMessage', 'Message')}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            maxLength={500}
+            maxLength={MAX_MESSAGE_LEN}
             placeholder={tt('phContactMessage', 'Message')}
             className="w-full border rounded px-3 py-2 pr-16 not-italic"
             rows={6}
             required
           />
-          <span className="counter-inside">{message.length}/500</span>
+          <span className="counter-inside">
+            {message.length}/{MAX_MESSAGE_LEN}
+          </span>
         </div>
 
-        {status === 'sent' && <p className="text-sm">{tt('contactSuccess', 'Sent ✅')}</p>}
+        {status === 'sent' && (
+          <p className="text-sm text-green-700">
+            {tt('contactSuccess', 'Message ready in your email app ✅')}
+          </p>
+        )}
         {status === 'error' && (
-          <p className="text-sm">
+          <p className="text-sm text-red-700">
             {tt('contactError', 'Error:')} {errorMsg}
           </p>
         )}
@@ -181,9 +197,9 @@ export default function Contact() {
           disabled={disableSend}
         >
           {sending
-            ? tt('contactSending', 'Sending…')
+            ? tt('contactSending', 'Opening email…')
             : cooldown
-            ? tt('contactCooling', 'Wait…')
+            ? tt('contactCooling', 'Please wait…')
             : tt('contactSend', 'Send')}
         </button>
       </form>

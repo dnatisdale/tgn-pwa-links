@@ -2,11 +2,12 @@
 import React from 'react';
 import { useI18n } from './i18n-provider';
 
-type TabKey = 'BROWSE' | 'ADD' | 'IMPORT' | 'EXPORT' | 'CONTACT' | 'ABOUT';
+type TabKey = 'BROWSE' | 'ADD' | 'IMPORT' | 'EXPORT' | 'CONTACT' | 'ABOUT' | 'ADMIN';
 
 type Props = {
   activeTab?: TabKey;
   setActiveTab?: (t: TabKey) => void;
+  isAdmin?: boolean; // <-- add this
 };
 
 // hash helpers
@@ -31,7 +32,7 @@ const tabToHash = (t: TabKey) =>
     ? '#/about'
     : '#/browse';
 
-export default function TopTabs({ activeTab, setActiveTab }: Props) {
+export default function TopTabs({ activeTab, setActiveTab, isAdmin }: Props) {
   // ✅ safe i18n getter that accepts any string key (avoids TS union error)
   let t: (k: string) => string = (k: string) => k;
   try {
@@ -143,6 +144,7 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
               to="CONTACT"
             />
             <TabBtn active={currentTab === 'ABOUT'} label={tOr('about', 'About')} to="ABOUT" />
+            {isAdmin && <TabBtn active={currentTab === 'ADMIN'} label="Admin" to="ADMIN" />}
             {/* 🔍 Search (button + expanding input) */}
             <div className="flex items-center gap-2">
               {/* 2) The actual input (Thai-red border). 

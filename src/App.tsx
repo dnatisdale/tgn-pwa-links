@@ -17,6 +17,9 @@ import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { useI18n } from './i18n-provider';
 import { useAuth } from './hooks/useAuth';
 
+import { isAdminUser } from './adminConfig';
+import AdminPanel from './AdminPanel';
+
 // Shape for rows passed into ExportPage
 type ExportRow = {
   id: string;
@@ -29,7 +32,12 @@ export default function App() {
   const { t, lang } = useI18n();
   const { user, loading } = useAuth();
 
-  const tOr = (k: any, fb: string) => {
+  const [rows, setRows] = useState<ExportRow[]>([]);
+  const [route, setRoute] = useState<string>(window.location.hash || '#/browse');
+
+  const isAdmin = isAdminUser(user?.email || null);
+
+  const tOr = (k: string, fb: string) => {
     try {
       const v = t?.(k as any);
       const s = (v ?? '').toString().trim();
@@ -39,9 +47,6 @@ export default function App() {
     }
   };
 
-  const [rows, setRows] = useState<ExportRow[]>([]);
-  const [route, setRoute] = useState<string>(window.location.hash || '#/browse');
-
   // Hash routing for tabs (#/add, #/browse, etc.)
   useEffect(() => {
     const onHash = () => {
@@ -50,6 +55,15 @@ export default function App() {
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
+
+  // Derived route flags
+  const isBrowse = route.startsWith('#/browse') || route === '' || route === '#/';
+  const isAdd = route.startsWith('#/add');
+  const isImport = route.startsWith('#/import');
+  const isExport = route.startsWith('#/export');
+  const isContact = route.startsWith('#/contact');
+  const isAbout = route.startsWith('#/about');
+  const isAdminRoute = route.startsWith('#/admin');
 
   // Keep <html lang="..."> in sync
   useEffect(() => {
@@ -73,7 +87,7 @@ export default function App() {
           id: doc.id,
           name: data.name ?? '',
           url: data.url ?? '',
-          language: data.language ?? '', // <= always a string
+          language: data.language ?? '',
         };
       });
       setRows(list);
@@ -81,13 +95,6 @@ export default function App() {
 
     return () => unsub();
   }, [user]);
-
-  const isBrowse = route.startsWith('#/browse');
-  const isAdd = route.startsWith('#/add');
-  const isImport = route.startsWith('#/import');
-  const isExport = route.startsWith('#/export');
-  const isAbout = route.startsWith('#/about');
-  const isContact = route.startsWith('#/contact');
 
   // While we don't yet know auth state
   if (loading) {
@@ -100,6 +107,7 @@ export default function App() {
     );
   }
 
+  // Not signed in → show login screen
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -112,34 +120,28 @@ export default function App() {
     );
   }
 
-  // Logged in → main shell
+  // Signed in → main shell
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <TopTabs />
+      <TopTabs isAdmin={isAdmin} />
       <main className="flex-1 p-3 max-w-6xl mx-auto">
-        {isAdd ? (
-          user ? (
-            <section>
-              {/* No extra "Add" heading; TopTabs already says ADD */}
-              <AddLink />
-            </section>
-          ) : (
-            <p className="text-center text-gray-500">Sign in to add links.</p>
-          )
+        {isAdminRoute && isAdmin ? (
+          <AdminPanel />
+        ) : isAdd ? (
+          <section>
+            <AddLink />
+          </section>
         ) : isImport ? (
           <section>
-            {/* No "Import" heading; TopTabs label is enough */}
             <ImportExport />
           </section>
         ) : isExport ? (
           <section>
-            {/* No "Export" heading; TopTabs label is enough */}
             <ExportPage rows={rows} />
           </section>
         ) : isContact ? (
           <section>
-            {/* No "Contact" heading; TopTabs label is enough */}
             <Contact />
           </section>
         ) : isAbout ? (

@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../hooks/useAuth';
-import { sendEmail } from '../utils/email';
+import { sendEmail } from '../email';
 import { formatUrl } from '../utils/formatUrl';
 import QRCode from 'qrcode';
 import {
