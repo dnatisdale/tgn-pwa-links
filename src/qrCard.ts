@@ -163,19 +163,43 @@ export async function copyCardToClipboard(canvas: HTMLCanvasElement) {
 }
 
 export async function shareCardIfPossible(
-  filenameBase: string,
+  filename: string,
   canvas: HTMLCanvasElement
 ): Promise<boolean> {
-  try {
-    const blob = await cardToBlob(canvas);
-    const name = filenameBase?.endsWith('.png') ? filenameBase : `${filenameBase || 'card'}.png`;
-    const file = new File([blob], name, { type: 'image/png' });
-    if ((navigator as any).canShare?.({ files: [file] })) {
-      await (navigator as any).share({ files: [file], title: name, text: '' });
-      return true;
-    }
+  // Basic feature detection
+  const nav = typeof navigator !== 'undefined' ? (navigator as any) : null;
+  const hasShare = !!nav?.share;
+  const hasCanShare = !!nav?.canShare;
+
+  if (!hasShare || !hasCanShare) {
     return false;
+  }
+
+  // Get PNG blob from canvas
+  const blob: Blob = await new Promise((resolve, reject) => {
+    canvas.toBlob((b) => {
+      if (!b) {
+        reject(new Error('Failed to create PNG blob from canvas'));
+      } else {
+        resolve(b);
+      }
+    }, 'image/png');
+  });
+
+  const file = new File([blob], filename, { type: 'image/png' });
+
+  if (!nav.canShare({ files: [file] })) {
+    return false;
+  }
+
+  try {
+    await nav.share({
+      files: [file],
+      title: filename,
+    });
+    return true;
   } catch {
+    // If user cancels or it fails, just report false so caller can fall back
     return false;
   }
 }
@@ -256,13 +280,20 @@ export async function downloadQrCard(opts: {
   // QR (use provided canvas if found, else generate)
   const qrTop = pad + titleBlockH + gap;
   let qrCanvas: HTMLCanvasElement | null = null;
+
   if (qrCanvasId) {
-    const el = document.getElementById(qrCanvasId) as HTMLCanvasElement | null;
-    if (el && el.toDataURL) qrCanvas = el;
+    const el = document.getElementById(qrCanvasId);
+    // Make sure it's actually a canvas element
+    if (el instanceof HTMLCanvasElement) {
+      qrCanvas = el;
+    }
   }
+
   if (!qrCanvas) {
+    // Fallback: generate QR ourselves
     qrCanvas = await makeQrCanvas(url, qrBox - 32);
   }
+
   const qrX = (w - qrCanvas.width) / 2;
   ctx.drawImage(qrCanvas, qrX, qrTop);
 
