@@ -1,12 +1,15 @@
-// usePWAInstall.ts
+// src/usePWAInstall.ts
 import { useEffect, useState } from 'react';
 
-type BIPEvent = Event & { prompt: () => Promise<void> };
+type BIPEvent = Event & {
+  prompt: () => Promise<void>;
+};
 
 export function usePWAInstall() {
   const [promptEvent, setPromptEvent] = useState<BIPEvent | null>(null);
 
   useEffect(() => {
+    // Safety: only in browser
     if (typeof window === 'undefined') return;
 
     const handler = (e: Event) => {
@@ -15,16 +18,20 @@ export function usePWAInstall() {
     };
 
     window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
   }, []);
 
   const canInstall = !!promptEvent;
 
   const install = async () => {
     if (!promptEvent) return;
+
     try {
       await promptEvent.prompt();
     } finally {
+      // Can only prompt once; clear it
       setPromptEvent(null);
     }
   };
