@@ -1,3 +1,5 @@
+// src/AdminPanel.tsx
+
 import { useEffect, useState } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
@@ -55,7 +57,7 @@ export default function AdminPanel() {
           const data = snap.data() as Partial<AdminSettings>;
           setSettings({ ...DEFAULT_SETTINGS, ...data });
         } else {
-          // first time: write defaults
+          // First time: write defaults
           await setDoc(ref, DEFAULT_SETTINGS, { merge: true });
         }
       } catch (err) {
@@ -87,8 +89,8 @@ export default function AdminPanel() {
     <div className="max-w-3xl mx-auto p-4">
       <h1 className="text-2xl font-semibold mb-2">Admin Controls</h1>
       <p className="text-sm text-gray-600 mb-4">
-        Signed in as <strong>{user.email}</strong>. Only emails in <code>adminConfig.ts</code> can
-        see this page. Use these switches to keep the normal user experience simple.
+        Signed in as <strong>{user.email}</strong>. Only addresses in <code>adminConfig.ts</code>{' '}
+        can see this page. Use these switches to keep the normal user experience simple.
       </p>
 
       {loading ? (
@@ -125,8 +127,9 @@ export default function AdminPanel() {
       {saving && <p className="mt-3 text-xs text-gray-500">Saving changes…</p>}
 
       <p className="mt-6 text-xs text-gray-500">
-        Note: At this stage these flags are stored centrally in Firestore. In the next step we wire
-        individual pages (AddLink, LinksList, etc.) to respect them for non-admin users.
+        These settings are stored in Firestore at <code>admin/uiSettings</code>. Next step is wiring
+        AddLink, LinksList, etc. to respect them for non-admin users (you will always see
+        everything).
       </p>
     </div>
   );
