@@ -37,7 +37,7 @@ type LinkDoc = {
   createdAt?: Timestamp | null;
 };
 
-// Format Firestore Timestamp (or similar) safely for display
+// Format Firestore Timestamp safely for display
 const fmt = (ts?: { seconds?: number } | null): string => {
   if (!ts || typeof ts.seconds !== 'number') return '';
   try {
@@ -200,6 +200,27 @@ export default function LinksList() {
     () => filtered.filter((l) => selectedIds.includes(l.id)),
     [filtered, selectedIds]
   );
+
+  const deleteSelected = async () => {
+    if (!user) return;
+    if (!selectedIds.length) return;
+
+    const count = selectedIds.length;
+    const ok = window.confirm(
+      `Delete ${count} selected link${count > 1 ? 's' : ''}? This cannot be undone.`
+    );
+    if (!ok) return;
+
+    try {
+      await Promise.all(
+        selectedIds.map((id) => deleteDoc(doc(db, 'users', user.uid, 'links', id)))
+      );
+      setSelectedIds([]);
+    } catch (err) {
+      console.error('Error deleting selected links:', err);
+      alert('Failed to delete one or more links.');
+    }
+  };
 
   // =========================
   // Tags cloud
@@ -393,8 +414,8 @@ export default function LinksList() {
           </button>
         </div>
 
-        {/* Filters / Controls */}
-        <div className="flex flex-col gap-2 border rounded p-3">
+        {/* Filters / Controls (Choices box) */}
+        <div className="flex flex-col gap-2 border rounded-xl p-3 bg-gray-50">
           <div className="flex items-center gap-2 flex-wrap">
             <select
               value={scope}
@@ -456,13 +477,12 @@ export default function LinksList() {
 
             <button
               type="button"
-              className="btn btn-blue font-krub"
+              className="btn btn-blue"
               onClick={() => {
                 setTextFilter('');
                 setTagFilter(null);
                 setActiveLangs([]);
               }}
-              title="Clear search, tags, and languages"
             >
               Clear All
             </button>
@@ -531,48 +551,57 @@ export default function LinksList() {
           )}
         </div>
 
-        {/* Bulk actions bar */}
+        {/* Bulk actions bar (gray, stacked, with Delete) */}
         {selectedIds.length > 0 && (
-          <div className="mt-3 mb-2 px-3 py-2 border rounded bg-[#FFF8E1] flex flex-wrap items-center gap-2 text-xs">
-            <span>{selectedIds.length} selected</span>
+          <div className="mt-3 mb-2 px-3 py-2 border rounded-xl bg-gray-100 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-xs">
+            <div className="font-semibold text-gray-800">{selectedIds.length} selected</div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="px-2 py-1 border rounded bg-white"
+                onClick={() => {
+                  const text = selectedLinks.map((l) => composeCardText(l)).join('\n\n---\n\n');
+                  navigator.clipboard
+                    .writeText(text)
+                    .then(() => alert('Selected links copied.'))
+                    .catch(() => alert('Copy failed. Please try again.'));
+                }}
+              >
+                Copy selected
+              </button>
 
-            <button
-              type="button"
-              className="px-2 py-1 border rounded bg-white"
-              onClick={() => {
-                const text = selectedLinks.map((l) => composeCardText(l)).join('\n\n---\n\n');
-                navigator.clipboard
-                  .writeText(text)
-                  .then(() => alert('Selected links copied.'))
-                  .catch(() => alert('Copy failed. Please try again.'));
-              }}
-            >
-              Copy selected
-            </button>
+              <button
+                type="button"
+                className="px-2 py-1 border rounded bg-white"
+                onClick={() => exportLinks(selectedLinks)}
+              >
+                Export selected
+              </button>
 
-            <button
-              type="button"
-              className="px-2 py-1 border rounded bg-white"
-              onClick={() => exportLinks(selectedLinks)}
-            >
-              Export selected
-            </button>
+              <button
+                type="button"
+                className="px-2 py-1 rounded bg-red-600 text-white border border-red-700"
+                onClick={deleteSelected}
+              >
+                Delete selected
+              </button>
 
-            <button
-              type="button"
-              className="px-2 py-1 border rounded bg-white"
-              onClick={clearSelection}
-            >
-              Clear selection
-            </button>
+              <button
+                type="button"
+                className="px-2 py-1 border rounded bg-white"
+                onClick={clearSelection}
+              >
+                Clear selection
+              </button>
 
-            <button
-              type="button"
-              className="ml-auto px-2 py-1 border rounded bg-white"
-              onClick={selectAllFiltered}
-            >
-              Select all visible
-            </button>
+              <button
+                type="button"
+                className="px-2 py-1 border rounded bg-white"
+                onClick={selectAllFiltered}
+              >
+                Select all visible
+              </button>
+            </div>
           </div>
         )}
 
