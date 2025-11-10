@@ -1,10 +1,9 @@
 // src/adminConfig.ts
 
-const ADMIN_EMAILS = [
-  'dant.grnt@Gmail.com', // exact email from Firebase Auth -> Users
-];
+const ADMIN_EMAILS = ['dant.grnt@gmail.com'];
 
-export function isAdminUser(email?: string | null): boolean {
+export function isAdminUser(email: string | null | undefined): boolean {
   if (!email) return false;
-  return ADMIN_EMAILS.includes(email.trim().toLowerCase());
+  const lower = email.toLowerCase();
+  return ADMIN_EMAILS.includes(lower);
 }

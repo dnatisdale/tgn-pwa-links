@@ -70,6 +70,12 @@ export default function LinksList() {
   // Selection
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
+  // Inline edit state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editUrl, setEditUrl] = useState('');
+  const [editTags, setEditTags] = useState('');
+
   // =========================
   // Firestore subscription
   // =========================
@@ -204,6 +210,48 @@ export default function LinksList() {
   const deleteSelected = async () => {
     if (!user) return;
     if (!selectedIds.length) return;
+
+    // Inline edit helpers
+    const startEdit = (l: LinkDoc) => {
+      setEditingId(l.id);
+      setEditTitle(l.title ?? '');
+      setEditUrl(l.url ?? '');
+      setEditTags((l.tags ?? []).join(', '));
+    };
+
+    const cancelEdit = () => {
+      setEditingId(null);
+      setEditTitle('');
+      setEditUrl('');
+      setEditTags('');
+    };
+
+    const saveEdit = async (id: string) => {
+      if (!user) return;
+
+      const trimmedUrl = editUrl.trim();
+      if (!trimmedUrl) {
+        alert('URL is required.');
+        return;
+      }
+
+      const tags = editTags
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean);
+
+      try {
+        await updateDoc(doc(db, 'users', user.uid, 'links', id), {
+          title: editTitle.trim(),
+          url: trimmedUrl,
+          tags,
+        });
+        cancelEdit();
+      } catch (e) {
+        console.error('Failed to update link', e);
+        alert('Could not save changes.');
+      }
+    };
 
     const count = selectedIds.length;
     const ok = window.confirm(
@@ -626,7 +674,16 @@ export default function LinksList() {
                         }}
                       />
                     )}
-                    <div className="font-semibold truncate">{l.title || '(no title)'}</div>
+                    {editingId === l.id ? (
+                      <input
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        className="border rounded px-2 py-1 text-xs w-full"
+                        placeholder="Title"
+                      />
+                    ) : (
+                      <div className="font-semibold truncate">{l.title || '(no title)'}</div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-xs opacity-60 whitespace-nowrap">{fmt(l.createdAt)}</div>
@@ -639,38 +696,94 @@ export default function LinksList() {
                   </div>
                 </div>
 
-                <a
-                  href={l.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline break-all inline-block mt-1"
-                >
-                  {l.url}
-                </a>
+                {editingId === l.id ? (
+                  <input
+                    value={editUrl}
+                    onChange={(e) => setEditUrl(e.target.value)}
+                    className="border rounded px-2 py-1 text-xs w-full mt-1 break-all"
+                    placeholder="https://example.com"
+                  />
+                ) : (
+                {/* URL line (view or edit) */}
+                {editingId === l.id ? (
+                  <input
+                    value={editUrl}
+                    onChange={(e) => setEditUrl(e.target.value)}
+                    className="border rounded px-2 py-1 text-xs w-full mt-1 break-all"
+                    placeholder="https://example.com"
+                  />
+                ) : (
+                  <a
+                    href={l.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline break-all inline-block mt-1"
+                  >
+                    {l.url}
+                  </a>
+                )}
 
-                {/* Per-card actions */}
+                {/* Tags input (only when editing) */}
+                {editingId === l.id && (
+                  <input
+                    value={editTags}
+                    onChange={(e) => setEditTags(e.target.value)}
+                    className="border rounded px-2 py-1 text-xs w-full mt-1"
+                    placeholder="Tags (comma separated)"
+                  />
+                )}
+
+                {/* Per-card actions: edit / save / cancel / share / copy / email */}
                 <div className="mt-2 flex flex-wrap gap-2 text-sm">
-                  <button
-                    type="button"
-                    className="border rounded px-2 py-1"
-                    onClick={() => shareCard(l, 'share', includeQr, qrSize)}
-                  >
-                    Share
-                  </button>
-                  <button
-                    type="button"
-                    className="border rounded px-2 py-1"
-                    onClick={() => shareCard(l, 'copy', includeQr, qrSize)}
-                  >
-                    Copy
-                  </button>
-                  <button
-                    type="button"
-                    className="border rounded px-2 py-1"
-                    onClick={() => shareCard(l, 'email', includeQr, qrSize)}
-                  >
-                    Email
-                  </button>
+                  {editingId === l.id ? (
+                    <>
+                      <button
+                        type="button"
+                        className="px-2 py-1 rounded bg-[#2D2A4A] text-white"
+                        onClick={() => saveEdit(l.id)}
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        className="px-2 py-1 border rounded bg-white"
+                        onClick={cancelEdit}
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className="border rounded px-2 py-1"
+                        onClick={() => startEdit(l)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="border rounded px-2 py-1"
+                        onClick={() => shareCard(l, 'share', includeQr, qrSize)}
+                      >
+                        Share
+                      </button>
+                      <button
+                        type="button"
+                        className="border rounded px-2 py-1"
+                        onClick={() => shareCard(l, 'copy', includeQr, qrSize)}
+                      >
+                        Copy
+                      </button>
+                      <button
+                        type="button"
+                        className="border rounded px-2 py-1"
+                        onClick={() => shareCard(l, 'email', includeQr, qrSize)}
+                      >
+                        Email
+                      </button>
+                    </>
+                  )}
                 </div>
 
                 <div className="mt-2 flex flex-wrap gap-2 text-sm">
