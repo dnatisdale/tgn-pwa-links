@@ -657,9 +657,14 @@ export default function LinksList() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
           {filtered.map((l) => {
             const icon = faviconFor(l.url);
+            const isEditing = editingId === l.id;
 
             return (
-              <div key={l.id} className="border rounded p-3 bg-white shadow-sm h-full">
+              <div
+                key={l.id}
+                className="border rounded p-3 bg-white shadow-sm h-full"
+              >
+                {/* Header row: favicon + title + checkbox */}
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     {icon && (
@@ -670,11 +675,13 @@ export default function LinksList() {
                         loading="lazy"
                         referrerPolicy="no-referrer"
                         onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.display = 'none';
+                          (e.currentTarget as HTMLImageElement).style.display =
+                            'none';
                         }}
                       />
                     )}
-                    {editingId === l.id ? (
+
+                    {isEditing ? (
                       <input
                         value={editTitle}
                         onChange={(e) => setEditTitle(e.target.value)}
@@ -682,11 +689,16 @@ export default function LinksList() {
                         placeholder="Title"
                       />
                     ) : (
-                      <div className="font-semibold truncate">{l.title || '(no title)'}</div>
+                      <div className="font-semibold truncate">
+                        {l.title || '(no title)'}
+                      </div>
                     )}
                   </div>
+
                   <div className="flex items-center gap-2">
-                    <div className="text-xs opacity-60 whitespace-nowrap">{fmt(l.createdAt)}</div>
+                    <div className="text-xs opacity-60 whitespace-nowrap">
+                      {fmt(l.createdAt)}
+                    </div>
                     <input
                       type="checkbox"
                       className="w-3.5 h-3.5"
@@ -696,16 +708,8 @@ export default function LinksList() {
                   </div>
                 </div>
 
-                {editingId === l.id ? (
-                  <input
-                    value={editUrl}
-                    onChange={(e) => setEditUrl(e.target.value)}
-                    className="border rounded px-2 py-1 text-xs w-full mt-1 break-all"
-                    placeholder="https://example.com"
-                  />
-                ) : (
                 {/* URL line (view or edit) */}
-                {editingId === l.id ? (
+                {isEditing ? (
                   <input
                     value={editUrl}
                     onChange={(e) => setEditUrl(e.target.value)}
@@ -724,7 +728,7 @@ export default function LinksList() {
                 )}
 
                 {/* Tags input (only when editing) */}
-                {editingId === l.id && (
+                {isEditing && (
                   <input
                     value={editTags}
                     onChange={(e) => setEditTags(e.target.value)}
@@ -735,7 +739,7 @@ export default function LinksList() {
 
                 {/* Per-card actions: edit / save / cancel / share / copy / email */}
                 <div className="mt-2 flex flex-wrap gap-2 text-sm">
-                  {editingId === l.id ? (
+                  {isEditing ? (
                     <>
                       <button
                         type="button"
@@ -764,21 +768,27 @@ export default function LinksList() {
                       <button
                         type="button"
                         className="border rounded px-2 py-1"
-                        onClick={() => shareCard(l, 'share', includeQr, qrSize)}
+                        onClick={() =>
+                          shareCard(l, 'share', includeQr, qrSize)
+                        }
                       >
                         Share
                       </button>
                       <button
                         type="button"
                         className="border rounded px-2 py-1"
-                        onClick={() => shareCard(l, 'copy', includeQr, qrSize)}
+                        onClick={() =>
+                          shareCard(l, 'copy', includeQr, qrSize)
+                        }
                       >
                         Copy
                       </button>
                       <button
                         type="button"
                         className="border rounded px-2 py-1"
-                        onClick={() => shareCard(l, 'email', includeQr, qrSize)}
+                        onClick={() =>
+                          shareCard(l, 'email', includeQr, qrSize)
+                        }
                       >
                         Email
                       </button>
@@ -786,6 +796,7 @@ export default function LinksList() {
                   )}
                 </div>
 
+                {/* Second row: PNG / QR actions */}
                 <div className="mt-2 flex flex-wrap gap-2 text-sm">
                   <button
                     type="button"
@@ -839,7 +850,9 @@ export default function LinksList() {
                         await copyCardToClipboard(c);
                         alert('PNG card copied to clipboard ✅');
                       } catch {
-                        alert('Copying images not supported here. Try Preview then save.');
+                        alert(
+                          'Copying images not supported here. Try Preview then save.'
+                        );
                       }
                     }}
                     title="Copy PNG card to clipboard"
@@ -850,6 +863,70 @@ export default function LinksList() {
               </div>
             );
           })}
+        </div>
+
+          {/* Second row: PNG options (unchanged) */}
+          <div className="mt-2 flex flex-wrap gap-2 text-sm">
+            <button
+              type="button"
+              className="border rounded px-2 py-1"
+              onClick={async () => {
+                const c = await renderCardCanvas({
+                  title: l.title || '(no title)',
+                  url: l.url,
+                  size: qrSize,
+                  orientation,
+                });
+                await openCardPreview(c);
+              }}
+              title="Preview PNG card"
+            >
+              Preview
+            </button>
+
+            <button
+              type="button"
+              className="border rounded px-2 py-1"
+              onClick={async () => {
+                const c = await renderCardCanvas({
+                  title: l.title || '(no title)',
+                  url: l.url,
+                  size: qrSize,
+                  orientation,
+                });
+                const filename = `${(l.title || 'link').slice(0, 40)}.png`;
+                const shared = await shareCardIfPossible(filename, c);
+                if (!shared) {
+                  await downloadCardPng(filename, c);
+                }
+              }}
+              title="Share or download PNG card"
+            >
+              Share / Download
+            </button>
+
+            <button
+              type="button"
+              className="border rounded px-2 py-1"
+              onClick={async () => {
+                const c = await renderCardCanvas({
+                  title: l.title || '(no title)',
+                  url: l.url,
+                  size: qrSize,
+                  orientation,
+                });
+                try {
+                  await copyCardToClipboard(c);
+                  alert('PNG card copied to clipboard ✅');
+                } catch {
+                  alert('Copying images not supported here. Try Preview then save.');
+                }
+              }}
+              title="Copy PNG card to clipboard"
+            >
+              Copy PNG
+            </button>
+          </div>
         </div>
       </div>
     </div>
