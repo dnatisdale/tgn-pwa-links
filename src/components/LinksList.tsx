@@ -111,17 +111,16 @@ export default function LinksList() {
   // Helpers
   // =========================
 
-  const faviconFor = (rawUrl: string) => {
+  function faviconFor(rawUrl: string): string | null {
     try {
       const hasScheme = /^https?:\/\//i.test(rawUrl);
       const urlObj = new URL(hasScheme ? rawUrl : `https://${rawUrl}`);
-      const host = urlObj.hostname.toLowerCase();
-      if (!host.includes('.') || host === 'http' || host === 'https') return '';
-      return `https://icons.duckduckgo.com/ip3/${host}.ico`;
+      if (!urlObj.hostname) return null;
+      return `https://icons.duckduckgo.com/ip3/${urlObj.hostname}.ico`;
     } catch {
-      return '';
+      return null;
     }
-  };
+  }
 
   const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
