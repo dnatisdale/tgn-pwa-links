@@ -9,7 +9,9 @@ import {
   Timestamp,
   doc,
   updateDoc,
+  deleteDoc,
 } from 'firebase/firestore';
+
 import { db } from '../firebase';
 import { useAuth } from '../hooks/useAuth';
 import { sendEmail } from '../email';
