@@ -2,3 +2,9 @@ node_modules/
 dist/
 .DS_Store
 .env
+# Local import scripts and data (do NOT commit)
+scripts/importStarterKitFromCsv.cjs
+scripts/importStarterKit.ts
+scripts/serviceAccountKey.json
+scripts/*.csv
+scripts/*.xlsx
