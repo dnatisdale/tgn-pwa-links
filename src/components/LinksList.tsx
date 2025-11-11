@@ -301,22 +301,19 @@ export default function LinksList() {
   // Share helper: QR + Web Share if possible, else mailto
   const shareLinkWithQrOrEmail = async (l: LinkDoc, primaryTitle: string, langLabel: string) => {
     try {
-      const canvas = includeQr
-        ? await renderCardCanvas({
-            title: primaryTitle,
-            url: l.url,
-            language: langLabel,
-            size: qrSize,
-            orientation,
-          })
-        : null;
+      const canvas = await renderCardCanvas({
+        title: primaryTitle,
+        url: l.url,
+        language: langLabel,
+        size: qrSize,
+        orientation,
+      });
 
-      if (canvas) {
-        const filename = `${(primaryTitle || 'tgn-link').slice(0, 40)}.png`;
-        const shared = await shareCardIfPossible(filename, canvas);
-        if (shared) {
-          return;
-        }
+      const filename = `${(primaryTitle || 'tgn-link').slice(0, 40)}.png`;
+      const shared = await shareCardIfPossible(filename, canvas);
+      if (shared) {
+        // Shared successfully with QR image attached (mobile / supported browsers)
+        return;
       }
 
       // Fallback: simple mailto with text

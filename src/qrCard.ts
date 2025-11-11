@@ -16,9 +16,9 @@ type RenderOptions = {
 /**
  * Create a QR card canvas:
  * - QR code at top
- * - Title (bold) directly under
- * - Language (if provided)
- * - URL (stripped visually handled by caller; here we use full URL)
+ * - Title (bold) under QR
+ * - Language label (if provided)
+ * - URL under that
  * Text auto-shrinks to fit width.
  */
 export async function renderCardCanvas(opts: RenderOptions): Promise<HTMLCanvasElement> {
@@ -28,9 +28,8 @@ export async function renderCardCanvas(opts: RenderOptions): Promise<HTMLCanvasE
     throw new Error('renderCardCanvas: url is required');
   }
 
-  // Base size by option
+  // Base size
   const base = size === 'sm' ? 256 : size === 'lg' ? 512 : 384;
-
   const isPortrait = orientation === 'portrait';
 
   const width = isPortrait ? base : Math.round(base * 1.4);
@@ -44,17 +43,16 @@ export async function renderCardCanvas(opts: RenderOptions): Promise<HTMLCanvasE
   if (!ctx) {
     throw new Error('2D context not available');
   }
-  const context = ctx; // non-null alias
+  const context = ctx; // non-null alias for TS
 
-  // Layout metrics
-  const margin = Math.round(width * 0.06); // tighter
+  const margin = Math.round(width * 0.06);
   const qrSize = width - margin * 2;
 
   // Background
   context.fillStyle = '#ffffff';
   context.fillRect(0, 0, width, height);
 
-  // QR to offscreen canvas
+  // Offscreen QR canvas
   const qrCanvas = document.createElement('canvas');
   qrCanvas.width = qrSize;
   qrCanvas.height = qrSize;
@@ -64,7 +62,7 @@ export async function renderCardCanvas(opts: RenderOptions): Promise<HTMLCanvasE
     width: qrSize,
   });
 
-  // Draw QR centered
+  // Draw QR centered at top
   const qrX = (width - qrSize) / 2;
   const qrY = margin;
   context.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
@@ -89,8 +87,8 @@ export async function renderCardCanvas(opts: RenderOptions): Promise<HTMLCanvasE
     bold = false
   ): number {
     if (!text) return 0;
-    let fontSize = basePx;
 
+    let fontSize = basePx;
     while (fontSize >= minPx) {
       setFont(fontSize, bold);
       const w = context.measureText(text).width;
@@ -101,27 +99,22 @@ export async function renderCardCanvas(opts: RenderOptions): Promise<HTMLCanvasE
     setFont(fontSize, bold);
     context.fillStyle = color;
     context.fillText(text, margin, y);
+
     const lineHeight = fontSize + 2;
     y += lineHeight;
     return lineHeight;
   }
 
-  // 1) Title (bold, slightly larger)
+  // 1) Title (bold, larger)
   const safeTitle = title || url;
-  fitAndDraw(
-    safeTitle,
-    20, // base
-    10, // min
-    '#111111',
-    true
-  );
+  fitAndDraw(safeTitle, 20, 10, '#111111', true);
 
-  // 2) Language (if any)
+  // 2) Language
   if (language) {
     fitAndDraw(language, 14, 8, '#333333', false);
   }
 
-  // 3) URL (full)
+  // 3) URL (full; readable)
   fitAndDraw(url, 12, 7, '#0066cc', false);
 
   return canvas;
@@ -143,9 +136,8 @@ async function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
 }
 
 /**
- * Try to share the PNG via Web Share API.
- * Returns true if sharing was attempted, false if not supported.
- * Caller should fall back to download when false.
+ * Try to share the PNG via Web Share API (with file).
+ * Returns true if sharing was attempted; false if not supported.
  */
 export async function shareCardIfPossible(
   filename: string,
@@ -157,20 +149,11 @@ export async function shareCardIfPossible(
     }
 
     const blob = await canvasToBlob(canvas);
-    const file = new File([blob], filename, {
-      type: 'image/png',
-    });
+    const file = new File([blob], filename, { type: 'image/png' });
+    const nav: any = navigator;
 
-    const anyNav = navigator as any;
-
-    // Prefer canShare(files)
-    if (
-      anyNav.canShare &&
-      anyNav.canShare({
-        files: [file],
-      })
-    ) {
-      await anyNav.share({
+    if (nav.canShare && nav.canShare({ files: [file] })) {
+      await nav.share({
         files: [file],
         title: 'Thai Good News',
         text: '',
@@ -178,7 +161,6 @@ export async function shareCardIfPossible(
       return true;
     }
 
-    // Fallback: share without file (just URL/text) – not ideal for QR, so return false.
     return false;
   } catch (e) {
     console.error('shareCardIfPossible error', e);
@@ -200,8 +182,7 @@ export async function downloadCardPng(filename: string, canvas: HTMLCanvasElemen
 }
 
 /**
- * Optional helper: open a preview window with the QR card.
- * (Call this from a "Preview" button if you want it.)
+ * Optional: open a preview window with the QR card.
  */
 export function openCardPreview(canvas: HTMLCanvasElement): void {
   const dataUrl = canvas.toDataURL('image/png');
