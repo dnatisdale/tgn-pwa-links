@@ -1,22 +1,49 @@
-/*
+/* 
+X-Frame-Options: SAMEORIGIN
 X-Content-Type-Options: nosniff
 Referrer-Policy: strict-origin-when-cross-origin
-Permissions-Policy: geolocation=(), microphone=(), camera=()
-Content-Security-Policy: default-src 'self'; base-uri 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://www.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com; connect-src 'self' https://firestore.googleapis.com https://www.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.google-analytics.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-src 'self'; object-src 'none'; manifest-src 'self';
 
-/manifest.webmanifest
-Content-Type: application/manifest+json; charset=utf-8
-Cache-Control: no-cache
-
-/site.webmanifest
-Content-Type: application/manifest+json; charset=utf-8
-Cache-Control: no-cache
-
-/assets/*
-Cache-Control: public, max-age=31536000, immutable
-
-/
-Cache-Control: no-cache
-
-/*.html
-Cache-Control: no-cache
+Content-Security-Policy: 
+default-src 'self';
+script-src
+'self'
+'unsafe-inline'
+'unsafe-eval'
+https://www.gstatic.com
+https://www.google.com
+https://www.googleapis.com
+https://apis.google.com
+https://www.googletagmanager.com
+https://www.google-analytics.com;
+style-src
+'self'
+'unsafe-inline'
+https://fonts.googleapis.com;
+font-src
+'self'
+data:
+https://fonts.gstatic.com;
+img-src
+'self'
+data:
+blob:
+https://icons.duckduckgo.com
+https://www.google-analytics.com
+https://stats.g.doubleclick.net
+https://*;
+connect-src
+'self'
+https://firestore.googleapis.com
+https://identitytoolkit.googleapis.com
+https://securetoken.googleapis.com
+https://www.googleapis.com
+https://firebase.googleapis.com
+https://firebaseinstallations.googleapis.com
+https://www.google-analytics.com
+https://stats.g.doubleclick.net;
+manifest-src
+'self';
+frame-src
+'self'
+https://www.google.com
+https://apis.google.com;
