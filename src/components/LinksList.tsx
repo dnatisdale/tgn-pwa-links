@@ -289,18 +289,24 @@ export default function LinksList() {
   const sizePx = (s: CardSize) => (s === 'sm' ? 128 : s === 'lg' ? 384 : 256);
 
   const composeCardText = (l: LinkDoc) => {
-    const title = l.title?.trim() || '(no title)';
+    const anyL = l as any;
+    const primaryTitle = anyL.titleEn || l.title || '(no title)';
+    const secondaryTitle = anyL.titleTh || '';
     const url = l.url || '';
     const tags = (l.tags ?? []).join(', ');
     const when = fmt(l.createdAt);
-    return [
-      `Title: ${title}`,
-      `URL: ${url}`,
-      tags ? `Tags: ${tags}` : 'Tags: —',
-      when ? `Saved: ${when}` : undefined,
-    ]
-      .filter(Boolean)
-      .join('\n');
+
+    const lines = [`Title: ${primaryTitle}`];
+    if (secondaryTitle) {
+      lines.push(`Title (TH): ${secondaryTitle}`);
+    }
+    lines.push(`URL: ${url}`);
+    lines.push(tags ? `Tags: ${tags}` : 'Tags: —');
+    if (when) {
+      lines.push(`Saved: ${when}`);
+    }
+
+    return lines.join('\n');
   };
 
   const makeQrBlob = async (url: string, pixels: number): Promise<Blob> => {
@@ -321,9 +327,10 @@ export default function LinksList() {
     const text = composeCardText(l);
 
     if (mode === 'email') {
-      const to = prompt('Send to which email address?')?.trim();
+      const to = prompt('Send to which email address?')?.trim() || '';
       if (!to) return;
-      const subj = l.title?.trim() || 'Shared link';
+      const anyL = l as any;
+      const subj = anyL.titleEn || l.title?.trim() || 'Shared link';
       try {
         await sendEmail({
           to,
@@ -651,13 +658,15 @@ export default function LinksList() {
           {filtered.map((l) => {
             const icon = faviconFor(l.url);
             const isEditing = editingId === l.id;
-            const primaryTitle = (l as any).titleEn || l.title || '(no title)';
-            const secondaryTitle = (l as any).titleTh || '';
-            const iso3 = ((l as any).iso3 || l.language || '').toUpperCase();
-            const langEn = (l as any).langEn || '';
-            const langTh = (l as any).langTh || '';
-            const program = (l as any).program || '';
-            const playUrl = (l as any).playUrl || (l as any).downloadTrackUrl || l.url;
+
+            const anyL = l as any;
+            const primaryTitle = anyL.titleEn || l.title || '(no title)';
+            const secondaryTitle = anyL.titleTh || '';
+            const iso3 = (anyL.iso3 || l.language || '').toUpperCase();
+            const langEn = anyL.langEn || '';
+            const langTh = anyL.langTh || '';
+            const program = anyL.program || '';
+            const playUrl = anyL.playUrl || anyL.downloadTrackUrl || l.url;
 
             return (
               <div key={l.id} className="border rounded p-3 bg-white shadow-sm h-full">
@@ -685,7 +694,20 @@ export default function LinksList() {
                         placeholder="Title"
                       />
                     ) : (
-                      <div className="font-semibold truncate">{l.title || '(no title)'}</div>
+                      <div className="min-w-0">
+                        <div className="font-semibold truncate">{primaryTitle}</div>
+                        {secondaryTitle && (
+                          <div className="text-xs text-gray-600 truncate">{secondaryTitle}</div>
+                        )}
+                        {(iso3 || langEn || langTh || program) && (
+                          <div className="text-[10px] text-gray-500 truncate">
+                            {iso3 && <span className="font-semibold mr-1">{iso3}</span>}
+                            {langEn && <span>{langEn}</span>}
+                            {langTh && <span className="ml-1">/ {langTh}</span>}
+                            {program && <span className="ml-1">• {program}</span>}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
 
@@ -729,7 +751,7 @@ export default function LinksList() {
                   />
                 )}
 
-                {/* Per-card actions */}
+                {/* Actions row: edit / play / share / copy / email */}
                 <div className="mt-2 flex flex-wrap gap-2 text-sm">
                   {isEditing ? (
                     <>
@@ -757,6 +779,26 @@ export default function LinksList() {
                       >
                         Edit
                       </button>
+
+                      {playUrl && (
+                        <button
+                          type="button"
+                          className="border rounded px-2 py-1"
+                          onClick={() => {
+                            try {
+                              const audio = new Audio(playUrl);
+                              audio.play().catch(() => {
+                                window.open(playUrl, '_blank', 'noopener');
+                              });
+                            } catch {
+                              window.open(playUrl, '_blank', 'noopener');
+                            }
+                          }}
+                        >
+                          ▶ Play
+                        </button>
+                      )}
+
                       <button
                         type="button"
                         className="border rounded px-2 py-1"
@@ -789,7 +831,7 @@ export default function LinksList() {
                     className="border rounded px-2 py-1"
                     onClick={async () => {
                       const c = await renderCardCanvas({
-                        title: l.title || '(no title)',
+                        title: primaryTitle,
                         url: l.url,
                         size: qrSize,
                         orientation,
@@ -806,12 +848,12 @@ export default function LinksList() {
                     className="border rounded px-2 py-1"
                     onClick={async () => {
                       const c = await renderCardCanvas({
-                        title: l.title || '(no title)',
+                        title: primaryTitle,
                         url: l.url,
                         size: qrSize,
                         orientation,
                       });
-                      const filename = `${(l.title || 'link').slice(0, 40)}.png`;
+                      const filename = `${primaryTitle.slice(0, 40)}.png`;
                       const shared = await shareCardIfPossible(filename, c);
                       if (!shared) {
                         await downloadCardPng(filename, c);
@@ -827,7 +869,7 @@ export default function LinksList() {
                     className="border rounded px-2 py-1"
                     onClick={async () => {
                       const c = await renderCardCanvas({
-                        title: l.title || '(no title)',
+                        title: primaryTitle,
                         url: l.url,
                         size: qrSize,
                         orientation,
