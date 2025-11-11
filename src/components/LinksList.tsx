@@ -118,17 +118,6 @@ export default function LinksList() {
   // Helpers
   // =========================
 
-  function faviconFor(rawUrl: string): string | null {
-    try {
-      const hasScheme = /^https?:\/\//i.test(rawUrl);
-      const urlObj = new URL(hasScheme ? rawUrl : `https://${rawUrl}`);
-      if (!urlObj.hostname) return null;
-      return `https://icons.duckduckgo.com/ip3/${urlObj.hostname}.ico`;
-    } catch {
-      return null;
-    }
-  }
-
   const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
   const wildcardToRegex = (pattern: string) => {
@@ -373,7 +362,7 @@ export default function LinksList() {
         });
         return;
       } catch {
-        // fall through to copy
+        // fall through
       }
     }
 
@@ -656,7 +645,6 @@ export default function LinksList() {
         {/* Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
           {filtered.map((l) => {
-            const icon = faviconFor(l.url);
             const isEditing = editingId === l.id;
 
             const anyL = l as any;
@@ -670,22 +658,9 @@ export default function LinksList() {
 
             return (
               <div key={l.id} className="border rounded p-3 bg-white shadow-sm h-full">
-                {/* Header row */}
+                {/* Header row (no favicon) */}
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    {icon && (
-                      <img
-                        src={icon}
-                        alt=""
-                        className="w-4 h-4 rounded-sm shrink-0"
-                        loading="lazy"
-                        referrerPolicy="no-referrer"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    )}
-
+                  <div className="min-w-0">
                     {isEditing ? (
                       <input
                         value={editTitle}
@@ -694,7 +669,7 @@ export default function LinksList() {
                         placeholder="Title"
                       />
                     ) : (
-                      <div className="min-w-0">
+                      <>
                         <div className="font-semibold truncate">{primaryTitle}</div>
                         {secondaryTitle && (
                           <div className="text-xs text-gray-600 truncate">{secondaryTitle}</div>
@@ -707,7 +682,7 @@ export default function LinksList() {
                             {program && <span className="ml-1">• {program}</span>}
                           </div>
                         )}
-                      </div>
+                      </>
                     )}
                   </div>
 
