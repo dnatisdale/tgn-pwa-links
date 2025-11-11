@@ -651,6 +651,13 @@ export default function LinksList() {
           {filtered.map((l) => {
             const icon = faviconFor(l.url);
             const isEditing = editingId === l.id;
+            const primaryTitle = (l as any).titleEn || l.title || '(no title)';
+            const secondaryTitle = (l as any).titleTh || '';
+            const iso3 = ((l as any).iso3 || l.language || '').toUpperCase();
+            const langEn = (l as any).langEn || '';
+            const langTh = (l as any).langTh || '';
+            const program = (l as any).program || '';
+            const playUrl = (l as any).playUrl || (l as any).downloadTrackUrl || l.url;
 
             return (
               <div key={l.id} className="border rounded p-3 bg-white shadow-sm h-full">
