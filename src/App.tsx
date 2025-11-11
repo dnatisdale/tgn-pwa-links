@@ -1,6 +1,7 @@
 // src/App.tsx
 
 import React, { useEffect, useState } from 'react';
+
 import Header from './Header';
 import Footer from './Footer';
 import TopTabs from './TopTabs';
@@ -12,7 +13,14 @@ import AddLink from './components/AddLink';
 import LinksList from './components/LinksList';
 import Login from './Login';
 
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  type QuerySnapshot,
+  type DocumentData,
+} from 'firebase/firestore';
 import { db } from './firebase';
 
 import { useI18n } from './i18n-provider';
@@ -80,14 +88,14 @@ export default function App() {
 
     const qy = query(collection(db, 'users', user.uid, 'links'), orderBy('url'));
 
-    const unsub = onSnapshot(qy, (snap) => {
-      const list: ExportRow[] = snap.docs.map((doc) => {
-        const data = doc.data() as any;
+    const unsub = onSnapshot(qy, (snap: QuerySnapshot<DocumentData>) => {
+      const list: ExportRow[] = snap.docs.map((d) => {
+        const data = d.data() as any;
         return {
-          id: doc.id,
-          name: data.name ?? '',
+          id: d.id,
+          name: data.name ?? data.title ?? '',
           url: data.url ?? '',
-          language: data.language ?? '',
+          language: data.language ?? data.iso3 ?? '',
         };
       });
       setRows(list);
