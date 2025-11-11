@@ -4,3 +4,10 @@ node_modules
 .env.local
 .env.*.local
 
+# Local starter-kit tooling and secrets (do NOT commit)
+scripts/importStarterKitFromCsv.cjs
+scripts/importStarterKit.ts
+scripts/serviceAccountKey.json
+scripts/starter-kit.json
+scripts/*.csv
+scripts/*.xlsx
