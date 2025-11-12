@@ -24,6 +24,33 @@ import {
   type CardSize,
   type CardOrientation,
 } from '../qrCard';
+// --- UI language + helpers ---
+function getUiLang(): 'th' | 'en' {
+  try {
+    const htmlLang = document.documentElement.lang?.toLowerCase();
+    if (htmlLang === 'th') return 'th';
+    const stored =
+      localStorage.getItem('tgn_lang') ||
+      localStorage.getItem('lang') ||
+      localStorage.getItem('appLang');
+    if ((stored || '').toLowerCase() === 'th') return 'th';
+  } catch {}
+  return 'en';
+}
+
+function sanitizeName(s: string) {
+  return (s || '')
+    .replace(/[\\/:"*?<>|]+/g, '-') // windows-safe
+    .replace(/\s+/g, '_')
+    .slice(0, 60);
+}
+
+function yyyymmdd(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}${m}${day}`;
+}
 
 type LinkDoc = {
   id: string;
@@ -299,7 +326,12 @@ export default function LinksList() {
   };
 
   // Share helper: QR + Web Share if possible, else mailto
-  const shareLinkWithQrOrEmail = async (l: LinkDoc, primaryTitle: string, langLabel: string) => {
+  const shareLinkWithQrOrEmail = async (
+    l: LinkDoc,
+    primaryTitle: string,
+    langLabel: string,
+    fileBase: string
+  ) => {
     try {
       const canvas = await renderCardCanvas({
         title: primaryTitle,
@@ -309,7 +341,7 @@ export default function LinksList() {
         orientation,
       });
 
-      const filename = `${(primaryTitle || 'tgn-link').slice(0, 40)}.png`;
+      const filename = `${sanitizeName(fileBase || primaryTitle || 'tgn-link')}.png`;
       const shared = await shareCardIfPossible(filename, canvas);
       if (shared) {
         return;
@@ -591,12 +623,20 @@ export default function LinksList() {
 
             const titleEn = l.titleEn || l.title || '';
             const titleTh = l.titleTh || '';
-            const primaryTitle = titleEn || titleTh || '(no title)';
             const iso3 = (l.iso3 || l.language || '').toUpperCase();
             const langEn = l.langEn || '';
             const langTh = l.langTh || '';
             const program = l.program || '';
-            const langLabel = langEn || langTh || iso3 || '';
+
+            const uiLang = getUiLang();
+            const primaryTitle =
+              uiLang === 'th'
+                ? titleTh || titleEn || '(no title)'
+                : titleEn || titleTh || '(no title)';
+
+            const langLabel =
+              uiLang === 'th' ? langTh || langEn || iso3 || '' : langEn || langTh || iso3 || '';
+
             const playUrl = l.playUrl || l.downloadTrackUrl || l.url;
 
             return (
@@ -703,7 +743,12 @@ export default function LinksList() {
                       <button
                         type="button"
                         className="border rounded px-2 py-1"
-                        onClick={() => shareLinkWithQrOrEmail(l, primaryTitle, langLabel)}
+                        onClick={() => {
+                          const fileBase = `${sanitizeName(langLabel || 'Lang')}-${sanitizeName(
+                            program || 'NA'
+                          )}-${yyyymmdd()}`;
+                          shareLinkWithQrOrEmail(l, primaryTitle, langLabel, fileBase);
+                        }}
                       >
                         Share
                       </button>
@@ -719,7 +764,10 @@ export default function LinksList() {
                             size: qrSize,
                             orientation,
                           });
-                          const filename = `${(primaryTitle || 'tgn-link').slice(0, 40)}.png`;
+                          const fileBase = `${sanitizeName(langLabel || 'Lang')}-${sanitizeName(
+                            program || 'NA'
+                          )}-${yyyymmdd()}`;
+                          const filename = `${fileBase}.png`;
                           const shared = await shareCardIfPossible(filename, canvas);
                           if (!shared) {
                             await downloadCardPng(filename, canvas);
