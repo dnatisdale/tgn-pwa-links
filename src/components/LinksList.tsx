@@ -24,7 +24,38 @@ import {
   type CardSize,
   type CardOrientation,
 } from '../qrCard';
-// --- UI language + helpers ---
+
+type LinkDoc = {
+  id: string;
+  url: string;
+  title?: string;
+  tags?: string[];
+  language?: string; // internal key (often iso3)
+  createdAt?: Timestamp | null;
+  // optional/bilingual fields:
+  titleEn?: string;
+  titleTh?: string;
+  langEn?: string;
+  langTh?: string;
+  iso3?: string;
+  program?: string | number;
+  playUrl?: string;
+  downloadTrackUrl?: string;
+  [key: string]: any;
+};
+
+const fmt = (ts?: { seconds?: number } | null): string => {
+  if (!ts || typeof ts.seconds !== 'number') return '';
+  try {
+    return new Date(ts.seconds * 1000).toLocaleString();
+  } catch {
+    return '';
+  }
+};
+
+const displayUrl = (url: string) => url.replace(/^https?:\/\//, '');
+
+// ====== UI language + helpers ======
 function getUiLang(): 'th' | 'en' {
   try {
     const htmlLang = document.documentElement.lang?.toLowerCase();
@@ -42,7 +73,7 @@ function sanitizeName(s: string) {
   return (s || '')
     .replace(/[\\/:"*?<>|]+/g, '-') // windows-safe
     .replace(/\s+/g, '_')
-    .slice(0, 60);
+    .slice(0, 80);
 }
 
 function yyyymmdd(d = new Date()) {
@@ -51,28 +82,6 @@ function yyyymmdd(d = new Date()) {
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}${m}${day}`;
 }
-
-type LinkDoc = {
-  id: string;
-  url: string;
-  title?: string;
-  tags?: string[];
-  language?: string;
-  createdAt?: Timestamp | null;
-  // keep all extra starter-kit fields (iso3, titleEn, titleTh, etc.)
-  [key: string]: any;
-};
-
-const fmt = (ts?: { seconds?: number } | null): string => {
-  if (!ts || typeof ts.seconds !== 'number') return '';
-  try {
-    return new Date(ts.seconds * 1000).toLocaleString();
-  } catch {
-    return '';
-  }
-};
-
-const displayUrl = (url: string) => url.replace(/^https?:\/\//, '');
 
 export default function LinksList() {
   const { user } = useAuth();
@@ -127,7 +136,7 @@ export default function LinksList() {
             title: data.title ?? '',
             tags: Array.isArray(data.tags) ? data.tags : [],
             language:
-              (data.language || data.lang || data.iso3 || '').toString().trim() || undefined,
+              (data.language || data.iso3 || data.lang || '').toString().trim() || undefined,
             createdAt: data.createdAt ?? null,
           };
         });
@@ -171,8 +180,8 @@ export default function LinksList() {
 
     if (activeLangs.length > 0) {
       rows = rows.filter((l) => {
-        const lang = (l.language || '').toLowerCase();
-        return lang && activeLangs.includes(lang);
+        const langKey = (l.language || '').toLowerCase();
+        return langKey && activeLangs.includes(langKey);
       });
     }
 
@@ -305,33 +314,49 @@ export default function LinksList() {
   };
 
   // Compose text for share/mailto/bulk copy
-  const composeCardText = (l: LinkDoc) => {
-    const primaryTitle = l.titleEn || l.title || '(no title)';
-    const secondaryTitle = l.titleTh || '';
+  const composeCardText = (l: LinkDoc, uiLang: 'th' | 'en') => {
+    const titleEn = l.titleEn || l.title || '';
+    const titleTh = l.titleTh || '';
+    const primaryTitle =
+      uiLang === 'th' ? titleTh || titleEn || '(no title)' : titleEn || titleTh || '(no title)';
     const url = l.url || '';
     const tags = (l.tags ?? []).join(', ');
     const when = fmt(l.createdAt);
 
-    const lines = [`Title: ${primaryTitle}`];
-    if (secondaryTitle) {
-      lines.push(`Title (TH): ${secondaryTitle}`);
-    }
+    const langLine =
+      uiLang === 'th' ? `${l.langTh || l.langEn || ''}` : `${l.langEn || l.langTh || ''}`;
+
+    const lines = [`Language: ${langLine}`.trim(), `Title: ${primaryTitle}`];
+    if (titleEn && titleTh) lines.push(`Title(EN/TH): ${titleEn} / ${titleTh}`);
     lines.push(`URL: ${url}`);
-    lines.push(tags ? `Tags: ${tags}` : 'Tags: —');
-    if (when) {
-      lines.push(`Saved: ${when}`);
+    if (l.program || l.iso3) {
+      lines.push(
+        `Program/ISO3: ${l.program || ''}${l.program && l.iso3 ? ' • ' : ''}${(l.iso3 || '')
+          .toString()
+          .toUpperCase()}`
+      );
     }
+    lines.push(tags ? `Tags: ${tags}` : 'Tags: —');
+    if (when) lines.push(`Saved: ${when}`);
 
     return lines.join('\n');
   };
 
-  // Share helper: QR + Web Share if possible, else mailto
+  // Share helper: ask first, then QR + Web Share (or download/mailto)
   const shareLinkWithQrOrEmail = async (
     l: LinkDoc,
     primaryTitle: string,
     langLabel: string,
     fileBase: string
   ) => {
+    const uiLang = getUiLang();
+    const ok = window.confirm(
+      uiLang === 'th'
+        ? 'ต้องการแชร์พร้อมภาพ QR ใช่ไหม? (ถ้าอุปกรณ์ไม่รองรับจะแนะนำให้ดาวน์โหลดหรือส่งอีเมลแทน)'
+        : 'Share with a QR image? (If your device can’t share files, you can download or email instead.)'
+    );
+    if (!ok) return;
+
     try {
       const canvas = await renderCardCanvas({
         title: primaryTitle,
@@ -341,22 +366,32 @@ export default function LinksList() {
         orientation,
       });
 
+      // Try Web Share with file
       const filename = `${sanitizeName(fileBase || primaryTitle || 'tgn-link')}.png`;
       const shared = await shareCardIfPossible(filename, canvas);
-      if (shared) {
+      if (shared) return;
+
+      // Offer to download if share not supported
+      const wantDownload = window.confirm(
+        uiLang === 'th'
+          ? 'ไม่สามารถแชร์ไฟล์ได้ ต้องการดาวน์โหลด QR Card ไหม?'
+          : 'Sharing not supported. Download the QR Card instead?'
+      );
+      if (wantDownload) {
+        await downloadCardPng(filename, canvas);
         return;
       }
 
-      // Fallback: simple mailto with text (cannot attach image via mailto)
+      // Fallback: mailto (no image attachment—mailto cannot attach programmatically)
       const subject = primaryTitle || 'Shared link';
-      const body = composeCardText(l);
+      const body = composeCardText(l, uiLang);
       const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(
         body
       )}`;
       window.location.href = mailto;
     } catch (e) {
       console.error('Share failed', e);
-      alert('Could not share. You can copy the URL instead.');
+      alert('Could not share.');
     }
   };
 
@@ -400,6 +435,8 @@ export default function LinksList() {
   if (links.length === 0) {
     return <p className="text-center text-gray-500">No links yet.</p>;
   }
+
+  const uiLang = getUiLang();
 
   // =========================
   // Main layout
@@ -485,7 +522,7 @@ export default function LinksList() {
                 checked={includeQr}
                 onChange={(e) => setIncludeQr(e.target.checked)}
               />
-              Include QR in share/PNG
+              Include QR in share/QR Card
             </label>
 
             <button
@@ -508,43 +545,6 @@ export default function LinksList() {
               Export visible
             </button>
           </div>
-
-          <p className="text-xs text-gray-500">
-            Searching your <strong>saved links</strong> (newest first). Scope:{' '}
-            <strong>{scope}</strong>.{' '}
-            {activeLangs.length > 0 && (
-              <>
-                Languages: <strong>{activeLangs.join(', ')}</strong>.
-              </>
-            )}
-          </p>
-
-          {tagCounts.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              <button
-                type="button"
-                className={`px-2 py-0.5 text-xs rounded-full border ${
-                  !tagFilter ? 'bg-gray-100' : ''
-                }`}
-                onClick={() => setTagFilter(null)}
-              >
-                All tags
-              </button>
-              {tagCounts.map(([t, n]) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTagFilter((cur) => (cur === t ? null : t))}
-                  className={`px-2 py-0.5 text-xs rounded-full border ${
-                    tagFilter === t ? 'bg-gray-100' : ''
-                  }`}
-                  title={`${n} item(s)`}
-                >
-                  #{t}
-                </button>
-              ))}
-            </div>
-          )}
 
           {fixable.length > 0 && (
             <div className="p-2 border rounded bg-yellow-50 text-sm flex items-center justify-between">
@@ -571,7 +571,9 @@ export default function LinksList() {
                 type="button"
                 className="px-2 py-1 border rounded bg-white"
                 onClick={() => {
-                  const text = selectedLinks.map((l) => composeCardText(l)).join('\n\n---\n\n');
+                  const text = selectedLinks
+                    .map((l) => composeCardText(l, uiLang))
+                    .join('\n\n---\n\n');
                   navigator.clipboard
                     .writeText(text)
                     .then(() => alert('Selected links copied.'))
@@ -623,52 +625,90 @@ export default function LinksList() {
 
             const titleEn = l.titleEn || l.title || '';
             const titleTh = l.titleTh || '';
-            const iso3 = (l.iso3 || l.language || '').toUpperCase();
+
+            // Language labels for the card header (both shown)
             const langEn = l.langEn || '';
             const langTh = l.langTh || '';
-            const program = l.program || '';
+            const iso3 = (l.iso3 || l.language || '').toString().toUpperCase();
+            const program = l.program ?? '';
+            const programStr = typeof program === 'number' ? String(program) : program || '';
 
+            // Primary title (for share card title preference by UI lang)
             const uiLang = getUiLang();
             const primaryTitle =
               uiLang === 'th'
                 ? titleTh || titleEn || '(no title)'
                 : titleEn || titleTh || '(no title)';
 
+            // This is what we print on the PNG/Share card under QR
             const langLabel =
               uiLang === 'th' ? langTh || langEn || iso3 || '' : langEn || langTh || iso3 || '';
 
+            // Audio src
             const playUrl = l.playUrl || l.downloadTrackUrl || l.url;
+
+            // Filename base Language-Program-Date
+            const fileBase = `${sanitizeName(langLabel || 'Lang')}-${sanitizeName(
+              programStr || 'NA'
+            )}-${yyyymmdd()}`;
 
             return (
               <div
                 key={l.id}
                 className="border rounded p-3 bg-white shadow-sm h-full flex flex-col"
               >
-                {/* Header: titles + checkbox */}
+                {/* Header: languages on top */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    {isEditing ? (
+                    {/* Line 1: Language EN / Language TH */}
+                    {!isEditing && (
+                      <div className="font-semibold text-sm truncate">
+                        {langEn || iso3}
+                        {langTh ? <span className="text-gray-600"> / {langTh}</span> : null}
+                      </div>
+                    )}
+
+                    {/* Line 2: Program titles EN • TH • program • iso3 */}
+                    {!isEditing && (
+                      <div className="text-xs text-gray-700 truncate">
+                        {titleEn || titleTh ? (
+                          <>
+                            {titleEn}
+                            {titleTh ? <span> • {titleTh}</span> : null}
+                            {programStr || iso3 ? (
+                              <>
+                                {programStr ? <span> • {programStr}</span> : null}
+                                {iso3 ? <span> • {iso3}</span> : null}
+                              </>
+                            ) : null}
+                          </>
+                        ) : (
+                          <>
+                            {programStr || iso3 ? (
+                              <>
+                                {programStr ? <span>{programStr}</span> : null}
+                                {iso3 ? <span> • {iso3}</span> : null}
+                              </>
+                            ) : (
+                              <span className="italic text-gray-400">(no title)</span>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Editing title (single field) */}
+                    {isEditing && (
                       <input
                         value={editTitle}
                         onChange={(e) => setEditTitle(e.target.value)}
                         className="border rounded px-2 py-1 text-xs w-full"
                         placeholder="Title"
                       />
-                    ) : (
-                      <>
-                        <div className="font-semibold text-sm truncate">{primaryTitle}</div>
-                        {titleEn && titleTh && <div className="text-sm truncate">{titleTh}</div>}
-                        {(iso3 || langEn || langTh || program) && (
-                          <div className="text-[10px] text-gray-500 truncate">
-                            {iso3 && <span className="font-semibold mr-1">{iso3}</span>}
-                            {langEn && <span>{langEn}</span>}
-                            {langTh && <span className="ml-1">/ {langTh}</span>}
-                            {program && <span className="ml-1">• {program}</span>}
-                          </div>
-                        )}
-                      </>
                     )}
                   </div>
+
+                  {/* Checkbox on right */}
                   <div className="flex items-start gap-2">
                     <input
                       type="checkbox"
@@ -679,7 +719,7 @@ export default function LinksList() {
                   </div>
                 </div>
 
-                {/* URL */}
+                {/* URL below header lines */}
                 {isEditing ? (
                   <input
                     value={editUrl}
@@ -711,7 +751,7 @@ export default function LinksList() {
                 {/* Audio player */}
                 {!isEditing && playUrl && <audio controls src={playUrl} className="w-full mt-2" />}
 
-                {/* Actions */}
+                {/* Actions — order: Share, QR Card, Edit */}
                 <div className="mt-2 flex flex-wrap gap-2 text-sm">
                   {isEditing ? (
                     <>
@@ -732,31 +772,30 @@ export default function LinksList() {
                     </>
                   ) : (
                     <>
-                      <button
-                        type="button"
-                        className="border rounded px-2 py-1"
-                        onClick={() => startEdit(l)}
-                      >
-                        ✏ Edit
-                      </button>
-
+                      {/* Share (icon + label) */}
                       <button
                         type="button"
                         className="border rounded px-2 py-1"
                         onClick={() => {
-                          const fileBase = `${sanitizeName(langLabel || 'Lang')}-${sanitizeName(
-                            program || 'NA'
-                          )}-${yyyymmdd()}`;
+                          // Ask first; then share or download/mailto
                           shareLinkWithQrOrEmail(l, primaryTitle, langLabel, fileBase);
                         }}
                       >
-                        Share
+                        ↗︎ Share
                       </button>
 
+                      {/* QR Card (formerly PNG) — ask before download/share */}
                       <button
                         type="button"
                         className="border rounded px-2 py-1"
                         onClick={async () => {
+                          const ok = window.confirm(
+                            uiLang === 'th'
+                              ? 'ต้องการสร้าง/ดาวน์โหลด QR Card ใช่ไหม?'
+                              : 'Create/download a QR Card now?'
+                          );
+                          if (!ok) return;
+
                           const canvas = await renderCardCanvas({
                             title: primaryTitle,
                             url: l.url,
@@ -764,17 +803,24 @@ export default function LinksList() {
                             size: qrSize,
                             orientation,
                           });
-                          const fileBase = `${sanitizeName(langLabel || 'Lang')}-${sanitizeName(
-                            program || 'NA'
-                          )}-${yyyymmdd()}`;
-                          const filename = `${fileBase}.png`;
+                          const filename = `${sanitizeName(fileBase)}.png`;
+                          // Try share first (many mobile devices support sharing a file)
                           const shared = await shareCardIfPossible(filename, canvas);
                           if (!shared) {
                             await downloadCardPng(filename, canvas);
                           }
                         }}
                       >
-                        PNG
+                        ◻︎ QR Card
+                      </button>
+
+                      {/* Edit with angled pencil icon */}
+                      <button
+                        type="button"
+                        className="border rounded px-2 py-1"
+                        onClick={() => startEdit(l)}
+                      >
+                        🖉 Edit
                       </button>
                     </>
                   )}
