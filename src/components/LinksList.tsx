@@ -312,11 +312,10 @@ export default function LinksList() {
       const filename = `${(primaryTitle || 'tgn-link').slice(0, 40)}.png`;
       const shared = await shareCardIfPossible(filename, canvas);
       if (shared) {
-        // Shared successfully with QR image attached (mobile / supported browsers)
         return;
       }
 
-      // Fallback: simple mailto with text
+      // Fallback: simple mailto with text (cannot attach image via mailto)
       const subject = primaryTitle || 'Shared link';
       const body = composeCardText(l);
       const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(
