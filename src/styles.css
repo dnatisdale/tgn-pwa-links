@@ -51,6 +51,10 @@
 
 /* --- Global typography base --- */
 html {
+  font-size: var(--ui-font, 16px);
+}
+
+html {
   font-size: 16px;
 }
 a {

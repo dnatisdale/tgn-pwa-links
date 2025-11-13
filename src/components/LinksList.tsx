@@ -1,4 +1,5 @@
 // src/components/LinksList.tsx
+// Main “Browse” list + QR / Share / Sidebar language filter.
 
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -25,24 +26,31 @@ import {
   type CardOrientation,
 } from '../qrCard';
 
-type LinkDoc = {
+// src/components/LinksList.tsx — shared LinkDoc type
+export type LinkDoc = {
   id: string;
   url: string;
   title?: string;
   tags?: string[];
-  language?: string; // internal key (often iso3)
   createdAt?: Timestamp | null;
-  // optional/bilingual fields:
+
+  // Starter-kit / language metadata (all optional)
   titleEn?: string;
   titleTh?: string;
   langEn?: string;
   langTh?: string;
   iso3?: string;
+  language?: string;
   program?: string | number;
   playUrl?: string;
+  downloadZipUrl?: string;
   downloadTrackUrl?: string;
+  shareTrackUrl?: string;
+
+  // Allow any extra Firestore fields without type errors
   [key: string]: any;
 };
+// (end of shared LinkDoc type)
 
 const fmt = (ts?: { seconds?: number } | null): string => {
   if (!ts || typeof ts.seconds !== 'number') return '';
@@ -55,17 +63,39 @@ const fmt = (ts?: { seconds?: number } | null): string => {
 
 const displayUrl = (url: string) => url.replace(/^https?:\/\//, '');
 
-// ====== UI language + helpers ======
+// ---------- language helpers ----------
+
+function computeLangKey(langEn?: string, langTh?: string, iso3?: string, language?: string) {
+  const source = (langEn || langTh || iso3 || language || 'unknown')
+    .toString()
+    .trim()
+    .toLowerCase();
+  return (
+    source
+      .replace(/[àáâãäå]/g, 'a')
+      .replace(/[èéêë]/g, 'e')
+      .replace(/[ìíîï]/g, 'i')
+      .replace(/[òóôõö]/g, 'o')
+      .replace(/[ùúûü]/g, 'u')
+      .replace(/[^a-z0-9ก-๙]+/g, '-') // keep Thai
+      .replace(/^-+|-+$/g, '') || 'unknown'
+  );
+}
+
 function getUiLang(): 'th' | 'en' {
   try {
     const htmlLang = document.documentElement.lang?.toLowerCase();
     if (htmlLang === 'th') return 'th';
+
     const stored =
       localStorage.getItem('tgn_lang') ||
       localStorage.getItem('lang') ||
       localStorage.getItem('appLang');
+
     if ((stored || '').toLowerCase() === 'th') return 'th';
-  } catch {}
+  } catch {
+    // ignore
+  }
   return 'en';
 }
 
@@ -83,27 +113,32 @@ function yyyymmdd(d = new Date()) {
   return `${y}${m}${day}`;
 }
 
+// ======================================================
+// Component
+// ======================================================
+
 export default function LinksList() {
   const { user } = useAuth();
 
   const [links, setLinks] = useState<LinkDoc[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filters
+  // filters
   const [textFilter, setTextFilter] = useState('');
-  const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [scope, setScope] = useState<'all' | 'title' | 'url' | 'tags'>('all');
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
 
   // QR / card options
   const [orientation, setOrientation] = useState<CardOrientation>('portrait');
   const [includeQr, setIncludeQr] = useState(false);
   const [qrSize, setQrSize] = useState<CardSize>('md');
 
-  // Sidebar & language filter
+  // Sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeLangs, setActiveLangs] = useState<string[]>([]);
+  const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]); // card ids
 
-  // Selection
+  // card-level selection for bulk actions
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   // Inline edit state
@@ -112,9 +147,8 @@ export default function LinksList() {
   const [editUrl, setEditUrl] = useState('');
   const [editTags, setEditTags] = useState('');
 
-  // =========================
-  // Firestore subscription
-  // =========================
+  // -------- Firestore subscription --------
+
   useEffect(() => {
     if (!user) {
       setLinks([]);
@@ -129,17 +163,20 @@ export default function LinksList() {
       (snap) => {
         const rows: LinkDoc[] = snap.docs.map((d) => {
           const data = d.data() as any;
+          const langKey =
+            data.langKey || computeLangKey(data.langEn, data.langTh, data.iso3, data.language);
+
           return {
             id: d.id,
             ...data,
             url: data.url ?? '',
             title: data.title ?? '',
             tags: Array.isArray(data.tags) ? data.tags : [],
-            language:
-              (data.language || data.iso3 || data.lang || '').toString().trim() || undefined,
             createdAt: data.createdAt ?? null,
+            langKey,
           };
         });
+
         setLinks(rows);
         setLoading(false);
       },
@@ -153,9 +190,7 @@ export default function LinksList() {
     return () => off();
   }, [user]);
 
-  // =========================
-  // Helpers
-  // =========================
+  // -------- helpers for text filter --------
 
   const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -172,58 +207,75 @@ export default function LinksList() {
     setActiveLangs((prev) => (prev.includes(key) ? prev.filter((c) => c !== key) : [...prev, key]));
   };
 
-  // =========================
-  // Filtered links
-  // =========================
-  const filtered = useMemo(() => {
-    let rows = links;
+  const toggleProgram = (id: string) => {
+    setSelectedPrograms((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
 
+  // -------- filter links for view --------
+
+  const filtered = useMemo(() => {
+    let arr = links.slice();
+
+    // program selection (from sidebar)
+    if (selectedPrograms.length > 0) {
+      const set = new Set(selectedPrograms);
+      arr = arr.filter((l) => set.has(l.id));
+    }
+
+    // language selection (from sidebar)
     if (activeLangs.length > 0) {
-      rows = rows.filter((l) => {
-        const langKey = (l.language || '').toLowerCase();
-        return langKey && activeLangs.includes(langKey);
+      const want = new Set(activeLangs);
+      arr = arr.filter((l: any) => {
+        const key =
+          l.langKey?.toLowerCase?.() ||
+          l.language?.toLowerCase?.() ||
+          l.iso3?.toLowerCase?.() ||
+          l.langEn?.toLowerCase?.() ||
+          l.langTh?.toLowerCase?.() ||
+          '';
+        return want.has(key);
       });
     }
 
-    if (tagFilter) {
-      rows = rows.filter((l) => (l.tags ?? []).includes(tagFilter));
-    }
-
+    // text filter
     if (rx) {
-      rows = rows.filter((l) => {
-        const title = l.title ?? '';
-        const url = l.url ?? '';
-        const tagsText = (l.tags ?? []).join(' ');
-        const haystack =
-          scope === 'title'
-            ? title
-            : scope === 'url'
-            ? url
-            : scope === 'tags'
-            ? tagsText
-            : `${title} ${url} ${tagsText}`;
+      arr = arr.filter((l) => {
+        const haystackPieces: string[] = [];
+        if (scope === 'all' || scope === 'title') {
+          haystackPieces.push(l.title ?? '', l.titleEn ?? '', l.titleTh ?? '');
+        }
+        if (scope === 'all' || scope === 'url') {
+          haystackPieces.push(l.url ?? '');
+        }
+        if (scope === 'all' || scope === 'tags') {
+          haystackPieces.push(...((l.tags ?? []) as string[]));
+        }
+        const haystack = haystackPieces.join(' ').toLowerCase();
         return rx.test(haystack);
       });
     }
 
-    return rows;
-  }, [links, activeLangs, tagFilter, rx, scope]);
+    // tag filter (if used later)
+    if (tagFilter) {
+      arr = arr.filter((l) => (l.tags ?? []).includes(tagFilter));
+    }
 
-  // Keep selection in sync with visible rows
+    return arr;
+  }, [links, activeLangs, selectedPrograms, rx, scope, tagFilter]);
+
+  // keep selection in sync with visible rows
   useEffect(() => {
     setSelectedIds((prev) => prev.filter((id) => filtered.some((l) => l.id === id)));
   }, [filtered]);
 
-  // Selection helpers
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const clearSelection = () => setSelectedIds([]);
-
-  const selectAllFiltered = () => {
-    setSelectedIds(filtered.map((l) => l.id));
-  };
+  const selectAllFiltered = () => setSelectedIds(filtered.map((l) => l.id));
 
   const selectedLinks = useMemo(
     () => filtered.filter((l) => selectedIds.includes(l.id)),
@@ -231,8 +283,7 @@ export default function LinksList() {
   );
 
   const deleteSelected = async () => {
-    if (!user) return;
-    if (!selectedIds.length) return;
+    if (!user || !selectedIds.length) return;
 
     const count = selectedIds.length;
     const ok = window.confirm(
@@ -251,7 +302,7 @@ export default function LinksList() {
     }
   };
 
-  // Inline edit helpers
+  // inline edit helpers
   const startEdit = (l: LinkDoc) => {
     setEditingId(l.id);
     setEditTitle(l.title ?? '');
@@ -293,14 +344,13 @@ export default function LinksList() {
     }
   };
 
-  // Tag cloud
+  // tag cloud (not changed)
   const tagCounts = useMemo(() => {
     const m = new Map<string, number>();
     links.forEach((l) => (l.tags ?? []).forEach((t) => m.set(t, (m.get(t) ?? 0) + 1)));
     return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
   }, [links]);
 
-  // Export helpers
   const exportLinks = (rows: LinkDoc[]) => {
     const blob = new Blob([JSON.stringify(rows, null, 2)], {
       type: 'application/json',
@@ -313,7 +363,8 @@ export default function LinksList() {
     URL.revokeObjectURL(url);
   };
 
-  // Compose text for share/mailto/bulk copy
+  // ---------- share helpers ----------
+
   const composeCardText = (l: LinkDoc, uiLang: 'th' | 'en') => {
     const titleEn = l.titleEn || l.title || '';
     const titleTh = l.titleTh || '';
@@ -342,7 +393,6 @@ export default function LinksList() {
     return lines.join('\n');
   };
 
-  // Share helper: ask first, then QR + Web Share (or download/mailto)
   const shareLinkWithQrOrEmail = async (
     l: LinkDoc,
     primaryTitle: string,
@@ -366,12 +416,10 @@ export default function LinksList() {
         orientation,
       });
 
-      // Try Web Share with file
       const filename = `${sanitizeName(fileBase || primaryTitle || 'tgn-link')}.png`;
       const shared = await shareCardIfPossible(filename, canvas);
       if (shared) return;
 
-      // Offer to download if share not supported
       const wantDownload = window.confirm(
         uiLang === 'th'
           ? 'ไม่สามารถแชร์ไฟล์ได้ ต้องการดาวน์โหลด QR Card ไหม?'
@@ -382,7 +430,6 @@ export default function LinksList() {
         return;
       }
 
-      // Fallback: mailto (no image attachment—mailto cannot attach programmatically)
       const subject = primaryTitle || 'Shared link';
       const body = composeCardText(l, uiLang);
       const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(
@@ -395,7 +442,8 @@ export default function LinksList() {
     }
   };
 
-  // Malformed URL fixer
+  // ---------- malformed URLs fixer ----------
+
   const fixable = useMemo(
     () =>
       links.filter((l) => {
@@ -420,9 +468,7 @@ export default function LinksList() {
     alert(`Fixed ${toFix.length} URL(s).`);
   };
 
-  // =========================
-  // Render states
-  // =========================
+  // ---------- early returns ----------
 
   if (!user) {
     return <p className="text-center text-gray-500">Sign in to view links.</p>;
@@ -438,25 +484,30 @@ export default function LinksList() {
 
   const uiLang = getUiLang();
 
-  // =========================
-  // Main layout
-  // =========================
+  // ======================================================
+  // Layout
+  // ======================================================
 
   return (
     <div className="flex max-w-6xl mx-auto">
-      {/* Sidebar */}
+      {/* Sidebar panel (left) */}
       <LanguageSidebar
         links={links}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         activeLangs={activeLangs}
         onToggleLang={toggleLang}
+        selectedPrograms={selectedPrograms}
+        setSelectedPrograms={setSelectedPrograms}
+        onApply={() => {
+          // nothing special to do; filtered useMemo reacts to state
+        }}
       />
 
-      {/* Right side */}
+      {/* Right side (main content) */}
       <div className="flex-1 p-4 lg:ml-2">
-        {/* Mobile sidebar toggle */}
-        <div className="mb-2 lg:hidden flex justify-start">
+        {/* Mobile sidebar toggle (hamburger) */}
+        <div className="mb-2 flex justify-start">
           <button
             type="button"
             className="px-3 py-1.5 rounded-full border text-xs"
@@ -466,7 +517,7 @@ export default function LinksList() {
           </button>
         </div>
 
-        {/* Choices box */}
+        {/* Filter + options box */}
         <div className="flex flex-col gap-2 border rounded-xl p-3 bg-gray-50">
           <div className="flex items-center gap-2 flex-wrap">
             <select
@@ -532,6 +583,7 @@ export default function LinksList() {
                 setTextFilter('');
                 setTagFilter(null);
                 setActiveLangs([]);
+                setSelectedPrograms([]);
               }}
             >
               Clear All
@@ -618,36 +670,30 @@ export default function LinksList() {
           </div>
         )}
 
-        {/* Cards */}
+        {/* Cards grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
           {filtered.map((l) => {
             const isEditing = editingId === l.id;
 
             const titleEn = l.titleEn || l.title || '';
             const titleTh = l.titleTh || '';
-
-            // Language labels for the card header (both shown)
             const langEn = l.langEn || '';
             const langTh = l.langTh || '';
             const iso3 = (l.iso3 || l.language || '').toString().toUpperCase();
             const program = l.program ?? '';
             const programStr = typeof program === 'number' ? String(program) : program || '';
 
-            // Primary title (for share card title preference by UI lang)
-            const uiLang = getUiLang();
+            const uiLangCard = uiLang;
             const primaryTitle =
-              uiLang === 'th'
+              uiLangCard === 'th'
                 ? titleTh || titleEn || '(no title)'
                 : titleEn || titleTh || '(no title)';
 
-            // This is what we print on the PNG/Share card under QR
             const langLabel =
-              uiLang === 'th' ? langTh || langEn || iso3 || '' : langEn || langTh || iso3 || '';
+              uiLangCard === 'th' ? langTh || langEn || iso3 || '' : langEn || langTh || iso3 || '';
 
-            // Audio src
             const playUrl = l.playUrl || l.downloadTrackUrl || l.url;
 
-            // Filename base Language-Program-Date
             const fileBase = `${sanitizeName(langLabel || 'Lang')}-${sanitizeName(
               programStr || 'NA'
             )}-${yyyymmdd()}`;
@@ -657,7 +703,7 @@ export default function LinksList() {
                 key={l.id}
                 className="border rounded p-3 bg-white shadow-sm h-full flex flex-col"
               >
-                {/* Header: languages on top */}
+                {/* Header: languages + program titles */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     {/* Line 1: Language EN / Language TH */}
@@ -719,7 +765,7 @@ export default function LinksList() {
                   </div>
                 </div>
 
-                {/* URL below header lines */}
+                {/* URL under titles */}
                 {isEditing ? (
                   <input
                     value={editUrl}
@@ -751,7 +797,7 @@ export default function LinksList() {
                 {/* Audio player */}
                 {!isEditing && playUrl && <audio controls src={playUrl} className="w-full mt-2" />}
 
-                {/* Actions — order: Share, QR Card, Edit */}
+                {/* Actions row */}
                 <div className="mt-2 flex flex-wrap gap-2 text-sm">
                   {isEditing ? (
                     <>
@@ -772,19 +818,16 @@ export default function LinksList() {
                     </>
                   ) : (
                     <>
-                      {/* Share (icon + label) */}
+                      {/* Share (QR + mailto fallback) */}
                       <button
                         type="button"
                         className="border rounded px-2 py-1"
-                        onClick={() => {
-                          // Ask first; then share or download/mailto
-                          shareLinkWithQrOrEmail(l, primaryTitle, langLabel, fileBase);
-                        }}
+                        onClick={() => shareLinkWithQrOrEmail(l, primaryTitle, langLabel, fileBase)}
                       >
                         ↗︎ Share
                       </button>
 
-                      {/* QR Card (formerly PNG) — ask before download/share */}
+                      {/* QR Card (PNG) */}
                       <button
                         type="button"
                         className="border rounded px-2 py-1"
@@ -804,7 +847,6 @@ export default function LinksList() {
                             orientation,
                           });
                           const filename = `${sanitizeName(fileBase)}.png`;
-                          // Try share first (many mobile devices support sharing a file)
                           const shared = await shareCardIfPossible(filename, canvas);
                           if (!shared) {
                             await downloadCardPng(filename, canvas);
@@ -814,7 +856,7 @@ export default function LinksList() {
                         ◻︎ QR Card
                       </button>
 
-                      {/* Edit with angled pencil icon */}
+                      {/* Edit */}
                       <button
                         type="button"
                         className="border rounded px-2 py-1"
@@ -838,3 +880,5 @@ export default function LinksList() {
     </div>
   );
 }
+
+// end of src/components/LinksList.tsx

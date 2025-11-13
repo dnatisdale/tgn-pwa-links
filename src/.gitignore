@@ -4,6 +4,7 @@ dist/
 .env
 # Local import scripts and data (do NOT commit)
 scripts/importStarterKitFromCsv.cjs
+node scripts/migrate-add-langKey.cjs
 scripts/importStarterKit.ts
 scripts/serviceAccountKey.json
 scripts/*.csv
